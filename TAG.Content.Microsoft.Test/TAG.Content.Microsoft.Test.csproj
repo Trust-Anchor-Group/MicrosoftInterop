@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.5.0" />
+    <PackageReference Include="Microsoft.Office.Interop.Excel" Version="15.0.4795.1001" />
+    <PackageReference Include="Microsoft.Office.Interop.PowerPoint" Version="15.0.4420.1018" />
+    <PackageReference Include="Microsoft.Office.Interop.Word" Version="15.0.4797.1004" />
+    <PackageReference Include="MSTest.TestAdapter" Version="2.2.10" />
+    <PackageReference Include="MSTest.TestFramework" Version="2.2.10" />
+    <PackageReference Include="coverlet.collector" Version="3.2.0" />
+    <PackageReference Include="Waher.Content" Version="2.6.4" />
+    <PackageReference Include="Waher.Content.Markdown" Version="2.6.1" />
+    <PackageReference Include="Waher.Events" Version="1.1.2" />
+    <PackageReference Include="Waher.Events.Console" Version="1.1.1" />
+    <PackageReference Include="Waher.Persistence" Version="1.10.0" />
+    <PackageReference Include="Waher.Persistence.Files" Version="1.11.0" />
+    <PackageReference Include="Waher.Runtime.Inventory" Version="1.1.5" />
+    <PackageReference Include="Waher.Runtime.Inventory.Loader" Version="1.0.9" />
+    <PackageReference Include="Waher.Runtime.Settings" Version="1.0.10" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TAG.Content.Microsoft\TAG.Content.Microsoft.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="office">
+      <HintPath>..\..\..\Program Files (x86)\Microsoft Visual Studio\Shared\Visual Studio Tools for Office\PIA\Office15\Office.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>

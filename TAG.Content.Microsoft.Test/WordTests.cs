@@ -81,5 +81,21 @@ namespace TAG.Content.Microsoft.Test
 			string OutputFileName = Path.Combine(outputFolder, "Test_02.pdf");
 			WordUtilities.ConvertWordToPdf(wordFileName, OutputFileName, true);
 		}
+
+		[TestMethod]
+		public void Test_03_Convert_To_XPS()
+		{
+			Assert.IsNotNull(outputFolder);
+			string OutputFileName = Path.Combine(outputFolder, "Test_03.xps");
+			WordUtilities.ConvertWordToXps(wordFileName, OutputFileName);
+		}
+
+		[TestMethod]
+		public void Test_04_Convert_To_Markdown()
+		{
+			Assert.IsNotNull(outputFolder);
+			string OutputFileName = Path.Combine(outputFolder, "Test_04.md");
+			WordUtilities.ConvertWordToMarkdown(wordFileName, OutputFileName);
+		}
 	}
 }

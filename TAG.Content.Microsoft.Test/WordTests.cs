@@ -67,35 +67,34 @@ namespace TAG.Content.Microsoft.Test
 		}
 
 		[TestMethod]
-		public void Test_01_Convert_To_PDF_Screen()
+		public void Test_01_Convert_To_Markdown()
 		{
 			Assert.IsNotNull(outputFolder);
-			string OutputFileName = Path.Combine(outputFolder, "Test_01.pdf");
-			WordUtilities.ConvertWordToPdf(wordFileName, OutputFileName, false);
-		}
-
-		[TestMethod]
-		public void Test_02_Convert_To_PDF_Print()
-		{
-			Assert.IsNotNull(outputFolder);
-			string OutputFileName = Path.Combine(outputFolder, "Test_02.pdf");
-			WordUtilities.ConvertWordToPdf(wordFileName, OutputFileName, true);
-		}
-
-		[TestMethod]
-		public void Test_03_Convert_To_XPS()
-		{
-			Assert.IsNotNull(outputFolder);
-			string OutputFileName = Path.Combine(outputFolder, "Test_03.xps");
-			WordUtilities.ConvertWordToXps(wordFileName, OutputFileName);
-		}
-
-		[TestMethod]
-		public void Test_04_Convert_To_Markdown()
-		{
-			Assert.IsNotNull(outputFolder);
-			string OutputFileName = Path.Combine(outputFolder, "Test_04.md");
+			string OutputFileName = Path.Combine(outputFolder, "Test_01.md");
 			WordUtilities.ConvertWordToMarkdown(wordFileName, OutputFileName);
 		}
+
+		/* Sections
+		 * Columns
+		 * Paragraphs
+		 * Paragraph justification
+		 * Headlines
+		 * Bold
+		 * Italic
+		 * Underline
+		 * Strike-through
+		 * Super-script
+		 * Sub-script
+		 * Inline Code
+		 * Code block
+		 * Footnotes
+		 * Tables
+		 * Figures (Picture, Drawing)
+		 * Table of contents
+		 * Fields
+		 * Links
+		 * LineBreak
+		 * Horizontal Separator
+		 */
 	}
 }

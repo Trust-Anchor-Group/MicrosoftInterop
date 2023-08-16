@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Waher.Content.Markdown;
+using MarkdownModel = Waher.Content.Markdown.Model;
 
 namespace TAG.Content.Microsoft
 {
@@ -52,6 +53,25 @@ namespace TAG.Content.Microsoft
 				FormattingStyle Style = new FormattingStyle();
 
 				ExportAsMarkdown(MainDocument.Elements(), Markdown, Style);
+
+				if (!(Style.Footnotes is null))
+				{
+					foreach (KeyValuePair<string, string> P in Style.Footnotes)
+					{
+						Markdown.AppendLine();
+						Markdown.Append("[^");
+						Markdown.Append(P.Key);
+						Markdown.Append("]:");
+
+						string[] Rows = P.Value.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
+
+						foreach (string Row in Rows)
+						{
+							Markdown.Append('\t');
+							Markdown.AppendLine(Row);
+						}
+					}
+				}
 			}
 		}
 
@@ -100,9 +120,7 @@ namespace TAG.Content.Microsoft
 
 					case "pPr":
 						if (Element is ParagraphProperties ParagraphProperties)
-						{
-							// Ignore. Already processed.
-						}
+							HasText = ExportAsMarkdown(ParagraphProperties.Elements(), Markdown, Style);
 						break;
 
 					case "r":
@@ -115,13 +133,9 @@ namespace TAG.Content.Microsoft
 
 					case "rPr":
 						if (Element is ParagraphMarkRunProperties ParagraphMarkRunProperties)
-						{
-							// Ignore. Already processed.
-						}
+							HasText = ExportAsMarkdown(ParagraphMarkRunProperties.Elements(), Markdown, Style);
 						else if (Element is RunProperties RunProperties)
-						{
-							// Ignore. Already processed.
-						}
+							HasText = ExportAsMarkdown(RunProperties.Elements(), Markdown, Style);
 						break;
 
 					case "t":
@@ -137,151 +151,211 @@ namespace TAG.Content.Microsoft
 						}
 						break;
 
-					case "spacing":
-						if (Element is SpacingBetweenLines SpacingBetweenLines)
-						{
-						}
-						break;
-
-					case "jc":
-						if (Element is Justification Justification)
-						{
-						}
-						else if (Element is TableJustification TableJustification)
-						{
-						}
-						break;
-
-					case "rFonts":
-						if (Element is RunFonts RunFonts)
-						{
-						}
-						break;
-
-					case "b":
-						if (Element is Bold Bold)
-						{
-						}
-						break;
-
-					case "bCs":
-						if (Element is BoldComplexScript BoldComplexScript)
-						{
-						}
-						break;
-
-					case "sz":
-						if (Element is FontSize FontSize)
-						{
-						}
-						break;
-
-					case "szCs":
-						if (Element is FontSizeComplexScript FontSizeComplexScript)
-						{
-						}
-						break;
-
 					case "tbl":
 						if (Element is Table Table)
 						{
+							TableInfo Bak = Style.Table;
+							Style.Table = new TableInfo();
+
+							HasText = ExportAsMarkdown(Table.Elements(), Markdown, Style);
+							Markdown.AppendLine();
+
+							Style.Table = Bak;
 						}
 						break;
 
 					case "tblPr":
 						if (Element is TableProperties TableProperties)
-						{
-						}
+							HasText = ExportAsMarkdown(TableProperties.Elements(), Markdown, Style);
 						break;
 
 					case "tblStyle":
-						if (Element is TableStyle TableStyle)
+						if (Element is TableStyle)
 						{
+							// Ignore. Already processed.
 						}
 						break;
 
 					case "tblW":
-						if (Element is TableWidth TableWidth)
+						if (Element is TableWidth)
 						{
+							// Ignore. Already processed.
 						}
 						break;
 
 					case "tblLayout":
-						if (Element is TableLayout TableLayout)
+						if (Element is TableLayout)
 						{
+							// Ignore. Already processed.
 						}
 						break;
 
 					case "tblLook":
-						if (Element is TableLook TableLook)
+						if (Element is TableLook)
 						{
+							// Ignore. Already processed.
 						}
 						break;
 
 					case "tblGrid":
 						if (Element is TableGrid TableGrid)
-						{
-						}
+							HasText = ExportAsMarkdown(TableGrid.Elements(), Markdown, Style);
 						break;
 
 					case "gridCol":
-						if (Element is GridColumn GridColumn)
+						if (Element is GridColumn && !(Style.Table is null))
 						{
+							Style.Table.ColumnAlignments.Add(MarkdownModel.TextAlignment.Left); // TODO
+							Style.Table.NrColumns++;
 						}
 						break;
 
 					case "tr":
-						if (Element is TableRow TableRow)
+						if (Element is TableRow TableRow && !(Style.Table is null))
 						{
+							Style.Table.ColumnContents.Clear();
+							HasText = ExportAsMarkdown(TableRow.Elements(), Markdown, Style);
+
+							int i;
+
+							for (i = 0; i < Style.Table.NrColumns; i++)
+							{
+								Markdown.Append("| ");
+
+								if (i < Style.Table.ColumnContents.Count)
+								{
+									string s = Style.Table.ColumnContents[i].ToString();
+									bool Simple = s.IndexOfAny(simpleCharsProhibited) < 0;
+
+									if (Simple)
+									{
+										Markdown.Append(s);
+
+										if (!s.EndsWith(" "))
+											Markdown.Append(' ');
+									}
+									else
+									{
+										if (Style.Footnotes is null)
+											Style.Footnotes = new Dictionary<string, string>();
+
+										string FootnoteKey = "n" + (++Style.NrFootnotes).ToString();
+										Style.Footnotes[FootnoteKey] = s;
+
+										Markdown.Append("[^");
+										Markdown.Append(FootnoteKey);
+										Markdown.Append("] ");
+									}
+								}
+							}
+
+							Markdown.AppendLine("|");
 						}
 						break;
 
 					case "trPr":
 						if (Element is TableRowProperties TableRowProperties)
-						{
-						}
+							HasText = ExportAsMarkdown(TableRowProperties.Elements(), Markdown, Style);
 						break;
 
 					case "tc":
 						if (Element is TableCell TableCell)
 						{
+							StringBuilder CellMarkdown = new StringBuilder();
+							Style.Table.ColumnContents.Add(CellMarkdown);
+							HasText = ExportAsMarkdown(TableCell.Elements(), CellMarkdown, Style);
 						}
 						break;
 
 					case "tcPr":
 						if (Element is TableCellProperties TableCellProperties)
-						{
-						}
+							HasText = ExportAsMarkdown(TableCellProperties.Elements(), Markdown, Style);
 						break;
 
 					case "tcW":
-						if (Element is TableCellWidth TableCellWidth)
+						if (Element is TableCellWidth)
 						{
+							// Ignore. Already processed.
 						}
 						break;
 
 					case "tcBorders":
-						if (Element is TableCellBorders TableCellBorders)
+						if (Element is TableCellBorders)
 						{
+							// Ignore. Already processed.
+						}
+						break;
+
+					case "spacing":
+						if (Element is SpacingBetweenLines)
+						{
+							// Ignore. Already processed.
+						}
+						break;
+
+					case "jc":
+						if (Element is Justification)
+						{
+							// Ignore. Already processed.
+						}
+						else if (Element is TableJustification)
+						{
+							// Ignore. Already processed.
+						}
+						break;
+
+					case "rFonts":
+						if (Element is RunFonts)
+						{
+							// Ignore. Already processed.
+						}
+						break;
+
+					case "b":
+						if (Element is Bold)
+						{
+							// Ignore. Already processed.
+						}
+						break;
+
+					case "bCs":
+						if (Element is BoldComplexScript)
+						{
+							// Ignore. Already processed.
+						}
+						break;
+
+					case "sz":
+						if (Element is FontSize)
+						{
+							// Ignore. Already processed.
+						}
+						break;
+
+					case "szCs":
+						if (Element is FontSizeComplexScript)
+						{
+							// Ignore. Already processed.
 						}
 						break;
 
 					case "top":
-						if (Element is TopBorder TopBorder)
+						if (Element is TopBorder)
 						{
+							// Ignore. Already processed.
 						}
 						break;
 
 					case "bottom":
-						if (Element is BottomBorder BottomBorder)
+						if (Element is BottomBorder)
 						{
+							// Ignore. Already processed.
 						}
 						break;
 
 					case "br":
 						if (Element is Break Break)
-						{
-						}
+							Markdown.AppendLine("  ");
 						break;
 
 					case "pStyle":
@@ -415,6 +489,8 @@ namespace TAG.Content.Microsoft
 			return HasText;
 		}
 
+		private static readonly char[] simpleCharsProhibited = new char[] { '\r', '\n', '|' };
+
 		private class FormattingStyle
 		{
 			public bool Bold = false;
@@ -423,6 +499,17 @@ namespace TAG.Content.Microsoft
 			public bool StrikeThrough = false;
 			public bool Insert = false;
 			public bool Delete = false;
+			public TableInfo Table = null;
+			public Dictionary<string, string> Footnotes = null;
+			public int NrFootnotes = 0;
+		}
+
+		private class TableInfo
+		{
+			public int NrColumns;
+			public List<MarkdownModel.TextAlignment> ColumnAlignments = new List<MarkdownModel.TextAlignment>();
+			public List<StringBuilder> ColumnContents = new List<StringBuilder>();
+			public bool HeaderRow = true;
 		}
 
 		private static void CheckStyle(Run Item, FormattingStyle Style, StringBuilder Markdown)

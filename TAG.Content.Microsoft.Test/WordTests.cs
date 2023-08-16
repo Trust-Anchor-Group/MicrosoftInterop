@@ -95,6 +95,17 @@ namespace TAG.Content.Microsoft.Test
 		 * Links
 		 * LineBreak
 		 * Horizontal Separator
+		 * Table column alignments.
+		 * Table column spans.
+		 * Table with multiple header rows
+		 * Table captions
+		 * Figure captions
+		 * Cross-paragraph styles
+		 * Cross-table-cell styles
+		 * Cross-table-row styles
+		 * Cross-table styles
+		 * Footnotes
+		 * Endnotes
 		 */
 	}
 }

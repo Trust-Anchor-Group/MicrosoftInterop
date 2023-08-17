@@ -11,8 +11,10 @@
 
   <ItemGroup>
     <None Remove="Documents\Paragraphs.docx" />
+    <None Remove="Documents\Sections.docx" />
     <None Remove="Documents\SimpleText.docx" />
     <None Remove="Expected\Paragraphs.md" />
+    <None Remove="Expected\Sections.md" />
     <None Remove="Expected\SimpleText.md" />
   </ItemGroup>
 
@@ -20,10 +22,16 @@
     <Content Include="Documents\Paragraphs.docx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Documents\Sections.docx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Documents\SimpleText.docx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Expected\Paragraphs.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Expected\Sections.md">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Expected\SimpleText.md">

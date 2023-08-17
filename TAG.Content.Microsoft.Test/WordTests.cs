@@ -41,6 +41,7 @@ namespace TAG.Content.Microsoft.Test
 		[DataTestMethod]
 		[DataRow("SimpleText")]
 		[DataRow("Paragraphs")]
+		[DataRow("Sections")]
 		public void Convert_To_Markdown(string FileName)
 		{
 			Assert.IsNotNull(inputFolder);
@@ -92,8 +93,7 @@ namespace TAG.Content.Microsoft.Test
 			}
 		}
 
-		/* Sections
-		 * Columns
+		/* 
 		 * Code block
 		 * Footnotes
 		 * Tables
@@ -115,6 +115,7 @@ namespace TAG.Content.Microsoft.Test
 		 * Cross-table styles
 		 * Footnotes
 		 * Endnotes
+		 * Detect document language
 		 */
 	}
 }

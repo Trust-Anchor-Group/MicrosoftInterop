@@ -56,6 +56,7 @@ namespace TAG.Content.Microsoft
 				Document MainDocument = Doc.MainDocumentPart.Document;
 				FormattingStyle Style = new FormattingStyle();
 				RenderingState State = new RenderingState();
+				int StartLen = Markdown.Length;
 
 				ExportAsMarkdown(Doc, MainDocument.Elements(), Markdown, Style, State);
 
@@ -74,6 +75,28 @@ namespace TAG.Content.Microsoft
 							Markdown.AppendLine(Row);
 						}
 					}
+				}
+
+				if (!(State.Sections is null))
+				{
+					string End = Markdown.ToString();
+					string Start;
+
+					if (StartLen == 0)
+						Start = string.Empty;
+					else
+					{
+						Start = End.Substring(0, StartLen);
+						End = End.Substring(StartLen);
+					}
+
+					Markdown.Clear();
+					Markdown.Append(Start);
+				
+					foreach (string Section in State.Sections)
+						Markdown.Append(Section);
+
+					Markdown.Append(End);
 				}
 
 				if (!(State.Unrecognized is null))
@@ -101,7 +124,7 @@ namespace TAG.Content.Microsoft
 #if DEBUG
 					Msg.AppendLine();
 					Msg.AppendLine("```");
-					Msg.AppendLine(XML.PrettyXml(MainDocument.OuterXml));
+					Msg.AppendLine(CapLength(XML.PrettyXml(MainDocument.OuterXml), 256 * 1024));
 					Msg.AppendLine("```");
 #endif
 					Log.Warning(Msg.ToString(), WordFileName);
@@ -114,13 +137,21 @@ namespace TAG.Content.Microsoft
 					Msg.AppendLine("Open XML-document converted to Markdown.");
 					Msg.AppendLine();
 					Msg.AppendLine("```");
-					Msg.AppendLine(XML.PrettyXml(MainDocument.OuterXml));
+					Msg.AppendLine(CapLength(XML.PrettyXml(MainDocument.OuterXml), 256 * 1024));
 					Msg.AppendLine("```");
 
 					Log.Informational(Msg.ToString(), WordFileName);
 				}
 #endif
 			}
+		}
+
+		private static string CapLength(string s, int MaxLength)
+		{
+			if (s.Length > MaxLength)
+				return s.Substring(0, MaxLength) + "...";
+			else
+				return s;
 		}
 
 		private static string[] GetRows(string s)
@@ -284,6 +315,39 @@ namespace TAG.Content.Microsoft
 							}
 
 							Markdown.AppendLine();
+
+							if (Style.NewSection.HasValue)
+							{
+								StringBuilder Section = new StringBuilder();
+
+								int NrColumns = Style.NewSection.Value;
+								Style.NewSection = null;
+
+								int NrChars = 80 / NrColumns;
+								if (NrChars < 5)
+									NrChars = 5;
+
+								string s = new string('=', NrChars);
+								int i;
+
+								for (i = 0; i < NrColumns; i++)
+								{
+									if (i > 0)
+										Section.Append(' ');
+
+									Section.Append(s);
+								}
+
+								Section.AppendLine();
+								Section.AppendLine();
+								Section.Append(Markdown.ToString());
+								Markdown.Clear();
+
+								if (State.Sections is null)
+									State.Sections = new LinkedList<string>();
+
+								State.Sections.AddLast(Section.ToString());
+							}
 						}
 						else
 							State.UnrecognizedElement(Element);
@@ -872,27 +936,75 @@ namespace TAG.Content.Microsoft
 						break;
 
 					case "sectPr":
-						if (!(Element is SectionProperties))
+						if (Element is SectionProperties SectionProperties)
+						{
+							HasText = ExportAsMarkdown(Doc, SectionProperties.Elements(), Markdown, Style, State);
+							if (!Style.NewSection.HasValue)
+								Style.NewSection = 1;
+						}
+						else
+							State.UnrecognizedElement(Element);
+						break;
+
+					case "type":
+						if (Element is SectionType SectionType)
+						{
+							if (SectionType.Val.HasValue)
+							{
+								switch (SectionType.Val.Value)
+								{
+									case SectionMarkValues.EvenPage:
+									case SectionMarkValues.OddPage:
+									case SectionMarkValues.Continuous:
+									case SectionMarkValues.NextPage:
+										Style.NewSection = 1;
+										break;
+
+									case SectionMarkValues.NextColumn:
+									default:
+										break;
+								}
+							}
+
+							HasText = ExportAsMarkdown(Doc, SectionType.Elements(), Markdown, Style, State);
+						}
+						else
+							State.UnrecognizedElement(Element);
+						break;
+
+					case "col":
+						if (!(Element is Column))
+							State.UnrecognizedElement(Element);
+						break;
+
+					case "pgSz":
+						if (Element is PageSize PageSize)
+							HasText = ExportAsMarkdown(Doc, PageSize.Elements(), Markdown, Style, State);
+						else
+							State.UnrecognizedElement(Element);
+						break;
+
+					case "pgMar":
+						if (Element is PageMargin PageMargin)
+							HasText = ExportAsMarkdown(Doc, PageMargin.Elements(), Markdown, Style, State);
+						else
+							State.UnrecognizedElement(Element);
+						break;
+
+					case "cols":
+						if (Element is Columns Columns)
+						{
+							if (Style.NewSection.HasValue && !(Columns.ColumnCount is null) && Columns.ColumnCount.HasValue)
+								Style.NewSection = Columns.ColumnCount.Value;
+
+							HasText = ExportAsMarkdown(Doc, Columns.Elements(), Markdown, Style, State);
+						}
+						else
 							State.UnrecognizedElement(Element);
 						break;
 
 					case "footerReference":
 						if (!(Element is FooterReference))
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "pgSz":
-						if (!(Element is PageSize))
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "pgMar":
-						if (!(Element is PageMargin))
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "cols":
-						if (!(Element is Columns))
 							State.UnrecognizedElement(Element);
 						break;
 
@@ -911,6 +1023,21 @@ namespace TAG.Content.Microsoft
 							State.UnrecognizedElement(Element);
 						break;
 
+					case "shd":
+						if (!(Element is Shading))
+							State.UnrecognizedElement(Element);
+						break;
+
+					case "color":
+						if (!(Element is Color))
+							State.UnrecognizedElement(Element);
+						break;
+
+					case "kern":
+						if (!(Element is Kern))
+							State.UnrecognizedElement(Element);
+						break;
+
 					default:
 						State.UnrecognizedElement(Element);
 						break;
@@ -923,10 +1050,10 @@ namespace TAG.Content.Microsoft
 		private static bool IsCodeFont(RunFonts Fonts)
 		{
 			return
-				monospaceFonts.Contains(Fonts.Ascii.Value?.ToUpper()) ||
-				monospaceFonts.Contains(Fonts.HighAnsi.Value?.ToUpper()) ||
-				monospaceFonts.Contains(Fonts.ComplexScript.Value?.ToUpper()) ||
-				monospaceFonts.Contains(Fonts.EastAsia.Value?.ToUpper());
+				monospaceFonts.Contains(Fonts.Ascii?.Value?.ToUpper()) ||
+				monospaceFonts.Contains(Fonts.HighAnsi?.Value?.ToUpper()) ||
+				monospaceFonts.Contains(Fonts.ComplexScript?.Value?.ToUpper()) ||
+				monospaceFonts.Contains(Fonts.EastAsia?.Value?.ToUpper());
 		}
 
 		private static readonly VanityResources styleIds = GetStyleIds();
@@ -976,6 +1103,7 @@ namespace TAG.Content.Microsoft
 			public bool Superscript;
 			public bool Subscript;
 			public bool Code;
+			public int? NewSection;
 			public ParagraphAlignment ParagraphAlignment;
 
 			public FormattingStyle()
@@ -989,6 +1117,7 @@ namespace TAG.Content.Microsoft
 				this.Superscript = false;
 				this.Subscript = false;
 				this.Code = false;
+				this.NewSection = null;
 				this.ParagraphAlignment = ParagraphAlignment.Left;
 			}
 
@@ -1003,6 +1132,7 @@ namespace TAG.Content.Microsoft
 				this.Superscript = Prev.Superscript;
 				this.Subscript = Prev.Subscript;
 				this.Code = Prev.Code;
+				this.NewSection = Prev.NewSection;
 				this.ParagraphAlignment = Prev.ParagraphAlignment;
 			}
 		}
@@ -1013,6 +1143,7 @@ namespace TAG.Content.Microsoft
 			public Dictionary<string, string> Footnotes = null;
 			public int NrFootnotes = 0;
 			public Dictionary<string, Dictionary<string, int>> Unrecognized = null;
+			public LinkedList<string> Sections = null;
 
 			public void UnrecognizedElement(OpenXmlElement Element)
 			{

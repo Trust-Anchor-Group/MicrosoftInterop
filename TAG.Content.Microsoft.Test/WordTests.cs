@@ -1,7 +1,9 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Text;
 using Waher.Events;
 using Waher.Events.Console;
 using Waher.Runtime.Inventory.Loader;
+using Waher.Runtime.Text;
 
 namespace TAG.Content.Microsoft.Test
 {
@@ -10,6 +12,7 @@ namespace TAG.Content.Microsoft.Test
 	{
 		private static string? inputFolder;
 		private static string? outputFolder;
+		private static string? expectedFolder;
 
 		[AssemblyInitialize]
 		public static Task AssemblyInitialize(TestContext _)
@@ -27,6 +30,7 @@ namespace TAG.Content.Microsoft.Test
 		{
 			inputFolder = Path.Combine(Environment.CurrentDirectory, "Documents");
 			outputFolder = Path.Combine(Environment.CurrentDirectory, "Output");
+			expectedFolder = Path.Combine(Environment.CurrentDirectory, "Expected");
 
 			if (!Directory.Exists(outputFolder))
 				Directory.CreateDirectory(outputFolder);
@@ -36,20 +40,60 @@ namespace TAG.Content.Microsoft.Test
 
 		[DataTestMethod]
 		[DataRow("SimpleText")]
-		public void Test_01_Convert_To_Markdown(string FileName)
+		[DataRow("Paragraphs")]
+		public void Convert_To_Markdown(string FileName)
 		{
 			Assert.IsNotNull(inputFolder);
 			Assert.IsNotNull(outputFolder);
+			Assert.IsNotNull(expectedFolder);
 
 			string InputFileName = Path.Combine(inputFolder, FileName + ".docx");
 			string OutputFileName = Path.Combine(outputFolder, FileName + ".md");
+			string ExpectedFileName = Path.Combine(expectedFolder, FileName + ".md");
 
 			WordUtilities.ConvertWordToMarkdown(InputFileName, OutputFileName);
+
+			if (File.Exists(ExpectedFileName))
+			{
+				string Output = File.ReadAllText(OutputFileName);
+				string Expected = File.ReadAllText(ExpectedFileName);
+
+				if (Expected != Output)
+				{
+					StringBuilder Error = new();
+
+					Error.AppendLine("Output not as expected.");
+					Error.AppendLine();
+
+					foreach (Step<string> Change in Difference.AnalyzeRows(Expected, Output).Steps)
+					{
+						switch (Change.Operation)
+						{
+							case EditOperation.Insert:
+								foreach (string Row in Change.Symbols)
+								{
+									Error.Append("+ ");
+									Error.AppendLine(Row);
+								}
+								break;
+
+							case EditOperation.Delete:
+								foreach (string Row in Change.Symbols)
+								{
+									Error.Append("- ");
+									Error.AppendLine(Row);
+								}
+								break;
+						}
+					}
+
+					Assert.Fail(Error.ToString());
+				}
+			}
 		}
 
 		/* Sections
 		 * Columns
-		 * Paragraph justification
 		 * Code block
 		 * Footnotes
 		 * Tables

@@ -10,11 +10,23 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Documents\Paragraphs.docx" />
     <None Remove="Documents\SimpleText.docx" />
+    <None Remove="Expected\Paragraphs.md" />
+    <None Remove="Expected\SimpleText.md" />
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="Documents\Paragraphs.docx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Documents\SimpleText.docx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Expected\Paragraphs.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Expected\SimpleText.md">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
@@ -30,6 +42,7 @@
     <PackageReference Include="Waher.Events.Console" Version="1.1.1" />
     <PackageReference Include="Waher.Runtime.Inventory" Version="1.1.5" />
     <PackageReference Include="Waher.Runtime.Inventory.Loader" Version="1.0.9" />
+    <PackageReference Include="Waher.Runtime.Text" Version="1.0.1" />
   </ItemGroup>
 
   <ItemGroup>

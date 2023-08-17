@@ -68,9 +68,7 @@ namespace TAG.Content.Microsoft
 						Markdown.Append(P.Key);
 						Markdown.Append("]:");
 
-						string[] Rows = P.Value.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
-
-						foreach (string Row in Rows)
+						foreach (string Row in GetRows(P.Value))
 						{
 							Markdown.Append('\t');
 							Markdown.AppendLine(Row);
@@ -125,6 +123,11 @@ namespace TAG.Content.Microsoft
 			}
 		}
 
+		private static string[] GetRows(string s)
+		{
+			return s.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
+		}
+
 		private const string MainNaemspace = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
 
 		private static bool ExportAsMarkdown(WordprocessingDocument Doc, IEnumerable<OpenXmlElement> Elements,
@@ -160,6 +163,9 @@ namespace TAG.Content.Microsoft
 					case "p":
 						if (Element is Paragraph Paragraph)
 						{
+							Style = new FormattingStyle(Style);
+							StringBuilder ParagraphContent = new StringBuilder();
+
 							if (!(Paragraph.ParagraphProperties?.ParagraphStyleId is null))
 							{
 								string StyleId = Paragraph.ParagraphProperties.ParagraphStyleId.Val?.Value?.ToUpper() ?? string.Empty;
@@ -168,67 +174,67 @@ namespace TAG.Content.Microsoft
 									switch (StyleId)
 									{
 										case "TITLE":
-											Markdown.Append("# ");
+											ParagraphContent.Append("# ");
 											HasText = true;
 											break;
 
 										case "H1":
-											Markdown.Append("## ");
+											ParagraphContent.Append("## ");
 											HasText = true;
 											break;
 
 										case "H2":
-											Markdown.Append("### ");
+											ParagraphContent.Append("### ");
 											HasText = true;
 											break;
 
 										case "H3":
-											Markdown.Append("#### ");
+											ParagraphContent.Append("#### ");
 											HasText = true;
 											break;
 
 										case "H4":
-											Markdown.Append("##### ");
+											ParagraphContent.Append("##### ");
 											HasText = true;
 											break;
 
 										case "H5":
-											Markdown.Append("###### ");
+											ParagraphContent.Append("###### ");
 											HasText = true;
 											break;
 
 										case "H6":
-											Markdown.Append("####### ");
+											ParagraphContent.Append("####### ");
 											HasText = true;
 											break;
 
 										case "H7":
-											Markdown.Append("######## ");
+											ParagraphContent.Append("######## ");
 											HasText = true;
 											break;
 
 										case "H8":
-											Markdown.Append("######### ");
+											ParagraphContent.Append("######### ");
 											HasText = true;
 											break;
 
 										case "H9":
-											Markdown.Append("########## ");
+											ParagraphContent.Append("########## ");
 											HasText = true;
 											break;
 
 										case "UL":
-											Markdown.Append("* ");
+											ParagraphContent.Append("* ");
 											HasText = true;
 											break;
 
 										case "OL":
-											Markdown.Append("#. ");
+											ParagraphContent.Append("#. ");
 											HasText = true;
 											break;
 
 										case "QUOTE":
-											Markdown.Append("> ");
+											ParagraphContent.Append("> ");
 											HasText = true;
 											break;
 
@@ -240,10 +246,43 @@ namespace TAG.Content.Microsoft
 								}
 							}
 
-							if (ExportAsMarkdown(Doc, Paragraph.Elements(), Markdown, Style, State))
+							if (ExportAsMarkdown(Doc, Paragraph.Elements(), ParagraphContent, Style, State))
 								HasText = true;
 
-							Markdown.AppendLine();
+							switch (Style.ParagraphAlignment)
+							{
+								case ParagraphAlignment.Left:
+								default:
+									Markdown.AppendLine(ParagraphContent.ToString());
+									break;
+
+								case ParagraphAlignment.Right:
+									foreach (string Row in GetRows(ParagraphContent.ToString()))
+									{
+										Markdown.Append(Row);
+										Markdown.AppendLine(">>");
+									}
+									break;
+
+								case ParagraphAlignment.Center:
+									foreach (string Row in GetRows(ParagraphContent.ToString()))
+									{
+										Markdown.Append(">>");
+										Markdown.Append(Row);
+										Markdown.AppendLine("<<");
+									}
+									break;
+
+								case ParagraphAlignment.Justified:
+									foreach (string Row in GetRows(ParagraphContent.ToString()))
+									{
+										Markdown.Append("<<");
+										Markdown.Append(Row);
+										Markdown.AppendLine(">>");
+									}
+									break;
+							}
+
 							Markdown.AppendLine();
 						}
 						else
@@ -252,7 +291,43 @@ namespace TAG.Content.Microsoft
 
 					case "pPr":
 						if (Element is ParagraphProperties ParagraphProperties)
+						{
+							if (!(ParagraphProperties.Justification is null) &&
+								ParagraphProperties.Justification.Val.HasValue)
+							{
+								switch (ParagraphProperties.Justification.Val.Value)
+								{
+									case JustificationValues.Left:
+									case JustificationValues.Start:
+										Style.ParagraphAlignment = ParagraphAlignment.Left;
+										break;
+
+									case JustificationValues.Center:
+										Style.ParagraphAlignment = ParagraphAlignment.Center;
+										break;
+
+									case JustificationValues.Right:
+									case JustificationValues.End:
+										Style.ParagraphAlignment = ParagraphAlignment.Right;
+										break;
+
+									case JustificationValues.Both:
+									case JustificationValues.Distribute:
+										Style.ParagraphAlignment = ParagraphAlignment.Justified;
+										break;
+
+									case JustificationValues.MediumKashida:
+									case JustificationValues.NumTab:
+									case JustificationValues.HighKashida:
+									case JustificationValues.LowKashida:
+									case JustificationValues.ThaiDistribute:
+									default:
+										break;
+								}
+							}
+
 							HasText = ExportAsMarkdown(Doc, ParagraphProperties.Elements(), Markdown, Style, State);
+						}
 						else
 							State.UnrecognizedElement(Element);
 						break;
@@ -831,6 +906,11 @@ namespace TAG.Content.Microsoft
 							State.UnrecognizedElement(Element);
 						break;
 
+					case "proofErr":
+						if (!(Element is ProofError))
+							State.UnrecognizedElement(Element);
+						break;
+
 					default:
 						State.UnrecognizedElement(Element);
 						break;
@@ -877,6 +957,14 @@ namespace TAG.Content.Microsoft
 			"PT MONO"
 		};
 
+		private enum ParagraphAlignment
+		{
+			Left,
+			Right,
+			Center,
+			Justified
+		}
+
 		private class FormattingStyle
 		{
 			public bool Bold;
@@ -888,6 +976,7 @@ namespace TAG.Content.Microsoft
 			public bool Superscript;
 			public bool Subscript;
 			public bool Code;
+			public ParagraphAlignment ParagraphAlignment;
 
 			public FormattingStyle()
 			{
@@ -900,6 +989,7 @@ namespace TAG.Content.Microsoft
 				this.Superscript = false;
 				this.Subscript = false;
 				this.Code = false;
+				this.ParagraphAlignment = ParagraphAlignment.Left;
 			}
 
 			public FormattingStyle(FormattingStyle Prev)
@@ -913,6 +1003,7 @@ namespace TAG.Content.Microsoft
 				this.Superscript = Prev.Superscript;
 				this.Subscript = Prev.Subscript;
 				this.Code = Prev.Code;
+				this.ParagraphAlignment = Prev.ParagraphAlignment;
 			}
 		}
 

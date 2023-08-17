@@ -1,7 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Text;
 using Waher.Events;
-using Waher.Runtime.Inventory;
+using Waher.Events.Console;
+using Waher.Runtime.Inventory.Loader;
 
 namespace TAG.Content.Microsoft.Test
 {
@@ -10,6 +10,17 @@ namespace TAG.Content.Microsoft.Test
 	{
 		private static string? inputFolder;
 		private static string? outputFolder;
+
+		[AssemblyInitialize]
+		public static Task AssemblyInitialize(TestContext _)
+		{
+			// Create inventory of available classes.
+			TypesLoader.Initialize();
+
+			Log.Register(new ConsoleEventSink());
+
+			return Task.CompletedTask;
+		}
 
 		[ClassInitialize]
 		public static Task ClassInitialize(TestContext _)
@@ -38,24 +49,13 @@ namespace TAG.Content.Microsoft.Test
 
 		/* Sections
 		 * Columns
-		 * Paragraphs
 		 * Paragraph justification
-		 * Headlines
-		 * Bold
-		 * Italic
-		 * Underline
-		 * Strike-through
-		 * Super-script
-		 * Sub-script
-		 * Inline Code
 		 * Code block
 		 * Footnotes
 		 * Tables
 		 * Figures (Picture, Drawing)
 		 * Table of contents
 		 * Fields
-		 * Links
-		 * LineBreak
 		 * Horizontal Separator
 		 * Bullet-lists
 		 * Numbered lists

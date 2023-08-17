@@ -5,12 +5,13 @@ VisualStudioVersion = 17.6.33927.249
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{80146D0E-D575-44DD-8D22-F551FC0A9DE8}"
 	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TAG.Content.Microsoft", "TAG.Content.Microsoft\TAG.Content.Microsoft.csproj", "{4BEDFC65-2BE7-499B-8F04-CE967B66E78C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TAG.Content.Microsoft", "TAG.Content.Microsoft\TAG.Content.Microsoft.csproj", "{4BEDFC65-2BE7-499B-8F04-CE967B66E78C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TAG.Content.Microsoft.Test", "TAG.Content.Microsoft.Test\TAG.Content.Microsoft.Test.csproj", "{D84B7D7F-C407-48BD-86E5-0BAE0F7FE935}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TAG.Content.Microsoft.Test", "TAG.Content.Microsoft.Test\TAG.Content.Microsoft.Test.csproj", "{D84B7D7F-C407-48BD-86E5-0BAE0F7FE935}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

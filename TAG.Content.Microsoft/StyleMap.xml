@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Styles>
+	<GenericStyleId id="H{N}">
+		<LocalStyleId id="H(EAD(ING)?)?\s*(?'N'\d+)"/>
+		<LocalStyleId id="RUBRIK\s*(?'N'\d+)"/>
+		<LocalStyleId id="RUBRIEK\s*(?'N'\d+)"/>
+		<LocalStyleId id="ÜBERSCHRIFT\s*(?'N'\d+)"/>
+		<LocalStyleId id="OVERSKRIFT\s*(?'N'\d+)"/>
+		<LocalStyleId id="TITRE\s*(?'N'\d+)"/>
+		<LocalStyleId id="TITOLO\s*(?'N'\d+)"/>
+		<LocalStyleId id="TÍTULO\s*(?'N'\d+)"/>
+		<LocalStyleId id="ЗАГОЛОВОК\s*(?'N'\d+)"/>
+		<LocalStyleId id="OTSIKKO\s*(?'N'\d+)"/>
+		<LocalStyleId id="NAGŁÓWEK\s*(?'N'\d+)"/>
+		<LocalStyleId id="NADPIS\s*(?'N'\d+)"/>
+	</GenericStyleId>
+	<GenericStyleId id="NORMAL">
+		<LocalStyleId id="NORMAL"/>
+		<LocalStyleId id="SUBTITLE"/>
+		<LocalStyleId id="BODY TEXT(\s+\d+)"/>
+	</GenericStyleId>
+	<GenericStyleId id="TITLE">
+		<LocalStyleId id="(BOOK\s+)?TITLE"/>
+	</GenericStyleId>
+	<GenericStyleId id="UL">
+		<LocalStyleId id="LIST PARAGRAPH"/>
+	</GenericStyleId>
+	<GenericStyleId id="OL">
+	</GenericStyleId>
+	<GenericStyleId id="QUOTE">
+		<LocalStyleId id="(INTENSE\s+)?QUOTE"/>
+	</GenericStyleId>
+</Styles>

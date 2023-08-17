@@ -94,7 +94,6 @@ namespace TAG.Content.Microsoft.Test
 		}
 
 		/* 
-		 * Code block
 		 * Footnotes
 		 * Tables
 		 * Figures (Picture, Drawing)

@@ -279,38 +279,50 @@ namespace TAG.Content.Microsoft
 							if (ExportAsMarkdown(Doc, Paragraph.Elements(), ParagraphContent, Style, State))
 								HasText = true;
 
-							switch (Style.ParagraphAlignment)
+							if (Style.CodeBlock)
 							{
-								case ParagraphAlignment.Left:
-								default:
-									Markdown.AppendLine(ParagraphContent.ToString());
-									break;
+								Markdown.AppendLine("```");
+								Markdown.AppendLine(ParagraphContent.ToString());
+								Markdown.AppendLine("```");
 
-								case ParagraphAlignment.Right:
-									foreach (string Row in GetRows(ParagraphContent.ToString()))
-									{
-										Markdown.Append(Row);
-										Markdown.AppendLine(">>");
-									}
-									break;
+								Style.CodeBlock = false;
+								Style.InlineCode = false;
+							}
+							else
+							{
+								switch (Style.ParagraphAlignment)
+								{
+									case ParagraphAlignment.Left:
+									default:
+										Markdown.AppendLine(ParagraphContent.ToString());
+										break;
 
-								case ParagraphAlignment.Center:
-									foreach (string Row in GetRows(ParagraphContent.ToString()))
-									{
-										Markdown.Append(">>");
-										Markdown.Append(Row);
-										Markdown.AppendLine("<<");
-									}
-									break;
+									case ParagraphAlignment.Right:
+										foreach (string Row in GetRows(ParagraphContent.ToString()))
+										{
+											Markdown.Append(Row);
+											Markdown.AppendLine(">>");
+										}
+										break;
 
-								case ParagraphAlignment.Justified:
-									foreach (string Row in GetRows(ParagraphContent.ToString()))
-									{
-										Markdown.Append("<<");
-										Markdown.Append(Row);
-										Markdown.AppendLine(">>");
-									}
-									break;
+									case ParagraphAlignment.Center:
+										foreach (string Row in GetRows(ParagraphContent.ToString()))
+										{
+											Markdown.Append(">>");
+											Markdown.Append(Row);
+											Markdown.AppendLine("<<");
+										}
+										break;
+
+									case ParagraphAlignment.Justified:
+										foreach (string Row in GetRows(ParagraphContent.ToString()))
+										{
+											Markdown.Append("<<");
+											Markdown.Append(Row);
+											Markdown.AppendLine(">>");
+										}
+										break;
+								}
 							}
 
 							Style.ParagraphAlignment = ParagraphAlignment.Left;
@@ -468,7 +480,7 @@ namespace TAG.Content.Microsoft
 										case 'c':
 											AppendWhitespaceIfNoText(ref HasText, Markdown);
 											Markdown.Append('`');
-											Style.Code = false;
+											Style.InlineCode = false;
 											break;
 									}
 								}
@@ -827,11 +839,19 @@ namespace TAG.Content.Microsoft
 					case "rFonts":
 						if (Element is RunFonts RunFonts)
 						{
-							if (IsCodeFont(RunFonts) ^ Style.Code)
+							if (IsCodeFont(RunFonts))
 							{
-								Markdown.Append('`');
-								Style.Code = !Style.Code;
-								Style.StyleChanged('c');
+								if (Style.ParagraphStyle)
+								{
+									Style.CodeBlock = true;
+									Style.InlineCode = true;
+								}
+								else if (!Style.InlineCode)
+								{
+									Markdown.Append('`');
+									Style.InlineCode = true;
+									Style.StyleChanged('c');
+								}
 							}
 						}
 						else
@@ -1119,7 +1139,8 @@ namespace TAG.Content.Microsoft
 			public bool Delete;
 			public bool Superscript;
 			public bool Subscript;
-			public bool Code;
+			public bool CodeBlock;
+			public bool InlineCode;
 			public int? NewSection;
 			public bool HorizontalSeparator;
 			public bool ParagraphStyle;
@@ -1136,7 +1157,8 @@ namespace TAG.Content.Microsoft
 				this.Delete = false;
 				this.Superscript = false;
 				this.Subscript = false;
-				this.Code = false;
+				this.InlineCode = false;
+				this.CodeBlock = false;
 				this.NewSection = null;
 				this.ParagraphStyle = false;
 				this.HorizontalSeparator = false;

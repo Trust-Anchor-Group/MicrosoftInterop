@@ -92,7 +92,7 @@ namespace TAG.Content.Microsoft
 
 					Markdown.Clear();
 					Markdown.Append(Start);
-				
+
 					foreach (string Section in State.Sections)
 						Markdown.Append(Section);
 
@@ -194,7 +194,6 @@ namespace TAG.Content.Microsoft
 					case "p":
 						if (Element is Paragraph Paragraph)
 						{
-							Style = new FormattingStyle(Style);
 							StringBuilder ParagraphContent = new StringBuilder();
 
 							if (!(Paragraph.ParagraphProperties?.ParagraphStyleId is null))
@@ -314,7 +313,15 @@ namespace TAG.Content.Microsoft
 									break;
 							}
 
+							Style.ParagraphAlignment = ParagraphAlignment.Left;
 							Markdown.AppendLine();
+
+							if (Style.HorizontalSeparator)
+							{
+								Markdown.AppendLine(new string('-', 80));
+								Markdown.AppendLine();
+								Style.HorizontalSeparator = false;
+							}
 
 							if (Style.NewSection.HasValue)
 							{
@@ -347,6 +354,7 @@ namespace TAG.Content.Microsoft
 									State.Sections = new LinkedList<string>();
 
 								State.Sections.AddLast(Section.ToString());
+								Style.NewSection = null;
 							}
 						}
 						else
@@ -390,7 +398,9 @@ namespace TAG.Content.Microsoft
 								}
 							}
 
+							Style.ParagraphStyle = true;
 							HasText = ExportAsMarkdown(Doc, ParagraphProperties.Elements(), Markdown, Style, State);
+							Style.ParagraphStyle = false;
 						}
 						else
 							State.UnrecognizedElement(Element);
@@ -399,61 +409,71 @@ namespace TAG.Content.Microsoft
 					case "r":
 						if (Element is Run Run)
 						{
-							FormattingStyle RunStyle = new FormattingStyle(Style);
-							HasText = ExportAsMarkdown(Doc, Run.Elements(), Markdown, RunStyle, State);
+							HasText = ExportAsMarkdown(Doc, Run.Elements(), Markdown, Style, State);
 
-							if (Style.Bold ^ RunStyle.Bold)
+							if (!(Style.StyleChanges is null))
 							{
-								AppendWhitespaceIfNoText(ref HasText, Markdown);
-								Markdown.Append("**");
-							}
+								foreach (char ch in Style.StyleChanges)
+								{
+									switch (ch)
+									{
+										case 'b':
+											AppendWhitespaceIfNoText(ref HasText, Markdown);
+											Markdown.Append("**");
+											Style.Bold = false;
+											break;
 
-							if (Style.Italic ^ RunStyle.Italic)
-							{
-								AppendWhitespaceIfNoText(ref HasText, Markdown);
-								Markdown.Append('*');
-							}
+										case 'i':
+											AppendWhitespaceIfNoText(ref HasText, Markdown);
+											Markdown.Append('*');
+											Style.Italic = false;
+											break;
 
-							if (Style.Underline ^ RunStyle.Underline)
-							{
-								AppendWhitespaceIfNoText(ref HasText, Markdown);
-								Markdown.Append('_');
-							}
+										case 'u':
+											AppendWhitespaceIfNoText(ref HasText, Markdown);
+											Markdown.Append('_');
+											Style.Underline = false;
+											break;
 
-							if (Style.StrikeThrough ^ RunStyle.StrikeThrough)
-							{
-								AppendWhitespaceIfNoText(ref HasText, Markdown);
-								Markdown.Append('~');
-							}
+										case 's':
+											AppendWhitespaceIfNoText(ref HasText, Markdown);
+											Markdown.Append('~');
+											Style.StrikeThrough = false;
+											break;
 
-							if (Style.Insert ^ RunStyle.Insert)
-							{
-								AppendWhitespaceIfNoText(ref HasText, Markdown);
-								Markdown.Append("__");
-							}
+										case 'I':
+											AppendWhitespaceIfNoText(ref HasText, Markdown);
+											Markdown.Append("__");
+											Style.Insert = false;
+											break;
 
-							if (Style.Delete ^ RunStyle.Delete)
-							{
-								AppendWhitespaceIfNoText(ref HasText, Markdown);
-								Markdown.Append("~~");
-							}
+										case 'D':
+											AppendWhitespaceIfNoText(ref HasText, Markdown);
+											Markdown.Append("~~");
+											Style.Delete = false;
+											break;
 
-							if (Style.Superscript ^ RunStyle.Superscript)
-							{
-								AppendWhitespaceIfNoText(ref HasText, Markdown);
-								Markdown.Append(']');
-							}
+										case '^':
+											AppendWhitespaceIfNoText(ref HasText, Markdown);
+											Markdown.Append(']');
+											Style.Superscript = false;
+											break;
 
-							if (Style.Subscript ^ RunStyle.Subscript)
-							{
-								AppendWhitespaceIfNoText(ref HasText, Markdown);
-								Markdown.Append(']');
-							}
+										case 'v':
+											AppendWhitespaceIfNoText(ref HasText, Markdown);
+											Markdown.Append(']');
+											Style.Subscript = false;
+											break;
 
-							if (Style.Code ^ RunStyle.Code)
-							{
-								AppendWhitespaceIfNoText(ref HasText, Markdown);
-								Markdown.Append('`');
+										case 'c':
+											AppendWhitespaceIfNoText(ref HasText, Markdown);
+											Markdown.Append('`');
+											Style.Code = false;
+											break;
+									}
+								}
+
+								Style.StyleChanges = null;
 							}
 						}
 						else
@@ -477,10 +497,11 @@ namespace TAG.Content.Microsoft
 					case "b":
 						if (Element is Bold)
 						{
-							if (!Style.Bold)
+							if (!Style.Bold && !Style.ParagraphStyle)
 							{
 								Markdown.Append("**");
 								Style.Bold = true;
+								Style.StyleChanged('b');
 							}
 						}
 						else
@@ -495,10 +516,11 @@ namespace TAG.Content.Microsoft
 					case "i":
 						if (Element is Italic)
 						{
-							if (!Style.Italic)
+							if (!Style.Italic && !Style.ParagraphStyle)
 							{
 								Markdown.Append('*');
 								Style.Italic = true;
+								Style.StyleChanged('i');
 							}
 						}
 						else
@@ -513,10 +535,11 @@ namespace TAG.Content.Microsoft
 					case "strike":
 						if (Element is Strike)
 						{
-							if (!Style.StrikeThrough)
+							if (!Style.StrikeThrough && !Style.ParagraphStyle)
 							{
 								Markdown.Append('~');
 								Style.StrikeThrough = true;
+								Style.StyleChanged('s');
 							}
 						}
 						else
@@ -526,10 +549,11 @@ namespace TAG.Content.Microsoft
 					case "dstrike":
 						if (Element is DoubleStrike)
 						{
-							if (!Style.Delete)
+							if (!Style.Delete && !Style.ParagraphStyle)
 							{
 								Markdown.Append("~~");
 								Style.Delete = true;
+								Style.StyleChanged('D');
 							}
 						}
 						else
@@ -539,7 +563,7 @@ namespace TAG.Content.Microsoft
 					case "u":
 						if (Element is Underline Underline)
 						{
-							if (Underline.Val.HasValue)
+							if (Underline.Val.HasValue && !Style.ParagraphStyle)
 							{
 								switch (Underline.Val.Value)
 								{
@@ -556,6 +580,7 @@ namespace TAG.Content.Microsoft
 										{
 											Markdown.Append('_');
 											Style.Underline = true;
+											Style.StyleChanged('u');
 										}
 										break;
 
@@ -572,21 +597,11 @@ namespace TAG.Content.Microsoft
 										{
 											Markdown.Append("__");
 											Style.Insert = true;
+											Style.StyleChanged('I');
 										}
 										break;
 
 									case UnderlineValues.None:
-										if (Style.Underline)
-										{
-											Markdown.Append('_');
-											Style.Underline = false;
-										}
-
-										if (Style.Insert)
-										{
-											Markdown.Append("__");
-											Style.Insert = false;
-										}
 										break;
 								}
 							}
@@ -607,6 +622,7 @@ namespace TAG.Content.Microsoft
 										{
 											Markdown.Append("^[");
 											Style.Superscript = true;
+											Style.StyleChanged('^');
 										}
 										break;
 
@@ -615,21 +631,11 @@ namespace TAG.Content.Microsoft
 										{
 											Markdown.Append("[");
 											Style.Subscript = true;
+											Style.StyleChanged('v');
 										}
 										break;
 
 									case VerticalPositionValues.Baseline:
-										if (Style.Superscript)
-										{
-											Markdown.Append(']');
-											Style.Superscript = false;
-										}
-
-										if (Style.Subscript)
-										{
-											Markdown.Append(']');
-											Style.Subscript = false;
-										}
 										break;
 								}
 							}
@@ -825,6 +831,7 @@ namespace TAG.Content.Microsoft
 							{
 								Markdown.Append('`');
 								Style.Code = !Style.Code;
+								Style.StyleChanged('c');
 							}
 						}
 						else
@@ -1003,6 +1010,16 @@ namespace TAG.Content.Microsoft
 							State.UnrecognizedElement(Element);
 						break;
 
+					case "pBdr":
+						if (Element is ParagraphBorders ParagraphBorders)
+						{
+							if (!(ParagraphBorders.BottomBorder is null))
+								Style.HorizontalSeparator = true;
+						}
+						else
+							State.UnrecognizedElement(Element);
+						break;
+
 					case "footerReference":
 						if (!(Element is FooterReference))
 							State.UnrecognizedElement(Element);
@@ -1104,7 +1121,10 @@ namespace TAG.Content.Microsoft
 			public bool Subscript;
 			public bool Code;
 			public int? NewSection;
+			public bool HorizontalSeparator;
+			public bool ParagraphStyle;
 			public ParagraphAlignment ParagraphAlignment;
+			public LinkedList<char> StyleChanges;
 
 			public FormattingStyle()
 			{
@@ -1118,22 +1138,18 @@ namespace TAG.Content.Microsoft
 				this.Subscript = false;
 				this.Code = false;
 				this.NewSection = null;
+				this.ParagraphStyle = false;
+				this.HorizontalSeparator = false;
 				this.ParagraphAlignment = ParagraphAlignment.Left;
+				this.StyleChanges = null;
 			}
 
-			public FormattingStyle(FormattingStyle Prev)
+			public void StyleChanged(char c)
 			{
-				this.Bold = Prev.Bold;
-				this.Italic = Prev.Italic;
-				this.Underline = Prev.Underline;
-				this.StrikeThrough = Prev.StrikeThrough;
-				this.Insert = Prev.Insert;
-				this.Delete = Prev.Delete;
-				this.Superscript = Prev.Superscript;
-				this.Subscript = Prev.Subscript;
-				this.Code = Prev.Code;
-				this.NewSection = Prev.NewSection;
-				this.ParagraphAlignment = Prev.ParagraphAlignment;
+				if (this.StyleChanges is null)
+					this.StyleChanges = new LinkedList<char>();
+
+				this.StyleChanges.AddFirst(c);
 			}
 		}
 

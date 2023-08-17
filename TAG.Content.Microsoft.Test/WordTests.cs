@@ -66,7 +66,7 @@ namespace TAG.Content.Microsoft.Test
 					Error.AppendLine("Output not as expected.");
 					Error.AppendLine();
 
-					foreach (Step<string> Change in Difference.AnalyzeRows(Expected, Output).Steps)
+					foreach (Step<string> Change in Difference.AnalyzeRows(Output, Expected).Steps)
 					{
 						switch (Change.Operation)
 						{
@@ -100,7 +100,6 @@ namespace TAG.Content.Microsoft.Test
 		 * Figures (Picture, Drawing)
 		 * Table of contents
 		 * Fields
-		 * Horizontal Separator
 		 * Bullet-lists
 		 * Numbered lists
 		 * Mixed lists
@@ -109,7 +108,6 @@ namespace TAG.Content.Microsoft.Test
 		 * Table with multiple header rows
 		 * Table captions
 		 * Figure captions
-		 * Cross-paragraph styles
 		 * Cross-table-cell styles
 		 * Cross-table-row styles
 		 * Cross-table styles

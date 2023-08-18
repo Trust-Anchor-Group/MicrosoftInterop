@@ -17,6 +17,7 @@
     <None Remove="Expected\Paragraphs.md" />
     <None Remove="Expected\Sections.md" />
     <None Remove="Expected\SimpleText.md" />
+    <None Remove="Expected\Tables.md" />
   </ItemGroup>
 
   <ItemGroup>
@@ -39,6 +40,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Expected\SimpleText.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Expected\Tables.md">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

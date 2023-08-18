@@ -954,7 +954,18 @@ namespace TAG.Content.Microsoft
 
 					case "cnfStyle":
 						if (Element is ConditionalFormatStyle ConditionalFormatStyle)
+						{
+							if (!(State.Table is null) &&
+								!State.Table.HasHeaderRows &&
+								ConditionalFormatStyle.FirstRow.HasValue &&
+								ConditionalFormatStyle.FirstRow.Value)
+							{
+								State.Table.HasHeaderRows = true;
+								State.Table.IsHeaderRow = true;
+							}
+
 							HasText = ExportAsMarkdown(Doc, ConditionalFormatStyle.Elements(), Markdown, Style, State);
+						}
 						else
 							State.UnrecognizedElement(Element);
 						break;

@@ -1,9 +1,11 @@
 ﻿using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Xml;
 using Waher.Content;
 using Waher.Content.Markdown;
@@ -39,8 +41,19 @@ namespace TAG.Content.Microsoft
 		/// <returns>Markdown.</returns>
 		public static string ExtractAsMarkdown(string WordFileName)
 		{
+			return ExtractAsMarkdown(WordFileName, out _);
+		}
+
+		/// <summary>
+		/// Extracts the contents of a Word file to Markdown.
+		/// </summary>
+		/// <param name="WordFileName">File name of Word document.</param>
+		/// <param name="Language">Language of document.</param>
+		/// <returns>Markdown.</returns>
+		public static string ExtractAsMarkdown(string WordFileName, out string Language)
+		{
 			StringBuilder Markdown = new StringBuilder();
-			ExtractAsMarkdown(WordFileName, Markdown);
+			ExtractAsMarkdown(WordFileName, Markdown, out Language);
 			return Markdown.ToString();
 		}
 
@@ -51,98 +64,148 @@ namespace TAG.Content.Microsoft
 		/// <param name="Markdown">Markdown will be output here.</param>
 		public static void ExtractAsMarkdown(string WordFileName, StringBuilder Markdown)
 		{
+			ExtractAsMarkdown(WordFileName, Markdown, out _);
+		}
+
+		/// <summary>
+		/// Extracts the contents of a Word file to Markdown.
+		/// </summary>
+		/// <param name="WordFileName">File name of Word document.</param>
+		/// <param name="Markdown">Markdown will be output here.</param>
+		/// <param name="Language">Language of document.</param>
+		public static void ExtractAsMarkdown(string WordFileName, StringBuilder Markdown,
+			out string Language)
+		{
 			using (WordprocessingDocument Doc = WordprocessingDocument.Open(WordFileName, false))
 			{
-				Document MainDocument = Doc.MainDocumentPart.Document;
-				FormattingStyle Style = new FormattingStyle();
-				RenderingState State = new RenderingState();
-				int StartLen = Markdown.Length;
+				Language = Doc.PackageProperties.Language;
+				ExtractAsMarkdown(Doc, WordFileName, Markdown);
+			}
+		}
 
-				ExportAsMarkdown(Doc, MainDocument.Elements(), Markdown, Style, State);
+		/// <summary>
+		/// Extracts the contents of a Word file to Markdown.
+		/// </summary>
+		/// <param name="Doc">Document to convert</param>
+		/// <param name="WordFileName">File name of Word document.</param>
+		/// <param name="Markdown">Markdown will be output here.</param>
+		public static void ExtractAsMarkdown(WordprocessingDocument Doc, string WordFileName, StringBuilder Markdown)
+		{
+			Document MainDocument = Doc.MainDocumentPart.Document;
+			FormattingStyle Style = new FormattingStyle();
+			RenderingState State = new RenderingState()
+			{
+				FileName = WordFileName,
+				FileSize = GetFileSize(WordFileName)
+			};
+			int StartLen = Markdown.Length;
 
-				if (!(State.Footnotes is null))
+			ExportAsMarkdown(Doc, MainDocument.Elements(), Markdown, Style, State);
+
+			if (!(State.Footnotes is null))
+			{
+				foreach (KeyValuePair<string, string> P in State.Footnotes)
 				{
-					foreach (KeyValuePair<string, string> P in State.Footnotes)
-					{
-						Markdown.AppendLine();
-						Markdown.Append("[^");
-						Markdown.Append(P.Key);
-						Markdown.Append("]:");
+					Markdown.AppendLine();
+					Markdown.Append("[^");
+					Markdown.Append(P.Key);
+					Markdown.Append("]:");
 
-						foreach (string Row in GetRows(P.Value))
-						{
-							Markdown.Append('\t');
-							Markdown.AppendLine(Row);
-						}
+					foreach (string Row in GetRows(P.Value))
+					{
+						Markdown.Append('\t');
+						Markdown.AppendLine(Row);
 					}
 				}
+			}
 
-				if (!(State.Sections is null))
-				{
-					string End = Markdown.ToString();
-					string Start;
+			if (!(State.Sections is null))
+			{
+				string End = Markdown.ToString();
+				string Start;
 
-					if (StartLen == 0)
-						Start = string.Empty;
-					else
-					{
-						Start = End.Substring(0, StartLen);
-						End = End.Substring(StartLen);
-					}
-
-					Markdown.Clear();
-					Markdown.Append(Start);
-
-					foreach (string Section in State.Sections)
-						Markdown.Append(Section);
-
-					Markdown.Append(End);
-				}
-
-				if (!(State.Unrecognized is null))
-				{
-					StringBuilder Msg = new StringBuilder();
-
-					Msg.AppendLine("Open XML-document with unrecognized elements converted to Markdown.");
-					Msg.AppendLine();
-					Msg.AppendLine("| Element | Open XML Type | Occurrences |");
-					Msg.AppendLine("|:--------|:--------------|------------:|");
-
-					foreach (KeyValuePair<string, Dictionary<string, int>> P in State.Unrecognized)
-					{
-						foreach (KeyValuePair<string, int> P2 in P.Value)
-						{
-							Msg.Append("| `");
-							Msg.Append(P.Key);
-							Msg.Append("` | `");
-							Msg.Append(P2.Key);
-							Msg.Append("` | ");
-							Msg.Append(P2.Value.ToString());
-							Msg.AppendLine(" |");
-						}
-					}
-#if DEBUG
-					Msg.AppendLine();
-					Msg.AppendLine("```");
-					Msg.AppendLine(CapLength(XML.PrettyXml(MainDocument.OuterXml), 256 * 1024));
-					Msg.AppendLine("```");
-#endif
-					Log.Warning(Msg.ToString(), WordFileName);
-				}
-#if DEBUG
+				if (StartLen == 0)
+					Start = string.Empty;
 				else
 				{
-					StringBuilder Msg = new StringBuilder();
-
-					Msg.AppendLine("Open XML-document converted to Markdown.");
-					Msg.AppendLine();
-					Msg.AppendLine("```");
-					Msg.AppendLine(CapLength(XML.PrettyXml(MainDocument.OuterXml), 256 * 1024));
-					Msg.AppendLine("```");
-
-					Log.Informational(Msg.ToString(), WordFileName);
+					Start = End.Substring(0, StartLen);
+					End = End.Substring(StartLen);
 				}
+
+				Markdown.Clear();
+				Markdown.Append(Start);
+
+				foreach (string Section in State.Sections)
+					Markdown.Append(Section);
+
+				Markdown.Append(End);
+			}
+
+			if (!(State.Unrecognized is null))
+			{
+				StringBuilder Msg = new StringBuilder();
+
+				Msg.AppendLine("Open XML-document with unrecognized elements converted to Markdown.");
+				Msg.AppendLine();
+				Msg.AppendLine("| Element | Open XML Type | Occurrences |");
+				Msg.AppendLine("|:--------|:--------------|------------:|");
+
+				foreach (KeyValuePair<string, Dictionary<string, int>> P in State.Unrecognized)
+				{
+					foreach (KeyValuePair<string, int> P2 in P.Value)
+					{
+						Msg.Append("| `");
+						Msg.Append(P.Key);
+						Msg.Append("` | `");
+						Msg.Append(P2.Key);
+						Msg.Append("` | ");
+						Msg.Append(P2.Value.ToString());
+						Msg.AppendLine(" |");
+					}
+				}
+#if DEBUG
+				Msg.AppendLine();
+				Msg.AppendLine("```");
+				Msg.AppendLine(CapLength(XML.PrettyXml(MainDocument.OuterXml), 256 * 1024));
+				Msg.AppendLine("```");
 #endif
+				Log.Warning(Msg.ToString(), WordFileName);
+			}
+#if DEBUG
+			else
+			{
+				StringBuilder Msg = new StringBuilder();
+
+				Msg.AppendLine("Open XML-document converted to Markdown.");
+				Msg.AppendLine();
+				Msg.AppendLine("```");
+				Msg.AppendLine(CapLength(XML.PrettyXml(MainDocument.OuterXml), 256 * 1024));
+				Msg.AppendLine("```");
+
+				Log.Informational(Msg.ToString(), WordFileName);
+			}
+#endif
+		}
+
+		private static long? GetFileSize(string FileName)
+		{
+			if (string.IsNullOrEmpty(FileName))
+				return null;
+			else if (!File.Exists(FileName))
+				return null;
+			else
+			{
+				try
+				{
+					using (FileStream fs = File.OpenRead(FileName))
+					{
+						return fs.Length;
+					}
+				}
+				catch (Exception)
+				{
+					return null;
+				}
 			}
 		}
 
@@ -288,7 +351,7 @@ namespace TAG.Content.Microsoft
 								Style.CodeBlock = false;
 								Style.InlineCode = false;
 							}
-							else
+							else if (State.Table is null)
 							{
 								switch (Style.ParagraphAlignment)
 								{
@@ -322,6 +385,30 @@ namespace TAG.Content.Microsoft
 											Markdown.AppendLine(">>");
 										}
 										break;
+								}
+							}
+							else
+							{
+								Markdown.AppendLine(ParagraphContent.ToString());
+
+								if (State.Table.ColumnIndex < State.Table.NrColumns)
+								{
+									switch (Style.ParagraphAlignment)
+									{
+										case ParagraphAlignment.Left:
+										case ParagraphAlignment.Justified:
+										default:
+											State.Table.ColumnAlignments[State.Table.ColumnIndex] = MarkdownModel.TextAlignment.Left;
+											break;
+
+										case ParagraphAlignment.Right:
+											State.Table.ColumnAlignments[State.Table.ColumnIndex] = MarkdownModel.TextAlignment.Right;
+											break;
+
+										case ParagraphAlignment.Center:
+											State.Table.ColumnAlignments[State.Table.ColumnIndex] = MarkdownModel.TextAlignment.Center;
+											break;
+									}
 								}
 							}
 
@@ -730,12 +817,27 @@ namespace TAG.Content.Microsoft
 							State.UnrecognizedElement(Element);
 						break;
 
+					case "tblHeader":
+						if (Element is TableHeader TableHeader)
+						{
+							if (!(State.Table is null))
+							{
+								State.Table.IsHeaderRow = true;
+								State.Table.HasHeaderRows = true;
+							}
+
+							HasText = ExportAsMarkdown(Doc, TableHeader.Elements(), Markdown, Style, State);
+						}
+						else
+							State.UnrecognizedElement(Element);
+						break;
+
 					case "gridCol":
 						if (Element is GridColumn)
 						{
 							if (!(State.Table is null))
 							{
-								State.Table.ColumnAlignments.Add(MarkdownModel.TextAlignment.Left); // TODO
+								State.Table.ColumnAlignments.Add(MarkdownModel.TextAlignment.Left);
 								State.Table.NrColumns++;
 							}
 						}
@@ -748,40 +850,92 @@ namespace TAG.Content.Microsoft
 						{
 							if (!(State.Table is null))
 							{
+								State.Table.ColumnIndex = 0;
 								State.Table.ColumnContents.Clear();
+								State.Table.IsHeaderRow = false;
 								HasText = ExportAsMarkdown(Doc, TableRow.Elements(), Markdown, Style, State);
 
 								int i;
 
-								for (i = 0; i < State.Table.NrColumns; i++)
+								if (!State.Table.IsHeaderRow && !State.Table.HeaderEmitted)
 								{
-									Markdown.Append("| ");
+									State.Table.HeaderEmitted = true;
 
-									if (i < State.Table.ColumnContents.Count)
+									if (!State.Table.HasHeaderRows)
 									{
-										string s = State.Table.ColumnContents[i].ToString();
-										bool Simple = s.IndexOfAny(simpleCharsProhibited) < 0;
+										Markdown.Append("| &nbsp; ");
 
-										if (Simple)
+										for (i = 0; i < State.Table.NrColumns; i++)
+											Markdown.Append('|');
+
+										Markdown.AppendLine();
+									}
+
+									Markdown.Append('|');
+
+									for (i = 0; i < State.Table.NrColumns; i++)
+									{
+										switch (State.Table.ColumnAlignments[i])
 										{
-											Markdown.Append(s);
+											case MarkdownModel.TextAlignment.Left:
+												Markdown.Append(":---|");
+												break;
 
-											if (!s.EndsWith(" "))
-												Markdown.Append(' ');
-										}
-										else
-										{
-											if (State.Footnotes is null)
-												State.Footnotes = new Dictionary<string, string>();
+											case MarkdownModel.TextAlignment.Center:
+												Markdown.Append(":--:|");
+												break;
 
-											string FootnoteKey = "n" + (++State.NrFootnotes).ToString();
-											State.Footnotes[FootnoteKey] = s;
+											case MarkdownModel.TextAlignment.Right:
+												Markdown.Append("---:|");
+												break;
 
-											Markdown.Append("[^");
-											Markdown.Append(FootnoteKey);
-											Markdown.Append("] ");
+											default:
+												Markdown.Append("----|");
+												break;
 										}
 									}
+
+									Markdown.AppendLine();
+								}
+
+								for (i = 0; i < State.Table.NrColumns; i++)
+								{
+									if (i < State.Table.ColumnContents.Count)
+									{
+										StringBuilder Column = State.Table.ColumnContents[i];
+
+										if (Column is null)
+											Markdown.Append('|');
+										else
+										{
+											Markdown.Append("| ");
+
+											string s = Column.ToString().TrimEnd();
+											bool Simple = s.IndexOfAny(simpleCharsProhibited) < 0;
+
+											if (Simple)
+											{
+												Markdown.Append(s);
+
+												if (!s.EndsWith(" "))
+													Markdown.Append(' ');
+											}
+											else
+											{
+												if (State.Footnotes is null)
+													State.Footnotes = new Dictionary<string, string>();
+
+												string FootnoteKey = "n" + (++State.NrFootnotes).ToString();
+												State.Footnotes[FootnoteKey] = s;
+
+												Markdown.Append("[^");
+												Markdown.Append(FootnoteKey);
+												Markdown.Append("] ");
+											}
+										}
+									}
+									else
+										Markdown.Append('|');
 								}
 
 								Markdown.AppendLine("|");
@@ -798,12 +952,20 @@ namespace TAG.Content.Microsoft
 							State.UnrecognizedElement(Element);
 						break;
 
+					case "cnfStyle":
+						if (Element is ConditionalFormatStyle ConditionalFormatStyle)
+							HasText = ExportAsMarkdown(Doc, ConditionalFormatStyle.Elements(), Markdown, Style, State);
+						else
+							State.UnrecognizedElement(Element);
+						break;
+
 					case "tc":
 						if (Element is TableCell TableCell)
 						{
 							StringBuilder CellMarkdown = new StringBuilder();
 							State.Table.ColumnContents.Add(CellMarkdown);
 							HasText = ExportAsMarkdown(Doc, TableCell.Elements(), CellMarkdown, Style, State);
+							State.Table.ColumnIndex++;
 						}
 						else
 							State.UnrecognizedElement(Element);
@@ -818,6 +980,26 @@ namespace TAG.Content.Microsoft
 
 					case "tcW":
 						if (!(Element is TableCellWidth))
+							State.UnrecognizedElement(Element);
+						break;
+
+					case "gridSpan":
+						if (Element is GridSpan GridSpan)
+						{
+							HasText = ExportAsMarkdown(Doc, GridSpan.Elements(), Markdown, Style, State);
+
+							if (GridSpan.Val.HasValue && !(State.Table is null))
+							{
+								int i = GridSpan.Val.Value;
+
+								while (i-- > 1)
+								{
+									State.Table.ColumnContents.Add(null);
+									State.Table.ColumnIndex++;
+								}
+							}
+						}
+						else
 							State.UnrecognizedElement(Element);
 						break;
 
@@ -1075,6 +1257,158 @@ namespace TAG.Content.Microsoft
 							State.UnrecognizedElement(Element);
 						break;
 
+					case "keepNext":
+						if (!(Element is KeepNext))
+							State.UnrecognizedElement(Element);
+						break;
+
+					case "fldSimple":
+						if (Element is SimpleField SimpleField)
+						{
+							if (!(SimpleField.Instruction is null))
+							{
+								string Instruction = SimpleField.Instruction.Value;
+								Match M = simpleFieldInstruction.Match(Instruction);
+								if (M.Success && M.Index == 0 && M.Length == Instruction.Length)
+								{
+									string Command = M.Groups["Command"].Value;
+									string Argument = M.Groups["Argument"].Value;
+									string Type = M.Groups["Type"].Value;
+									string Argument2 = M.Groups["Argument2"].Value;
+									string Content = null;
+
+									// Ref: http://officeopenxml.com/WPfieldInstructions.php
+									switch (Command.ToUpper())
+									{
+										case "DATE":
+										case "TIME":
+											Content = ToString(DateTime.Now, Argument2);
+											break;
+
+										case "CREATEDATE":
+											Content = ToString(Doc.PackageProperties.Created, Argument2);
+											break;
+
+										case "EDITTIME":
+										case "SAVEDATE":
+											Content = ToString(Doc.PackageProperties.Modified, Argument2);
+											break;
+
+										case "PRINTDATE":
+											Content = ToString(Doc.PackageProperties.LastPrinted, Argument2);
+											break;
+
+										case "SUBJECT":
+											Content = MarkdownDocument.Encode(Doc.PackageProperties.Subject);
+											break;
+
+										case "TITLE":
+											Content = MarkdownDocument.Encode(Doc.PackageProperties.Title);
+											break;
+
+										case "REVNUM":
+											Content = MarkdownDocument.Encode(Doc.PackageProperties.Revision);
+											break;
+
+										case "AUTHOR":
+											Content = MarkdownDocument.Encode(Doc.PackageProperties.Creator);
+											break;
+
+										case "LASTSAVEDBY":
+											Content = MarkdownDocument.Encode(Doc.PackageProperties.LastModifiedBy);
+											break;
+
+										case "FILENAME":
+											Content = MarkdownDocument.Encode(State.FileName);
+											break;
+
+										case "FILESIZE":
+											Content = ToString(State.FileSize, Argument2);
+											break;
+
+										case "KEYWORDS":
+											Content = MarkdownDocument.Encode(Doc.PackageProperties.Keywords);
+											break;
+
+										case "SEQ":
+											if (State.Sequences is null)
+												State.Sequences = new Dictionary<string, int>();
+
+											if (!State.Sequences.TryGetValue(Argument, out int i))
+												i = 0;
+
+											State.Sequences[Argument] = ++i;
+											Content = ToString(i, Argument2);
+											break;
+
+										case "FORMCHECKBOX":
+										case "FORMDROPDOWN":
+										case "FORMTEXT":
+										case "TOC":
+										case "HYPERLINK":
+										case "SECTION":
+
+										case "COMPARE":
+										case "DOCVARIABLE":
+										case "GOTOBUTTON":
+										case "IF":
+										case "MACROBUTTON":
+										case "PRINT":
+										case "COMMENTS":
+										case "DOCPROPERTY":
+										case "NUMCHARS":
+										case "NUMPAGES":
+										case "NUMWORDS":
+										case "TEMPLATE":
+										case "ADVANCE":
+										case "SYMBOL":
+										case "INDEX":
+										case "RD":
+										case "TA":
+										case "TC":
+										case "XE":
+										case "AUTOTEXT":
+										case "AUTOTEXTLIST":
+										case "BIBLIOGRAPHY":
+										case "CITATION":
+										case "INCLUDEPICTURE":
+										case "INCLUDETEXT":
+										case "LINK":
+										case "NOTEREF":
+										case "PAGEREF":
+										case "QUOTE":
+										case "REF":
+										case "STYLEREF":
+										case "ADDRESSBLOCK":
+										case "ASK":
+										case "DATABASE":
+										case "FILLIN":
+										case "GREETINGLINE":
+										case "MERGEFIELD":
+										case "MERGEREC":
+										case "MERGESEQ":
+										case "NEXT":
+										case "NEXTIF":
+										case "SET":
+										case "SKIPIF":
+										case "LISTNUM":
+										case "PAGE":
+										case "SECTIONPAGES":
+										case "USERADDRESS":
+										case "USERINITIALS":
+										case "USERNAME":
+											break;
+									}
+
+									if (!string.IsNullOrEmpty(Content))
+										Markdown.Append(Content);
+								}
+							}
+						}
+						else
+							State.UnrecognizedElement(Element);
+						break;
+
 					default:
 						State.UnrecognizedElement(Element);
 						break;
@@ -1082,6 +1416,29 @@ namespace TAG.Content.Microsoft
 			}
 
 			return HasText;
+		}
+
+		private static string ToString(double? Number, string Argument)
+		{
+			if (!Number.HasValue)
+				return string.Empty;
+
+			return Number.Value.ToString(); // TODO: Output format defined in argument.
+		}
+
+		private static string ToString(DateTime? TP, string Argument)
+		{
+			if (!TP.HasValue)
+				return string.Empty;
+
+			try
+			{
+				return MarkdownDocument.Encode(DateTime.Now.ToString(Argument));
+			}
+			catch (Exception)
+			{
+				return MarkdownDocument.Encode(DateTime.Now.ToString());
+			}
 		}
 
 		private static bool IsCodeFont(RunFonts Fonts)
@@ -1093,6 +1450,7 @@ namespace TAG.Content.Microsoft
 				monospaceFonts.Contains(Fonts.EastAsia?.Value?.ToUpper());
 		}
 
+		private static readonly Regex simpleFieldInstruction = new Regex(@"^\s*(?'Command'\w+)\s*(?'Argument'[^\\\s]*)\s*(\\(?'Type'[@#*])\s*(?'Argument2'.*))?$", RegexOptions.Singleline | RegexOptions.Compiled);
 		private static readonly VanityResources styleIds = GetStyleIds();
 		private static readonly char[] simpleCharsProhibited = new char[] { '\r', '\n', '|' };
 		private static readonly HashSet<string> monospaceFonts = new HashSet<string>()
@@ -1181,7 +1539,10 @@ namespace TAG.Content.Microsoft
 			public Dictionary<string, string> Footnotes = null;
 			public int NrFootnotes = 0;
 			public Dictionary<string, Dictionary<string, int>> Unrecognized = null;
+			public Dictionary<string, int> Sequences = null;
 			public LinkedList<string> Sections = null;
+			public string FileName;
+			public long? FileSize;
 
 			public void UnrecognizedElement(OpenXmlElement Element)
 			{
@@ -1208,9 +1569,12 @@ namespace TAG.Content.Microsoft
 		private class TableInfo
 		{
 			public int NrColumns;
+			public int ColumnIndex;
 			public List<MarkdownModel.TextAlignment> ColumnAlignments = new List<MarkdownModel.TextAlignment>();
 			public List<StringBuilder> ColumnContents = new List<StringBuilder>();
-			public bool HeaderRow = true;
+			public bool IsHeaderRow;
+			public bool HasHeaderRows;
+			public bool HeaderEmitted;
 		}
 
 		private static VanityResources GetStyleIds()

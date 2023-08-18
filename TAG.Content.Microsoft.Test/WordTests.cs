@@ -42,6 +42,7 @@ namespace TAG.Content.Microsoft.Test
 		[DataRow("SimpleText")]
 		[DataRow("Paragraphs")]
 		[DataRow("Sections")]
+		[DataRow("Tables")]
 		public void Convert_To_Markdown(string FileName)
 		{
 			Assert.IsNotNull(inputFolder);
@@ -95,24 +96,15 @@ namespace TAG.Content.Microsoft.Test
 
 		/* 
 		 * Footnotes
-		 * Tables
 		 * Figures (Picture, Drawing)
 		 * Table of contents
-		 * Fields
+		 * Form Fields
 		 * Bullet-lists
 		 * Numbered lists
 		 * Mixed lists
-		 * Table column alignments.
-		 * Table column spans.
-		 * Table with multiple header rows
-		 * Table captions
 		 * Figure captions
-		 * Cross-table-cell styles
-		 * Cross-table-row styles
-		 * Cross-table styles
 		 * Footnotes
 		 * Endnotes
-		 * Detect document language
 		 */
 	}
 }

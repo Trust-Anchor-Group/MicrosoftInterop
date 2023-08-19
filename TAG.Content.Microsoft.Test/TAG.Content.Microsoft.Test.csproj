@@ -10,6 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Documents\Lists.docx" />
     <None Remove="Documents\Paragraphs.docx" />
     <None Remove="Documents\Sections.docx" />
     <None Remove="Documents\SimpleText.docx" />
@@ -21,6 +22,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="Documents\Lists.docx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Documents\Paragraphs.docx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -48,17 +52,20 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.5.0" />
-    <PackageReference Include="MSTest.TestAdapter" Version="2.2.10" />
-    <PackageReference Include="MSTest.TestFramework" Version="2.2.10" />
-    <PackageReference Include="coverlet.collector" Version="3.2.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.7.1" />
+    <PackageReference Include="MSTest.TestAdapter" Version="3.1.1" />
+    <PackageReference Include="MSTest.TestFramework" Version="3.1.1" />
+    <PackageReference Include="coverlet.collector" Version="6.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Waher.Content" Version="2.6.4" />
     <PackageReference Include="Waher.Content.Xml" Version="2.2.1" />
     <PackageReference Include="Waher.Events" Version="1.1.2" />
     <PackageReference Include="Waher.Events.Console" Version="1.1.1" />
     <PackageReference Include="Waher.Runtime.Inventory" Version="1.1.5" />
     <PackageReference Include="Waher.Runtime.Inventory.Loader" Version="1.0.9" />
-    <PackageReference Include="Waher.Runtime.Text" Version="1.0.1" />
+    <PackageReference Include="Waher.Runtime.Text" Version="1.1.0" />
   </ItemGroup>
 
   <ItemGroup>

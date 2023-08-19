@@ -20,14 +20,15 @@
 		<LocalStyleId id="BODY TEXT(\s+\d+)"/>
 	</GenericStyleId>
 	<GenericStyleId id="TITLE">
-		<LocalStyleId id="(BOOK\s+)?TITLE"/>
+		<LocalStyleId id="TITLE"/>
+		<LocalStyleId id="BOOK\s+TITLE"/>
 	</GenericStyleId>
-	<GenericStyleId id="UL">
+	<GenericStyleId id="LIST">
 		<LocalStyleId id="LIST PARAGRAPH"/>
-	</GenericStyleId>
-	<GenericStyleId id="OL">
+		<LocalStyleId id="LISTSTYCKE"/>
 	</GenericStyleId>
 	<GenericStyleId id="QUOTE">
-		<LocalStyleId id="(INTENSE\s+)?QUOTE"/>
+		<LocalStyleId id="QUOTE"/>
+		<LocalStyleId id="INTENSE\s+QUOTE"/>
 	</GenericStyleId>
 </Styles>

@@ -1,4 +1,5 @@
 ﻿using DocumentFormat.OpenXml;
+using DocumentFormat.OpenXml.Drawing.Charts;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
 using System;
@@ -95,12 +96,13 @@ namespace TAG.Content.Microsoft
 			FormattingStyle Style = new FormattingStyle();
 			RenderingState State = new RenderingState()
 			{
+				Doc = Doc,
 				FileName = WordFileName,
 				FileSize = GetFileSize(WordFileName)
 			};
 			int StartLen = Markdown.Length;
 
-			ExportAsMarkdown(Doc, MainDocument.Elements(), Markdown, Style, State);
+			ExportAsMarkdown(MainDocument.Elements(), Markdown, Style, State);
 
 			if (!(State.Footnotes is null))
 			{
@@ -224,22 +226,22 @@ namespace TAG.Content.Microsoft
 
 		private const string MainNaemspace = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
 
-		private static bool ExportAsMarkdown(WordprocessingDocument Doc, IEnumerable<OpenXmlElement> Elements,
+		private static bool ExportAsMarkdown(IEnumerable<OpenXmlElement> Elements,
 			StringBuilder Markdown, FormattingStyle Style, RenderingState State)
 		{
 			bool HasText = false;
 
 			foreach (OpenXmlElement Element in Elements)
 			{
-				if (ExportAsMarkdown(Doc, Element, Markdown, Style, State))
+				if (ExportAsMarkdown(Element, Markdown, Style, State))
 					HasText = true;
 			}
 
 			return HasText;
 		}
 
-		private static bool ExportAsMarkdown(WordprocessingDocument Doc, OpenXmlElement Element,
-			StringBuilder Markdown, FormattingStyle Style, RenderingState State)
+		private static bool ExportAsMarkdown(OpenXmlElement Element, StringBuilder Markdown,
+			FormattingStyle Style, RenderingState State)
 		{
 			bool HasText = false;
 
@@ -249,7 +251,7 @@ namespace TAG.Content.Microsoft
 				{
 					case "body":
 						if (Element is Body Body)
-							HasText = ExportAsMarkdown(Doc, Body.Elements(), Markdown, Style, State);
+							HasText = ExportAsMarkdown(Body.Elements(), Markdown, Style, State);
 						else
 							State.UnrecognizedElement(Element);
 						break;
@@ -258,10 +260,12 @@ namespace TAG.Content.Microsoft
 						if (Element is Paragraph Paragraph)
 						{
 							StringBuilder ParagraphContent = new StringBuilder();
+							string StyleId = string.Empty;
 
 							if (!(Paragraph.ParagraphProperties?.ParagraphStyleId is null))
 							{
-								string StyleId = Paragraph.ParagraphProperties.ParagraphStyleId.Val?.Value?.ToUpper() ?? string.Empty;
+								StyleId = Paragraph.ParagraphProperties.ParagraphStyleId.Val?.Value?.ToUpper() ?? string.Empty;
+
 								if (styleIds.CheckVanityResource(ref StyleId))
 								{
 									switch (StyleId)
@@ -316,13 +320,7 @@ namespace TAG.Content.Microsoft
 											HasText = true;
 											break;
 
-										case "UL":
-											ParagraphContent.Append("* ");
-											HasText = true;
-											break;
-
-										case "OL":
-											ParagraphContent.Append("#. ");
+										case "LIST":
 											HasText = true;
 											break;
 
@@ -339,7 +337,7 @@ namespace TAG.Content.Microsoft
 								}
 							}
 
-							if (ExportAsMarkdown(Doc, Paragraph.Elements(), ParagraphContent, Style, State))
+							if (ExportAsMarkdown(Paragraph.Elements(), ParagraphContent, Style, State))
 								HasText = true;
 
 							if (Style.CodeBlock)
@@ -353,6 +351,16 @@ namespace TAG.Content.Microsoft
 							}
 							else if (State.Table is null)
 							{
+								if (StyleId == "LIST")
+								{
+									if (!Style.ItemNumber.HasValue)
+										ParagraphContent.Insert(0, "*\t");
+									else if (Style.ItemNumber.Value < 0)
+										ParagraphContent.Insert(0, "#.\t");
+									else
+										ParagraphContent.Insert(0, Style.ItemNumber.Value.ToString() + ".\t");
+								}
+
 								switch (Style.ParagraphAlignment)
 								{
 									case ParagraphAlignment.Left:
@@ -498,7 +506,7 @@ namespace TAG.Content.Microsoft
 							}
 
 							Style.ParagraphStyle = true;
-							HasText = ExportAsMarkdown(Doc, ParagraphProperties.Elements(), Markdown, Style, State);
+							HasText = ExportAsMarkdown(ParagraphProperties.Elements(), Markdown, Style, State);
 							Style.ParagraphStyle = false;
 						}
 						else
@@ -508,7 +516,7 @@ namespace TAG.Content.Microsoft
 					case "r":
 						if (Element is Run Run)
 						{
-							HasText = ExportAsMarkdown(Doc, Run.Elements(), Markdown, Style, State);
+							HasText = ExportAsMarkdown(Run.Elements(), Markdown, Style, State);
 
 							if (!(Style.StyleChanges is null))
 							{
@@ -581,9 +589,9 @@ namespace TAG.Content.Microsoft
 
 					case "rPr":
 						if (Element is ParagraphMarkRunProperties ParagraphMarkRunProperties)
-							HasText = ExportAsMarkdown(Doc, ParagraphMarkRunProperties.Elements(), Markdown, Style, State);
+							HasText = ExportAsMarkdown(ParagraphMarkRunProperties.Elements(), Markdown, Style, State);
 						else if (Element is RunProperties RunProperties)
-							HasText = ExportAsMarkdown(Doc, RunProperties.Elements(), Markdown, Style, State);
+							HasText = ExportAsMarkdown(RunProperties.Elements(), Markdown, Style, State);
 						else
 							State.UnrecognizedElement(Element);
 						break;
@@ -774,7 +782,7 @@ namespace TAG.Content.Microsoft
 							TableInfo Bak = State.Table;
 							State.Table = new TableInfo();
 
-							HasText = ExportAsMarkdown(Doc, Table.Elements(), Markdown, Style, State);
+							HasText = ExportAsMarkdown(Table.Elements(), Markdown, Style, State);
 							Markdown.AppendLine();
 
 							State.Table = Bak;
@@ -785,7 +793,7 @@ namespace TAG.Content.Microsoft
 
 					case "tblPr":
 						if (Element is TableProperties TableProperties)
-							HasText = ExportAsMarkdown(Doc, TableProperties.Elements(), Markdown, Style, State);
+							HasText = ExportAsMarkdown(TableProperties.Elements(), Markdown, Style, State);
 						else
 							State.UnrecognizedElement(Element);
 						break;
@@ -812,7 +820,7 @@ namespace TAG.Content.Microsoft
 
 					case "tblGrid":
 						if (Element is TableGrid TableGrid)
-							HasText = ExportAsMarkdown(Doc, TableGrid.Elements(), Markdown, Style, State);
+							HasText = ExportAsMarkdown(TableGrid.Elements(), Markdown, Style, State);
 						else
 							State.UnrecognizedElement(Element);
 						break;
@@ -826,7 +834,7 @@ namespace TAG.Content.Microsoft
 								State.Table.HasHeaderRows = true;
 							}
 
-							HasText = ExportAsMarkdown(Doc, TableHeader.Elements(), Markdown, Style, State);
+							HasText = ExportAsMarkdown(TableHeader.Elements(), Markdown, Style, State);
 						}
 						else
 							State.UnrecognizedElement(Element);
@@ -853,7 +861,7 @@ namespace TAG.Content.Microsoft
 								State.Table.ColumnIndex = 0;
 								State.Table.ColumnContents.Clear();
 								State.Table.IsHeaderRow = false;
-								HasText = ExportAsMarkdown(Doc, TableRow.Elements(), Markdown, Style, State);
+								HasText = ExportAsMarkdown(TableRow.Elements(), Markdown, Style, State);
 
 								int i;
 
@@ -947,7 +955,7 @@ namespace TAG.Content.Microsoft
 
 					case "trPr":
 						if (Element is TableRowProperties TableRowProperties)
-							HasText = ExportAsMarkdown(Doc, TableRowProperties.Elements(), Markdown, Style, State);
+							HasText = ExportAsMarkdown(TableRowProperties.Elements(), Markdown, Style, State);
 						else
 							State.UnrecognizedElement(Element);
 						break;
@@ -964,7 +972,7 @@ namespace TAG.Content.Microsoft
 								State.Table.IsHeaderRow = true;
 							}
 
-							HasText = ExportAsMarkdown(Doc, ConditionalFormatStyle.Elements(), Markdown, Style, State);
+							HasText = ExportAsMarkdown(ConditionalFormatStyle.Elements(), Markdown, Style, State);
 						}
 						else
 							State.UnrecognizedElement(Element);
@@ -975,7 +983,7 @@ namespace TAG.Content.Microsoft
 						{
 							StringBuilder CellMarkdown = new StringBuilder();
 							State.Table.ColumnContents.Add(CellMarkdown);
-							HasText = ExportAsMarkdown(Doc, TableCell.Elements(), CellMarkdown, Style, State);
+							HasText = ExportAsMarkdown(TableCell.Elements(), CellMarkdown, Style, State);
 							State.Table.ColumnIndex++;
 						}
 						else
@@ -984,7 +992,7 @@ namespace TAG.Content.Microsoft
 
 					case "tcPr":
 						if (Element is TableCellProperties TableCellProperties)
-							HasText = ExportAsMarkdown(Doc, TableCellProperties.Elements(), Markdown, Style, State);
+							HasText = ExportAsMarkdown(TableCellProperties.Elements(), Markdown, Style, State);
 						else
 							State.UnrecognizedElement(Element);
 						break;
@@ -997,7 +1005,7 @@ namespace TAG.Content.Microsoft
 					case "gridSpan":
 						if (Element is GridSpan GridSpan)
 						{
-							HasText = ExportAsMarkdown(Doc, GridSpan.Elements(), Markdown, Style, State);
+							HasText = ExportAsMarkdown(GridSpan.Elements(), Markdown, Style, State);
 
 							if (GridSpan.Val.HasValue && !(State.Table is null))
 							{
@@ -1072,17 +1080,11 @@ namespace TAG.Content.Microsoft
 						if (Element is Hyperlink Hyperlink)
 						{
 							Markdown.Append('[');
-							HasText = ExportAsMarkdown(Doc, Hyperlink.Elements(), Markdown, Style, State);
+							HasText = ExportAsMarkdown(Hyperlink.Elements(), Markdown, Style, State);
 							Markdown.Append("](");
 
-							foreach (HyperlinkRelationship Rel in Doc.MainDocumentPart.HyperlinkRelationships)
-							{
-								if (Rel.Id == Hyperlink.Id)
-								{
-									Markdown.Append(Rel.Uri.ToString());
-									break;
-								}
-							}
+							if (State.TryGetHyperlink(Hyperlink.Id, out string Link))
+								Markdown.Append(Link);
 
 							Markdown.Append(')');
 						}
@@ -1096,17 +1098,62 @@ namespace TAG.Content.Microsoft
 						break;
 
 					case "numPr":
-						if (!(Element is NumberingProperties))
+						if (Element is NumberingProperties NumberingProperties)
+						{
+							Style.ItemLevel = null;
+							Style.ItemNumber = null;
+							HasText = ExportAsMarkdown(NumberingProperties.Elements(), Markdown, Style, State);
+						}
+						else
 							State.UnrecognizedElement(Element);
 						break;
 
 					case "ilvl":
-						if (!(Element is NumberingLevelReference))
+						if (Element is NumberingLevelReference NumberingLevelReference)
+						{
+							if (NumberingLevelReference.Val.HasValue)
+								Style.ItemLevel = NumberingLevelReference.Val.Value;
+							else
+								Style.ItemLevel = null;
+
+							HasText = ExportAsMarkdown(NumberingLevelReference.Elements(), Markdown, Style, State);
+						}
+						else
 							State.UnrecognizedElement(Element);
 						break;
 
 					case "numId":
-						if (!(Element is NumberingId))
+						if (Element is NumberingId NumberingId)
+						{
+							Style.ItemNumber = null;
+
+							if (NumberingId.Val.HasValue &&
+								Style.ItemLevel.HasValue &&
+								State.TryGetNumberingFormat(NumberingId.Val.Value, out AbstractNum Num))
+							{
+								int i = Style.ItemLevel.Value;
+
+								foreach (DocumentFormat.OpenXml.Wordprocessing.Level Lvl in
+									Num.Elements<DocumentFormat.OpenXml.Wordprocessing.Level>())
+								{
+									if (i-- == 0)
+									{
+										if (Lvl.LevelText.Val.HasValue)
+										{
+											if (Lvl.LevelText.Val.Value.Contains("%"))
+												Style.ItemNumber = -1;
+											else
+												Style.ItemNumber = null;
+										}
+
+										break;
+									}
+								}
+							}
+
+							HasText = ExportAsMarkdown(NumberingId.Elements(), Markdown, Style, State);
+						}
+						else
 							State.UnrecognizedElement(Element);
 						break;
 
@@ -1158,7 +1205,7 @@ namespace TAG.Content.Microsoft
 					case "sectPr":
 						if (Element is SectionProperties SectionProperties)
 						{
-							HasText = ExportAsMarkdown(Doc, SectionProperties.Elements(), Markdown, Style, State);
+							HasText = ExportAsMarkdown(SectionProperties.Elements(), Markdown, Style, State);
 							if (!Style.NewSection.HasValue)
 								Style.NewSection = 1;
 						}
@@ -1186,7 +1233,7 @@ namespace TAG.Content.Microsoft
 								}
 							}
 
-							HasText = ExportAsMarkdown(Doc, SectionType.Elements(), Markdown, Style, State);
+							HasText = ExportAsMarkdown(SectionType.Elements(), Markdown, Style, State);
 						}
 						else
 							State.UnrecognizedElement(Element);
@@ -1199,14 +1246,14 @@ namespace TAG.Content.Microsoft
 
 					case "pgSz":
 						if (Element is PageSize PageSize)
-							HasText = ExportAsMarkdown(Doc, PageSize.Elements(), Markdown, Style, State);
+							HasText = ExportAsMarkdown(PageSize.Elements(), Markdown, Style, State);
 						else
 							State.UnrecognizedElement(Element);
 						break;
 
 					case "pgMar":
 						if (Element is PageMargin PageMargin)
-							HasText = ExportAsMarkdown(Doc, PageMargin.Elements(), Markdown, Style, State);
+							HasText = ExportAsMarkdown(PageMargin.Elements(), Markdown, Style, State);
 						else
 							State.UnrecognizedElement(Element);
 						break;
@@ -1217,7 +1264,7 @@ namespace TAG.Content.Microsoft
 							if (Style.NewSection.HasValue && !(Columns.ColumnCount is null) && Columns.ColumnCount.HasValue)
 								Style.NewSection = Columns.ColumnCount.Value;
 
-							HasText = ExportAsMarkdown(Doc, Columns.Elements(), Markdown, Style, State);
+							HasText = ExportAsMarkdown(Columns.Elements(), Markdown, Style, State);
 						}
 						else
 							State.UnrecognizedElement(Element);
@@ -1297,36 +1344,36 @@ namespace TAG.Content.Microsoft
 											break;
 
 										case "CREATEDATE":
-											Content = ToString(Doc.PackageProperties.Created, Argument2);
+											Content = ToString(State.Doc.PackageProperties.Created, Argument2);
 											break;
 
 										case "EDITTIME":
 										case "SAVEDATE":
-											Content = ToString(Doc.PackageProperties.Modified, Argument2);
+											Content = ToString(State.Doc.PackageProperties.Modified, Argument2);
 											break;
 
 										case "PRINTDATE":
-											Content = ToString(Doc.PackageProperties.LastPrinted, Argument2);
+											Content = ToString(State.Doc.PackageProperties.LastPrinted, Argument2);
 											break;
 
 										case "SUBJECT":
-											Content = MarkdownDocument.Encode(Doc.PackageProperties.Subject);
+											Content = MarkdownDocument.Encode(State.Doc.PackageProperties.Subject);
 											break;
 
 										case "TITLE":
-											Content = MarkdownDocument.Encode(Doc.PackageProperties.Title);
+											Content = MarkdownDocument.Encode(State.Doc.PackageProperties.Title);
 											break;
 
 										case "REVNUM":
-											Content = MarkdownDocument.Encode(Doc.PackageProperties.Revision);
+											Content = MarkdownDocument.Encode(State.Doc.PackageProperties.Revision);
 											break;
 
 										case "AUTHOR":
-											Content = MarkdownDocument.Encode(Doc.PackageProperties.Creator);
+											Content = MarkdownDocument.Encode(State.Doc.PackageProperties.Creator);
 											break;
 
 										case "LASTSAVEDBY":
-											Content = MarkdownDocument.Encode(Doc.PackageProperties.LastModifiedBy);
+											Content = MarkdownDocument.Encode(State.Doc.PackageProperties.LastModifiedBy);
 											break;
 
 										case "FILENAME":
@@ -1338,7 +1385,7 @@ namespace TAG.Content.Microsoft
 											break;
 
 										case "KEYWORDS":
-											Content = MarkdownDocument.Encode(Doc.PackageProperties.Keywords);
+											Content = MarkdownDocument.Encode(State.Doc.PackageProperties.Keywords);
 											break;
 
 										case "SEQ":
@@ -1513,6 +1560,8 @@ namespace TAG.Content.Microsoft
 			public int? NewSection;
 			public bool HorizontalSeparator;
 			public bool ParagraphStyle;
+			public int? ItemLevel;
+			public int? ItemNumber;
 			public ParagraphAlignment ParagraphAlignment;
 			public LinkedList<char> StyleChanges;
 
@@ -1531,6 +1580,8 @@ namespace TAG.Content.Microsoft
 				this.NewSection = null;
 				this.ParagraphStyle = false;
 				this.HorizontalSeparator = false;
+				this.ItemLevel = null;
+				this.ItemNumber = null;
 				this.ParagraphAlignment = ParagraphAlignment.Left;
 				this.StyleChanges = null;
 			}
@@ -1546,8 +1597,11 @@ namespace TAG.Content.Microsoft
 
 		private class RenderingState
 		{
+			public WordprocessingDocument Doc;
 			public TableInfo Table = null;
 			public Dictionary<string, string> Footnotes = null;
+			public Dictionary<string, string> Links = null;
+			public Dictionary<int, AbstractNum> NumberingFormats = null;
 			public int NrFootnotes = 0;
 			public Dictionary<string, Dictionary<string, int>> Unrecognized = null;
 			public Dictionary<string, int> Sequences = null;
@@ -1574,6 +1628,32 @@ namespace TAG.Content.Microsoft
 					i++;
 
 				ByType[s] = i;
+			}
+
+			public bool TryGetHyperlink(string Id, out string Link)
+			{
+				if (this.Links is null)
+				{
+					this.Links = new Dictionary<string, string>();
+
+					foreach (HyperlinkRelationship Rel in this.Doc.MainDocumentPart?.HyperlinkRelationships ?? Array.Empty<HyperlinkRelationship>())
+						this.Links[Rel.Id] = Rel.Uri.ToString();
+				}
+
+				return this.Links.TryGetValue(Id, out Link);
+			}
+
+			public bool TryGetNumberingFormat(int Id, out AbstractNum Numbering)
+			{
+				if (this.NumberingFormats is null)
+				{
+					this.NumberingFormats = new Dictionary<int, AbstractNum>();
+
+					foreach (AbstractNum N in this.Doc.MainDocumentPart?.NumberingDefinitionsPart.Numbering.Elements<AbstractNum>())
+						this.NumberingFormats[N.AbstractNumberId.Value] = N;
+				}
+
+				return this.NumberingFormats.TryGetValue(Id, out Numbering);
 			}
 		}
 

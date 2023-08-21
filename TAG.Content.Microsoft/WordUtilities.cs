@@ -1,5 +1,4 @@
 ﻿using DocumentFormat.OpenXml;
-using DocumentFormat.OpenXml.Drawing.Charts;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
 using System;
@@ -260,145 +259,112 @@ namespace TAG.Content.Microsoft
 						if (Element is Paragraph Paragraph)
 						{
 							StringBuilder ParagraphContent = new StringBuilder();
-							string StyleId = string.Empty;
 
-							if (!(Paragraph.ParagraphProperties?.ParagraphStyleId is null))
-							{
-								StyleId = Paragraph.ParagraphProperties.ParagraphStyleId.Val?.Value?.ToUpper() ?? string.Empty;
-
-								if (styleIds.CheckVanityResource(ref StyleId))
-								{
-									switch (StyleId)
-									{
-										case "TITLE":
-											ParagraphContent.Append("# ");
-											HasText = true;
-											break;
-
-										case "H1":
-											ParagraphContent.Append("## ");
-											HasText = true;
-											break;
-
-										case "H2":
-											ParagraphContent.Append("### ");
-											HasText = true;
-											break;
-
-										case "H3":
-											ParagraphContent.Append("#### ");
-											HasText = true;
-											break;
-
-										case "H4":
-											ParagraphContent.Append("##### ");
-											HasText = true;
-											break;
-
-										case "H5":
-											ParagraphContent.Append("###### ");
-											HasText = true;
-											break;
-
-										case "H6":
-											ParagraphContent.Append("####### ");
-											HasText = true;
-											break;
-
-										case "H7":
-											ParagraphContent.Append("######## ");
-											HasText = true;
-											break;
-
-										case "H8":
-											ParagraphContent.Append("######### ");
-											HasText = true;
-											break;
-
-										case "H9":
-											ParagraphContent.Append("########## ");
-											HasText = true;
-											break;
-
-										case "LIST":
-											HasText = true;
-											break;
-
-										case "QUOTE":
-											ParagraphContent.Append("> ");
-											HasText = true;
-											break;
-
-										case "NORMAL":
-										default:
-											HasText = false;
-											break;
-									}
-								}
-							}
+							Style.NextNumber();
 
 							if (ExportAsMarkdown(Paragraph.Elements(), ParagraphContent, Style, State))
 								HasText = true;
 
 							if (Style.CodeBlock)
 							{
-								Markdown.AppendLine("```");
-								Markdown.AppendLine(ParagraphContent.ToString());
-								Markdown.AppendLine("```");
+								StringBuilder Temp = new StringBuilder();
+
+								Temp.AppendLine("```");
+								Temp.AppendLine(ParagraphContent.ToString());
+								Temp.Append("```");
+
+								ParagraphContent = Temp;
 
 								Style.CodeBlock = false;
 								Style.InlineCode = false;
 							}
-							else if (State.Table is null)
+
+							if (Style.ParagraphType == ParagraphType.Continuation)
 							{
-								if (StyleId == "LIST")
+								StringBuilder Temp = new StringBuilder();
+								bool First = true;
+
+								foreach (string Row in GetRows(ParagraphContent.ToString()))
 								{
-									if (!Style.ItemNumber.HasValue)
-										ParagraphContent.Insert(0, "*\t");
-									else if (Style.ItemNumber.Value < 0)
-										ParagraphContent.Insert(0, "#.\t");
+									if (First)
+										First = false;
 									else
-										ParagraphContent.Insert(0, Style.ItemNumber.Value.ToString() + ".\t");
+										Temp.AppendLine();
+
+									Indentation(Temp, Style.PrevItemNumbers?.Count ?? 0);
+									Temp.Append(Row);
 								}
 
+								ParagraphContent = Temp;
+								Style.PrevNumber();
+							}
+
+							if (State.Table is null)
+							{
 								switch (Style.ParagraphAlignment)
 								{
-									case ParagraphAlignment.Left:
-									default:
-										Markdown.AppendLine(ParagraphContent.ToString());
-										break;
-
 									case ParagraphAlignment.Right:
+										StringBuilder Temp = new StringBuilder();
+										bool First = true;
+
 										foreach (string Row in GetRows(ParagraphContent.ToString()))
 										{
-											Markdown.Append(Row);
-											Markdown.AppendLine(">>");
+											if (First)
+												First = false;
+											else
+												Temp.AppendLine();
+
+											Temp.Append(Row);
+											Temp.Append(">>");
 										}
+
+										ParagraphContent = Temp;
 										break;
 
 									case ParagraphAlignment.Center:
+										Temp = new StringBuilder();
+										First = true;
+
 										foreach (string Row in GetRows(ParagraphContent.ToString()))
 										{
+											if (First)
+												First = false;
+											else
+												Temp.AppendLine();
+
 											Markdown.Append(">>");
 											Markdown.Append(Row);
-											Markdown.AppendLine("<<");
+											Markdown.Append("<<");
 										}
+
+										ParagraphContent = Temp;
 										break;
 
 									case ParagraphAlignment.Justified:
+										Temp = new StringBuilder();
+										First = true;
+
 										foreach (string Row in GetRows(ParagraphContent.ToString()))
 										{
+											if (First)
+												First = false;
+											else
+												Temp.AppendLine();
+
 											Markdown.Append("<<");
 											Markdown.Append(Row);
-											Markdown.AppendLine(">>");
+											Markdown.Append(">>");
 										}
+
+										ParagraphContent = Temp;
 										break;
 								}
 							}
-							else
-							{
-								Markdown.AppendLine(ParagraphContent.ToString());
 
+							Markdown.AppendLine(ParagraphContent.ToString());
+
+							if (!(State.Table is null))
+							{
 								if (State.Table.ColumnIndex < State.Table.NrColumns)
 								{
 									switch (Style.ParagraphAlignment)
@@ -1093,7 +1059,82 @@ namespace TAG.Content.Microsoft
 						break;
 
 					case "pStyle":
-						if (!(Element is ParagraphStyleId))
+						if (Element is ParagraphStyleId ParagraphStyleId)
+						{
+							string StyleId = ParagraphStyleId.Val?.Value?.ToUpper() ?? string.Empty;
+
+							if (styleIds.CheckVanityResource(ref StyleId))
+							{
+								switch (StyleId)
+								{
+									case "TITLE":
+										Markdown.Append("# ");
+										HasText = true;
+										break;
+
+									case "H1":
+										Markdown.Append("## ");
+										HasText = true;
+										break;
+
+									case "H2":
+										Markdown.Append("### ");
+										HasText = true;
+										break;
+
+									case "H3":
+										Markdown.Append("#### ");
+										HasText = true;
+										break;
+
+									case "H4":
+										Markdown.Append("##### ");
+										HasText = true;
+										break;
+
+									case "H5":
+										Markdown.Append("###### ");
+										HasText = true;
+										break;
+
+									case "H6":
+										Markdown.Append("####### ");
+										HasText = true;
+										break;
+
+									case "H7":
+										Markdown.Append("######## ");
+										HasText = true;
+										break;
+
+									case "H8":
+										Markdown.Append("######### ");
+										HasText = true;
+										break;
+
+									case "H9":
+										Markdown.Append("########## ");
+										HasText = true;
+										break;
+
+									case "LIST":
+										Style.ParagraphType = ParagraphType.Continuation;
+										HasText = true;
+										break;
+
+									case "QUOTE":
+										Markdown.Append("> ");
+										HasText = true;
+										break;
+
+									case "NORMAL":
+									default:
+										HasText = false;
+										break;
+								}
+							}
+						}
+						else
 							State.UnrecognizedElement(Element);
 						break;
 
@@ -1125,28 +1166,154 @@ namespace TAG.Content.Microsoft
 					case "numId":
 						if (Element is NumberingId NumberingId)
 						{
-							Style.ItemNumber = null;
-
-							if (NumberingId.Val.HasValue &&
-								Style.ItemLevel.HasValue &&
-								State.TryGetNumberingFormat(NumberingId.Val.Value, out AbstractNum Num))
+							if (!NumberingId.Val.HasValue)
+								Style.ItemNumber = null;
+							else
 							{
-								int i = Style.ItemLevel.Value;
+								Style.ItemNumber = NumberingId.Val.Value;
 
-								foreach (DocumentFormat.OpenXml.Wordprocessing.Level Lvl in
-									Num.Elements<DocumentFormat.OpenXml.Wordprocessing.Level>())
+								if (Style.ItemLevel.HasValue)
 								{
-									if (i-- == 0)
-									{
-										if (Lvl.LevelText.Val.HasValue)
-										{
-											if (Lvl.LevelText.Val.Value.Contains("%"))
-												Style.ItemNumber = -1;
-											else
-												Style.ItemNumber = null;
-										}
+									int i = Style.ItemLevel.Value;
 
-										break;
+									if (i > 0)
+										Indentation(Markdown, i);
+
+									if (State.TryGetNumberingFormat(NumberingId.Val.Value,
+										out AbstractNum Num, out _))
+									{
+										foreach (Level Lvl in Num.Elements<Level>())
+										{
+											if (i-- == 0)
+											{
+												if (!(Lvl.StartNumberingValue is null) &&
+													Lvl.StartNumberingValue.Val.HasValue)
+												{
+													Style.OrdinalNumber = Lvl.StartNumberingValue.Val.Value;
+												}
+
+												if (!(Lvl.NumberingFormat?.Val is null))
+												{
+
+													switch (Lvl.NumberingFormat.Val.Value)
+													{
+														case NumberFormatValues.Decimal:
+														case NumberFormatValues.UpperRoman:
+														case NumberFormatValues.LowerRoman:
+														case NumberFormatValues.Ordinal:
+														case NumberFormatValues.JapaneseCounting:
+														case NumberFormatValues.DecimalFullWidth:
+														case NumberFormatValues.DecimalHalfWidth:
+														case NumberFormatValues.JapaneseLegal:
+														case NumberFormatValues.JapaneseDigitalTenThousand:
+														case NumberFormatValues.DecimalEnclosedCircle:
+														case NumberFormatValues.DecimalFullWidth2:
+														case NumberFormatValues.DecimalZero:
+														case NumberFormatValues.Ganada:
+														case NumberFormatValues.Chosung:
+														case NumberFormatValues.DecimalEnclosedFullstop:
+														case NumberFormatValues.DecimalEnclosedParen:
+														case NumberFormatValues.DecimalEnclosedCircleChinese:
+														case NumberFormatValues.TaiwaneseCounting:
+														case NumberFormatValues.TaiwaneseCountingThousand:
+														case NumberFormatValues.TaiwaneseDigital:
+														case NumberFormatValues.ChineseCounting:
+														case NumberFormatValues.ChineseCountingThousand:
+														case NumberFormatValues.KoreanDigital:
+														case NumberFormatValues.KoreanCounting:
+														case NumberFormatValues.KoreanLegal:
+														case NumberFormatValues.KoreanDigital2:
+														case NumberFormatValues.VietnameseCounting:
+														case NumberFormatValues.NumberInDash:
+														case NumberFormatValues.Hebrew1:
+														case NumberFormatValues.ArabicAbjad:
+														case NumberFormatValues.HindiNumbers:
+														case NumberFormatValues.HindiCounting:
+														case NumberFormatValues.ThaiNumbers:
+														case NumberFormatValues.ThaiCounting:
+															Style.ParagraphType = ParagraphType.OrderedList;
+															HasText = true;
+
+															if (Style.SameNubmering || !Style.OrdinalNumber.HasValue)
+																Markdown.Append("#.\t");
+															else
+															{
+																Markdown.Append(Style.OrdinalNumber.Value.ToString());
+																Markdown.Append(".\t");
+															}
+															break;
+
+														case NumberFormatValues.UpperLetter:
+														case NumberFormatValues.LowerLetter:
+														case NumberFormatValues.CardinalText:
+														case NumberFormatValues.OrdinalText:
+														case NumberFormatValues.Hex:
+														case NumberFormatValues.Chicago:
+														case NumberFormatValues.IdeographDigital:
+														case NumberFormatValues.Aiueo:
+														case NumberFormatValues.Iroha:
+														case NumberFormatValues.AiueoFullWidth:
+														case NumberFormatValues.IrohaFullWidth:
+														case NumberFormatValues.Bullet:
+														case NumberFormatValues.IdeographEnclosedCircle:
+														case NumberFormatValues.IdeographTraditional:
+														case NumberFormatValues.IdeographZodiac:
+														case NumberFormatValues.IdeographZodiacTraditional:
+														case NumberFormatValues.IdeographLegalTraditional:
+														case NumberFormatValues.ChineseLegalSimplified:
+														case NumberFormatValues.RussianLower:
+														case NumberFormatValues.RussianUpper:
+														case NumberFormatValues.Hebrew2:
+														case NumberFormatValues.ArabicAlpha:
+														case NumberFormatValues.HindiVowels:
+														case NumberFormatValues.HindiConsonants:
+														case NumberFormatValues.ThaiLetters:
+														case NumberFormatValues.BahtText:
+														case NumberFormatValues.DollarText:
+														case NumberFormatValues.Custom:
+														default:
+															Style.ParagraphType = ParagraphType.BulletList;
+															HasText = true;
+
+															if (Style.ItemLevel.HasValue)
+															{
+																switch (Style.ItemLevel.Value % 3)
+																{
+																	case 0:
+																		Markdown.Append("*\t");
+																		break;
+
+																	case 1:
+																		Markdown.Append("-\t");
+																		break;
+
+																	case 2:
+																		Markdown.Append("+\t");
+																		break;
+																}
+															}
+															else
+																Markdown.Append("*\t");
+															break;
+
+														case NumberFormatValues.None:
+															Style.ParagraphType = ParagraphType.Continuation;
+															HasText = true;
+															Markdown.Append('\t');
+															break;
+													}
+												}
+												else if (Lvl.LevelText.Val.HasValue)
+												{
+													if (Lvl.LevelText.Val.Value.Contains("%"))
+														Style.ItemNumber = -1;
+													else
+														Style.ItemNumber = null;
+												}
+
+												break;
+											}
+										}
 									}
 								}
 							}
@@ -1331,7 +1498,7 @@ namespace TAG.Content.Microsoft
 								{
 									string Command = M.Groups["Command"].Value;
 									string Argument = M.Groups["Argument"].Value;
-									string Type = M.Groups["Type"].Value;
+									//string Type = M.Groups["Type"].Value;
 									string Argument2 = M.Groups["Argument2"].Value;
 									string Content = null;
 
@@ -1508,6 +1675,12 @@ namespace TAG.Content.Microsoft
 				monospaceFonts.Contains(Fonts.EastAsia?.Value?.ToUpper());
 		}
 
+		private static void Indentation(StringBuilder Markdown, int NrChars)
+		{
+			while (NrChars-- > 0)
+				Markdown.Append('\t');
+		}
+
 		private static readonly Regex simpleFieldInstruction = new Regex(@"^\s*(?'Command'\w+)\s*(?'Argument'[^\\\s]*)\s*(\\(?'Type'[@#*])\s*(?'Argument2'.*))?$", RegexOptions.Singleline | RegexOptions.Compiled);
 		private static readonly VanityResources styleIds = GetStyleIds();
 		private static readonly char[] simpleCharsProhibited = new char[] { '\r', '\n', '|' };
@@ -1545,6 +1718,14 @@ namespace TAG.Content.Microsoft
 			Justified
 		}
 
+		private enum ParagraphType
+		{
+			Normal,
+			BulletList,
+			OrderedList,
+			Continuation
+		}
+
 		private class FormattingStyle
 		{
 			public bool Bold;
@@ -1560,6 +1741,9 @@ namespace TAG.Content.Microsoft
 			public int? NewSection;
 			public bool HorizontalSeparator;
 			public bool ParagraphStyle;
+			public ParagraphType? ParagraphType;
+			public int? OrdinalNumber;
+			public List<int?> PrevItemNumbers;
 			public int? ItemLevel;
 			public int? ItemNumber;
 			public ParagraphAlignment ParagraphAlignment;
@@ -1579,7 +1763,10 @@ namespace TAG.Content.Microsoft
 				this.CodeBlock = false;
 				this.NewSection = null;
 				this.ParagraphStyle = false;
+				this.ParagraphType = null;
 				this.HorizontalSeparator = false;
+				this.OrdinalNumber = null;
+				this.PrevItemNumbers = null;
 				this.ItemLevel = null;
 				this.ItemNumber = null;
 				this.ParagraphAlignment = ParagraphAlignment.Left;
@@ -1593,6 +1780,75 @@ namespace TAG.Content.Microsoft
 
 				this.StyleChanges.AddFirst(c);
 			}
+
+			public bool SameNubmering
+			{
+				get
+				{
+					if (this.PrevItemNumbers is null ||
+						!this.ItemLevel.HasValue ||
+						!this.ItemNumber.HasValue)
+					{
+						return false;
+					}
+
+					int Level = this.ItemLevel.Value;
+					if (Level >= this.PrevItemNumbers.Count)
+						return false;
+
+					int? Number = this.PrevItemNumbers[Level];
+					if (!Number.HasValue)
+						return false;
+
+					return this.ItemNumber.Value == Number.Value;
+				}
+			}
+
+			public void NextNumber()
+			{
+				if (this.ParagraphType == WordUtilities.ParagraphType.Normal)
+					this.PrevItemNumbers = null;
+				else
+				{
+					if (this.PrevItemNumbers is null)
+						this.PrevItemNumbers = new List<int?>();
+
+					int i = this.ItemLevel ?? 0;
+					int c = this.PrevItemNumbers.Count;
+
+					while (c < i - 1)
+						this.PrevItemNumbers.Add(null);
+
+					if (c <= i)
+						this.PrevItemNumbers.Add(this.ItemNumber);
+					else
+					{
+						this.PrevItemNumbers[i] = this.ItemNumber;
+						while (c > i + 1)
+							this.PrevItemNumbers.RemoveAt(--c);
+					}
+				}
+
+				this.ItemLevel = null;
+				this.ItemNumber = null;
+				this.OrdinalNumber = null;
+			}
+
+			public void PrevNumber()
+			{
+				int i = this.PrevItemNumbers?.Count ?? 0;
+
+				if (i == 0)
+				{
+					this.ItemNumber = null;
+					this.ItemLevel = null;
+				}
+				else
+				{
+					this.ItemLevel = --i;
+					this.ItemNumber = this.PrevItemNumbers[i];
+				}
+			}
 		}
 
 		private class RenderingState
@@ -1601,7 +1857,7 @@ namespace TAG.Content.Microsoft
 			public TableInfo Table = null;
 			public Dictionary<string, string> Footnotes = null;
 			public Dictionary<string, string> Links = null;
-			public Dictionary<int, AbstractNum> NumberingFormats = null;
+			public Dictionary<int, KeyValuePair<AbstractNum, NumberingInstance>> NumberingFormats = null;
 			public int NrFootnotes = 0;
 			public Dictionary<string, Dictionary<string, int>> Unrecognized = null;
 			public Dictionary<string, int> Sequences = null;
@@ -1643,17 +1899,43 @@ namespace TAG.Content.Microsoft
 				return this.Links.TryGetValue(Id, out Link);
 			}
 
-			public bool TryGetNumberingFormat(int Id, out AbstractNum Numbering)
+			public bool TryGetNumberingFormat(int Id, out AbstractNum Numbering,
+				out NumberingInstance Instance)
 			{
 				if (this.NumberingFormats is null)
 				{
-					this.NumberingFormats = new Dictionary<int, AbstractNum>();
+					Dictionary<int, AbstractNum> Temp = new Dictionary<int, AbstractNum>();
 
 					foreach (AbstractNum N in this.Doc.MainDocumentPart?.NumberingDefinitionsPart.Numbering.Elements<AbstractNum>())
-						this.NumberingFormats[N.AbstractNumberId.Value] = N;
+						Temp[N.AbstractNumberId.Value] = N;
+
+					this.NumberingFormats = new Dictionary<int, KeyValuePair<AbstractNum, NumberingInstance>>();
+
+					foreach (NumberingInstance N in this.Doc.MainDocumentPart?.NumberingDefinitionsPart.Numbering.Elements<NumberingInstance>())
+					{
+						if (N.NumberID.HasValue &&
+							!(N.AbstractNumId?.Val is null) &&
+							Temp.TryGetValue(N.AbstractNumId.Val.Value, out AbstractNum Num))
+						{
+							this.NumberingFormats[N.NumberID.Value] =
+								new KeyValuePair<AbstractNum, NumberingInstance>(Num, N);
+						}
+					}
 				}
 
-				return this.NumberingFormats.TryGetValue(Id, out Numbering);
+				if (!this.NumberingFormats.TryGetValue(Id, out KeyValuePair<AbstractNum, NumberingInstance> P))
+				{
+					Numbering = null;
+					Instance = null;
+
+					return false;
+				}
+				else
+				{
+					Numbering = P.Key;
+					Instance = P.Value;
+					return true;
+				}
 			}
 		}
 

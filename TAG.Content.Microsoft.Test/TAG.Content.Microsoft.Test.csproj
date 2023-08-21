@@ -15,6 +15,7 @@
     <None Remove="Documents\Sections.docx" />
     <None Remove="Documents\SimpleText.docx" />
     <None Remove="Documents\Tables.docx" />
+    <None Remove="Expected\Lists.md" />
     <None Remove="Expected\Paragraphs.md" />
     <None Remove="Expected\Sections.md" />
     <None Remove="Expected\SimpleText.md" />
@@ -35,6 +36,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Documents\Tables.docx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Expected\Lists.md">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Expected\Paragraphs.md">

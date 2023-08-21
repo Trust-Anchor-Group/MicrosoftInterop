@@ -1634,6 +1634,109 @@ namespace TAG.Content.Microsoft
 							State.UnrecognizedElement(Element);
 						break;
 
+					case "sdt":
+						if (Element is SdtBlock SdtBlock)
+						{
+							Style.DocPartGallery = null;
+							HasText = ExportAsMarkdown(SdtBlock.Elements(), Markdown, Style, State);
+						}
+						else
+							State.UnrecognizedElement(Element);
+						break;
+
+					case "sdtPr":
+						if (Element is SdtProperties SdtProperties)
+							HasText = ExportAsMarkdown(SdtProperties.Elements(), Markdown, Style, State);
+						else
+							State.UnrecognizedElement(Element);
+						break;
+
+					case "sdtEndPr":
+						if (Element is SdtEndCharProperties SdtEndCharProperties)
+							HasText = ExportAsMarkdown(SdtEndCharProperties.Elements(), Markdown, Style, State);
+						else
+							State.UnrecognizedElement(Element);
+						break;
+
+					case "sdtContent":
+						if (Element is SdtContentBlock SdtContentBlock)
+						{
+							switch (Style.DocPartGallery)
+							{
+								case "Table of Contents":
+									Markdown.AppendLine("![](toc)");
+									Markdown.AppendLine();
+									HasText = true;
+									break;
+
+								default:
+									HasText = ExportAsMarkdown(SdtContentBlock.Elements(), Markdown, Style, State);
+									break;
+							}
+						}
+						else
+							State.UnrecognizedElement(Element);
+						break;
+
+					case "id":
+						if (!(Element is SdtId))
+							State.UnrecognizedElement(Element);
+						break;
+
+					case "docPartObj":
+						if (Element is SdtContentDocPartObject SdtContentDocPartObject)
+							HasText = ExportAsMarkdown(SdtContentDocPartObject.Elements(), Markdown, Style, State);
+						else
+							State.UnrecognizedElement(Element);
+						break;
+
+					case "docPartGallery":
+						if (Element is DocPartGallery DocPartGallery)
+						{
+							Style.DocPartGallery = DocPartGallery.Val?.Value ?? string.Empty;
+							HasText = ExportAsMarkdown(DocPartGallery.Elements(), Markdown, Style, State);
+						}
+						else
+							State.UnrecognizedElement(Element);
+						break;
+
+					case "docPartUnique":
+						if(!(Element is DocPartUnique))
+							State.UnrecognizedElement(Element);
+						break;
+
+					case "tabs":
+						if (!(Element is Tabs))
+							State.UnrecognizedElement(Element);
+						break;
+
+					case "noProof":
+						if (!(Element is NoProof))
+							State.UnrecognizedElement(Element);
+						break;
+
+					case "fldChar":
+						if (!(Element is FieldChar))
+							State.UnrecognizedElement(Element);
+						break;
+
+					case "instrText":
+						if (!(Element is FieldCode))
+							State.UnrecognizedElement(Element);
+						break;
+
+					case "webHidden":
+						if (!(Element is WebHidden))
+							State.UnrecognizedElement(Element);
+						break;
+
+					case "tab":
+						if (Element is TabChar)
+							Markdown.Append('\t');
+						else
+							State.UnrecognizedElement(Element);
+						break;
+
 					default:
 						State.UnrecognizedElement(Element);
 						break;
@@ -1746,6 +1849,7 @@ namespace TAG.Content.Microsoft
 			public List<int?> PrevItemNumbers;
 			public int? ItemLevel;
 			public int? ItemNumber;
+			public string DocPartGallery;
 			public ParagraphAlignment ParagraphAlignment;
 			public LinkedList<char> StyleChanges;
 
@@ -1771,6 +1875,7 @@ namespace TAG.Content.Microsoft
 				this.ItemNumber = null;
 				this.ParagraphAlignment = ParagraphAlignment.Left;
 				this.StyleChanges = null;
+				this.DocPartGallery = null;
 			}
 
 			public void StyleChanged(char c)
@@ -1888,6 +1993,12 @@ namespace TAG.Content.Microsoft
 
 			public bool TryGetHyperlink(string Id, out string Link)
 			{
+				if (Id is null)
+				{
+					Link = null;
+					return false;
+				}
+
 				if (this.Links is null)
 				{
 					this.Links = new Dictionary<string, string>();

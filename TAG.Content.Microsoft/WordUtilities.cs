@@ -12,8 +12,8 @@ using Waher.Content;
 using Waher.Content.Markdown;
 using Waher.Content.Xml;
 using Waher.Events;
-using Waher.Networking.HTTP.Vanity;
 using MarkdownModel = Waher.Content.Markdown.Model;
+using Waher.Runtime.Text;
 
 namespace TAG.Content.Microsoft
 {
@@ -1130,7 +1130,7 @@ namespace TAG.Content.Microsoft
 							{
 								string StyleId = ParagraphStyleId.Val?.Value?.ToUpper() ?? string.Empty;
 
-								if (styleIds.CheckVanityResource(ref StyleId))
+								if (styleIds.TryMap(StyleId, out StyleId))
 								{
 									switch (StyleId)
 									{
@@ -2642,7 +2642,7 @@ namespace TAG.Content.Microsoft
 		}
 
 		private static readonly Regex simpleFieldInstruction = new Regex(@"^\s*(?'Command'\w+)\s*(?'Argument'[^\\\s]*)\s*(\\(?'Type'[@#*])\s*(?'Argument2'.*))?$", RegexOptions.Singleline | RegexOptions.Compiled);
-		private static readonly VanityResources styleIds = GetStyleIds();
+		private static readonly HarmonizedTextMap styleIds = GetStyleIds();
 		private static readonly char[] simpleCharsProhibited = new char[] { '\r', '\n', '|' };
 		private static readonly HashSet<string> monospaceFonts = new HashSet<string>()
 		{
@@ -3007,13 +3007,13 @@ namespace TAG.Content.Microsoft
 			public bool HeaderEmitted;
 		}
 
-		private static VanityResources GetStyleIds()
+		private static HarmonizedTextMap GetStyleIds()
 		{
 			string Xml = Resources.LoadResourceAsText(typeof(WordUtilities).Namespace + ".StyleMap.xml");
 			XmlDocument Doc = new XmlDocument();
 			Doc.LoadXml(Xml);
 
-			VanityResources Result = new VanityResources();
+			HarmonizedTextMap Result = new HarmonizedTextMap();
 
 			foreach (XmlNode N in Doc.DocumentElement.ChildNodes)
 			{
@@ -3026,7 +3026,7 @@ namespace TAG.Content.Microsoft
 						if (N2 is XmlElement E2 && E2.LocalName == "LocalStyleId")
 						{
 							string From = XML.Attribute(E2, "id");
-							Result.RegisterVanityResource(From, To);
+							Result.RegisterMapping(From, To);
 						}
 					}
 				}

@@ -227,8 +227,12 @@ namespace TAG.Content.Microsoft
 		private const string Word2010Namespace = "http://schemas.microsoft.com/office/word/2010/wordml";
 		private const string Drawing2006Namespace = "http://schemas.openxmlformats.org/drawingml/2006/main";
 		private const string Drawing2010Namespace = "http://schemas.microsoft.com/office/drawing/2010/main";
+		private const string WordDrawing2010Namespace = "http://schemas.microsoft.com/office/word/2010/wordprocessingDrawing";
 		private const string WordprocessingDrawing2006Namespace = "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing";
+		private const string Shape2010Namespace = "http://schemas.microsoft.com/office/word/2010/wordprocessingShape";
 		private const string Picture2006Namespace = "http://schemas.openxmlformats.org/drawingml/2006/picture";
+		private const string Compatibility2006Namespace = "http://schemas.openxmlformats.org/markup-compatibility/2006";
+		private const string VmlNamespace = "urn:schemas-microsoft-com:vml";
 
 		private static bool ExportAsMarkdown(IEnumerable<OpenXmlElement> Elements,
 			StringBuilder Markdown, FormattingStyle Style, RenderingState State)
@@ -1750,6 +1754,20 @@ namespace TAG.Content.Microsoft
 								State.UnrecognizedElement(Element);
 							break;
 
+						case "pict":
+							if (Element is Picture Picture)
+								HasText = ExportAsMarkdown(Picture.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "txbxContent":
+							if (Element is TextBoxContent TextBoxContent)
+								HasText = ExportAsMarkdown(TextBoxContent.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
 						default:
 							State.UnrecognizedElement(Element);
 							break;
@@ -1912,6 +1930,55 @@ namespace TAG.Content.Microsoft
 								State.UnrecognizedElement(Element);
 							break;
 
+						case "spLocks":
+							if (Element is DocumentFormat.OpenXml.Drawing.ShapeLocks ShapeLocks)
+								HasText = ExportAsMarkdown(ShapeLocks.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "solidFill":
+							if (Element is DocumentFormat.OpenXml.Drawing.SolidFill SolidFill)
+								HasText = ExportAsMarkdown(SolidFill.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "miter":
+							if (Element is DocumentFormat.OpenXml.Drawing.Miter Miter)
+								HasText = ExportAsMarkdown(Miter.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "headEnd":
+							if (Element is DocumentFormat.OpenXml.Drawing.HeadEnd HeadEnd)
+								HasText = ExportAsMarkdown(HeadEnd.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "tailEnd":
+							if (Element is DocumentFormat.OpenXml.Drawing.TailEnd TailEnd)
+								HasText = ExportAsMarkdown(TailEnd.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "spAutoFit":
+							if (Element is DocumentFormat.OpenXml.Drawing.ShapeAutoFit ShapeAutoFit)
+								HasText = ExportAsMarkdown(ShapeAutoFit.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "srgbClr":
+							if (Element is DocumentFormat.OpenXml.Drawing.RgbColorModelHex RgbColorModelHex)
+								HasText = ExportAsMarkdown(RgbColorModelHex.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
 						default:
 							State.UnrecognizedElement(Element);
 							break;
@@ -1925,6 +1992,106 @@ namespace TAG.Content.Microsoft
 							if (Element is DocumentFormat.OpenXml.Office2010.Drawing.UseLocalDpi UseLocalDpi)
 								HasText = ExportAsMarkdown(UseLocalDpi.Elements(), Markdown, Style, State);
 							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						default:
+							State.UnrecognizedElement(Element);
+							break;
+					}
+					break;
+
+				case Shape2010Namespace:
+					switch (Element.LocalName)
+					{
+						case "wsp":
+							if (Element is DocumentFormat.OpenXml.Office2010.Word.DrawingShape.WordprocessingShape WordprocessingShape)
+								HasText = ExportAsMarkdown(WordprocessingShape.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "cNvSpPr":
+							if (Element is DocumentFormat.OpenXml.Office2010.Word.DrawingShape.NonVisualDrawingShapeProperties NonVisualDrawingShapeProperties)
+								HasText = ExportAsMarkdown(NonVisualDrawingShapeProperties.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "spPr":
+							if (Element is DocumentFormat.OpenXml.Office2010.Word.DrawingShape.ShapeProperties ShapeProperties)
+								HasText = ExportAsMarkdown(ShapeProperties.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "txbx":
+							if (Element is DocumentFormat.OpenXml.Office2010.Word.DrawingShape.TextBoxInfo2 TextBoxInfo2)
+								HasText = ExportAsMarkdown(TextBoxInfo2.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "bodyPr":
+							if (Element is DocumentFormat.OpenXml.Office2010.Word.DrawingShape.TextBodyProperties TextBodyProperties)
+								HasText = ExportAsMarkdown(TextBodyProperties.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						default:
+							State.UnrecognizedElement(Element);
+							break;
+					}
+					break;
+
+				case WordDrawing2010Namespace:
+					switch (Element.LocalName)
+					{
+						case "sizeRelH":
+							if (Element is DocumentFormat.OpenXml.Office2010.Word.Drawing.RelativeWidth RelativeWidth)
+								HasText = ExportAsMarkdown(RelativeWidth.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "sizeRelV":
+							if (Element is DocumentFormat.OpenXml.Office2010.Word.Drawing.RelativeHeight RelativeHeight)
+								HasText = ExportAsMarkdown(RelativeHeight.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "pctWidth":
+							if (Element is DocumentFormat.OpenXml.Office2010.Word.Drawing.PercentageWidth PercentageWidth)
+								HasText = ExportAsMarkdown(PercentageWidth.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "pctHeight":
+							if (Element is DocumentFormat.OpenXml.Office2010.Word.Drawing.PercentageHeight PercentageHeight)
+								HasText = ExportAsMarkdown(PercentageHeight.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						default:
+							State.UnrecognizedElement(Element);
+							break;
+					}
+					break;
+
+				case VmlNamespace:
+					switch (Element.LocalName)
+					{
+						case "shapetype":
+							if (!(Element is DocumentFormat.OpenXml.Vml.Shapetype))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "shape":
+							if (!(Element is DocumentFormat.OpenXml.Vml.Shape))
 								State.UnrecognizedElement(Element);
 							break;
 
@@ -2019,6 +2186,85 @@ namespace TAG.Content.Microsoft
 						case "cNvGraphicFramePr":
 							if (Element is DocumentFormat.OpenXml.Drawing.Wordprocessing.NonVisualGraphicFrameDrawingProperties NonVisualGraphicFrameDrawingProperties)
 								HasText = ExportAsMarkdown(NonVisualGraphicFrameDrawingProperties.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "anchor":
+							if (Element is DocumentFormat.OpenXml.Drawing.Wordprocessing.Anchor Anchor)
+								HasText = ExportAsMarkdown(Anchor.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "simplePos":
+							if (Element is DocumentFormat.OpenXml.Drawing.Wordprocessing.SimplePosition SimplePosition)
+								HasText = ExportAsMarkdown(SimplePosition.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "positionH":
+							if (Element is DocumentFormat.OpenXml.Drawing.Wordprocessing.HorizontalPosition HorizontalPosition)
+								HasText = ExportAsMarkdown(HorizontalPosition.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "positionV":
+							if (Element is DocumentFormat.OpenXml.Drawing.Wordprocessing.VerticalPosition VerticalPosition)
+								HasText = ExportAsMarkdown(VerticalPosition.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "wrapSquare":
+							if (Element is DocumentFormat.OpenXml.Drawing.Wordprocessing.WrapSquare WrapSquare)
+								HasText = ExportAsMarkdown(WrapSquare.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "posOffset":
+							if (Element is DocumentFormat.OpenXml.Drawing.Wordprocessing.PositionOffset PositionOffset)
+								HasText = ExportAsMarkdown(PositionOffset.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "align":
+							if (Element is DocumentFormat.OpenXml.Drawing.Wordprocessing.HorizontalAlignment HorizontalAlignment)
+								HasText = ExportAsMarkdown(HorizontalAlignment.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						default:
+							State.UnrecognizedElement(Element);
+							break;
+					}
+					break;
+
+				case Compatibility2006Namespace:
+					switch (Element.LocalName)
+					{
+						case "AlternateContent":
+							if (Element is AlternateContent AlternateContent)
+								HasText = ExportAsMarkdown(AlternateContent.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "Choice":
+							if (Element is AlternateContentChoice AlternateContentChoice)
+								HasText = ExportAsMarkdown(AlternateContentChoice.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "Fallback":
+							if (Element is AlternateContentFallback AlternateContentFallback)
+								HasText = ExportAsMarkdown(AlternateContentFallback.Elements(), Markdown, Style, State);
 							else
 								State.UnrecognizedElement(Element);
 							break;

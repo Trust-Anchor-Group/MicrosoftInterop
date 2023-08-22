@@ -32,6 +32,8 @@ They can also be used standalone.
 | [Waher.Networking.HTTP](https://www.nuget.org/packages/Waher.Networking.HTTP/)                     | Library for publishing information and services via HTTP. |
 | [Waher.Runtime.Inventory](https://www.nuget.org/packages/Waher.Runtime.Inventory/)                 | Maintains an inventory of type definitions in the runtime environment, and permits easy instantiation of suitable classes, and inversion of control (IoC). |
 | [Waher.Runtime.Text](https://www.nuget.org/packages/Waher.Runtime.Text/)                           | Tools for processing text, such as harmonized text maps, and comparing text differences. |
+| [Waher.Security](https://www.nuget.org/packages/Waher.Security/)                                   | Library with assorted security utilities. |
+| [Waher.Security.Users](https://www.nuget.org/packages/Waher.Security.Users/)                       | Security architecture based on users, roles and privileges. |
 
 The Unit Tests further use the following libraries:
 

@@ -3,6 +3,7 @@ using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -160,7 +161,7 @@ namespace TAG.Content.Microsoft
 				}
 			}
 
-			if (!(State.Sections is null))
+			if (!(State.Sections is null) || !(State.MetaData is null))
 			{
 				string End = Markdown.ToString();
 				string Start;
@@ -174,10 +175,26 @@ namespace TAG.Content.Microsoft
 				}
 
 				Markdown.Clear();
+
+				if (!(State.MetaData is null))
+				{
+					foreach (KeyValuePair<string, string> Header in State.MetaData)
+					{
+						Markdown.Append(Header.Key);
+						Markdown.Append(": ");
+						Markdown.AppendLine(Header.Value);
+					}
+
+					Markdown.AppendLine();
+				}
+
 				Markdown.Append(Start);
 
-				foreach (string Section in State.Sections)
-					Markdown.Append(Section);
+				if (!(State.Sections is null))
+				{
+					foreach (string Section in State.Sections)
+						Markdown.Append(Section);
+				}
 
 				Markdown.Append(End);
 			}
@@ -1690,6 +1707,14 @@ namespace TAG.Content.Microsoft
 								Style.DocPartGallery = null;
 								HasText = ExportAsMarkdown(SdtBlock.Elements(), Markdown, Style, State);
 							}
+							else if (Element is SdtRun SdtRun)
+							{
+								Style.Alias = null;
+								Style.ParameterType = ParameterType.String;
+								Style.ItemCount = null;
+
+								HasText = ExportAsMarkdown(SdtRun.Elements(), Markdown, Style, State);
+							}
 							else
 								State.UnrecognizedElement(Element);
 							break;
@@ -1724,12 +1749,38 @@ namespace TAG.Content.Microsoft
 										break;
 								}
 							}
+							else if (Element is SdtContentRun SdtContentRun)
+							{
+								if (!string.IsNullOrEmpty(Style.Alias) && Style.ParameterType.HasValue)
+								{
+									Markdown.Append("[%");
+									Markdown.Append(Style.Alias);
+									Markdown.Append(']');
+
+									StringBuilder Description = new StringBuilder();
+									ExportAsMarkdown(SdtContentRun.Elements(), Description, Style, State);
+
+									State.AddMetaData(Style.Alias, Description.ToString());
+									State.AddMetaData(Style.Alias + " Type", Style.ParameterType.Value.ToString());
+
+									HasText = true;
+								}
+								else
+									HasText = ExportAsMarkdown(SdtContentRun.Elements(), Markdown, Style, State);
+							}
 							else
 								State.UnrecognizedElement(Element);
 							break;
 
 						case "id":
 							if (!(Element is SdtId))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "docPart":
+							if (Element is DocPartReference DocPartReference)
+								HasText = ExportAsMarkdown(DocPartReference.Elements(), Markdown, Style, State);
+							else
 								State.UnrecognizedElement(Element);
 							break;
 
@@ -1870,6 +1921,142 @@ namespace TAG.Content.Microsoft
 								State.UnrecognizedElement(Element);
 							break;
 
+						case "alias":
+							if (Element is SdtAlias SdtAlias)
+							{
+								if (SdtAlias.Val.HasValue)
+									Style.Alias = SdtAlias.Val.Value;
+
+								HasText = ExportAsMarkdown(SdtAlias.Elements(), Markdown, Style, State);
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "tag":
+							if (Element is Tag Tag)
+								HasText = ExportAsMarkdown(Tag.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "placeholder":
+							if (Element is SdtPlaceholder SdtPlaceholder)
+								HasText = ExportAsMarkdown(SdtPlaceholder.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "showingPlcHdr":
+							if (Element is ShowingPlaceholder ShowingPlaceholder)
+								HasText = ExportAsMarkdown(ShowingPlaceholder.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "dataBinding":
+							if (Element is DataBinding DataBinding)
+							{
+								Style.Alias = null;
+								Style.ParameterType = null;
+								HasText = ExportAsMarkdown(DataBinding.Elements(), Markdown, Style, State);
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "text":
+							if (Element is SdtContentText SdtContentText)
+								HasText = ExportAsMarkdown(SdtContentText.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "date":
+							if (Element is SdtContentDate SdtContentDate)
+							{
+								Style.ParameterType = ParameterType.DatePicker;
+								HasText = ExportAsMarkdown(SdtContentDate.Elements(), Markdown, Style, State);
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "lid":
+							if (Element is LanguageId LanguageId)
+								HasText = ExportAsMarkdown(LanguageId.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "storeMappedDataAs":
+							if (Element is SdtDateMappingType SdtDateMappingType)
+								HasText = ExportAsMarkdown(SdtDateMappingType.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "calendar":
+							if (Element is DocumentFormat.OpenXml.Wordprocessing.Calendar Calendar)
+								HasText = ExportAsMarkdown(Calendar.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "comboBox":
+							if (Element is SdtContentComboBox SdtContentComboBox)
+							{
+								Style.ParameterType = ParameterType.ComboBox;
+								Style.ItemCount = null;
+
+								HasText = ExportAsMarkdown(SdtContentComboBox.Elements(), Markdown, Style, State);
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "dropDownList":
+							if (Element is SdtContentDropDownList SdtContentDropDownList)
+							{
+								Style.ParameterType = ParameterType.ListBox;
+								Style.ItemCount = null;
+
+								HasText = ExportAsMarkdown(SdtContentDropDownList.Elements(), Markdown, Style, State);
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "dateFormat":
+							if (Element is DateFormat DateFormat)
+								HasText = ExportAsMarkdown(DateFormat.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "listItem":
+							if (Element is ListItem ListItem)
+							{
+								if (!string.IsNullOrEmpty(ListItem.DisplayText?.Value) &&
+									!string.IsNullOrEmpty(ListItem.Value?.Value) &&
+									!string.IsNullOrEmpty(Style.Alias) &&
+									Style.ParameterType.HasValue)
+								{
+									int i = Style.ItemCount ?? 0;
+
+									Style.ItemCount = ++i;
+									string Key = Style.Alias + " Item" + i.ToString();
+
+									State.AddMetaData(Key + " Value", ListItem.Value.Value);
+									State.AddMetaData(Key + " Display", ListItem.DisplayText.Value);
+								}
+
+								HasText = ExportAsMarkdown(ListItem.Elements(), Markdown, Style, State);
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
 						default:
 							State.UnrecognizedElement(Element);
 							break;
@@ -1882,6 +2069,37 @@ namespace TAG.Content.Microsoft
 						case "ligatures":
 							if (Element is DocumentFormat.OpenXml.Office2010.Word.Ligatures Ligatures)
 								HasText = ExportAsMarkdown(Ligatures.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "checkbox":
+							if (Element is DocumentFormat.OpenXml.Office2010.Word.SdtContentCheckBox SdtContentCheckBox)
+							{
+								Style.ParameterType = ParameterType.CheckBox;
+								HasText = ExportAsMarkdown(SdtContentCheckBox.Elements(), Markdown, Style, State);
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "checked":
+							if (Element is DocumentFormat.OpenXml.Office2010.Word.Checked Checked)
+								HasText = ExportAsMarkdown(Checked.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "checkedState":
+							if (Element is DocumentFormat.OpenXml.Office2010.Word.CheckedState CheckedState)
+								HasText = ExportAsMarkdown(CheckedState.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "uncheckedState":
+							if (Element is DocumentFormat.OpenXml.Office2010.Word.UncheckedState UncheckedState)
+								HasText = ExportAsMarkdown(UncheckedState.Elements(), Markdown, Style, State);
 							else
 								State.UnrecognizedElement(Element);
 							break;
@@ -2468,6 +2686,15 @@ namespace TAG.Content.Microsoft
 			Continuation
 		}
 
+		private enum ParameterType
+		{
+			String,
+			CheckBox,
+			ComboBox,
+			ListBox,
+			DatePicker
+		}
+
 		private class FormattingStyle
 		{
 			public bool Bold;
@@ -2489,6 +2716,9 @@ namespace TAG.Content.Microsoft
 			public int? ItemLevel;
 			public int? ItemNumber;
 			public string DocPartGallery;
+			public string Alias;
+			public ParameterType? ParameterType;
+			public int? ItemCount;
 			public ParagraphAlignment ParagraphAlignment;
 			public LinkedList<char> StyleChanges;
 
@@ -2512,6 +2742,9 @@ namespace TAG.Content.Microsoft
 				this.PrevItemNumbers = null;
 				this.ItemLevel = null;
 				this.ItemNumber = null;
+				this.Alias = null;
+				this.ParameterType = null;
+				this.ItemCount = null;
 				this.ParagraphAlignment = ParagraphAlignment.Left;
 				this.StyleChanges = null;
 				this.DocPartGallery = null;
@@ -2607,6 +2840,7 @@ namespace TAG.Content.Microsoft
 			public Dictionary<string, Dictionary<string, int>> Unrecognized = null;
 			public Dictionary<string, int> Sequences = null;
 			public LinkedList<string> Sections = null;
+			public LinkedList<KeyValuePair<string, string>> MetaData = null;
 			public string FileName;
 			public long? FileSize;
 
@@ -2750,6 +2984,15 @@ namespace TAG.Content.Microsoft
 					Instance = P.Value;
 					return true;
 				}
+			}
+
+			public void AddMetaData(string Key, string Value)
+			{
+				if (this.MetaData is null)
+					this.MetaData = new LinkedList<KeyValuePair<string, string>>();
+
+				foreach (string Row in GetRows(Value.Trim()))
+					this.MetaData.AddLast(new KeyValuePair<string, string>(Key, Row));
 			}
 		}
 

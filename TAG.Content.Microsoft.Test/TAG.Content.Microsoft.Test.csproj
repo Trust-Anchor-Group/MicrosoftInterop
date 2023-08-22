@@ -10,7 +10,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Documents\Fields.docx" />
     <None Remove="Documents\Figures.docx" />
+    <None Remove="Documents\Forms.docx" />
     <None Remove="Documents\Frames.docx" />
     <None Remove="Documents\Lists.docx" />
     <None Remove="Documents\Notes.docx" />
@@ -19,6 +21,7 @@
     <None Remove="Documents\SimpleText.docx" />
     <None Remove="Documents\TableOfContents.docx" />
     <None Remove="Documents\Tables.docx" />
+    <None Remove="Expected\Fields.md" />
     <None Remove="Expected\Figures.md" />
     <None Remove="Expected\Frames.md" />
     <None Remove="Expected\Lists.md" />
@@ -31,6 +34,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="Documents\Fields.docx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Documents\Figures.docx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -56,6 +62,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Documents\Tables.docx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Expected\Fields.md">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Expected\Figures.md">

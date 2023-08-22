@@ -1,5 +1,4 @@
-﻿using DocumentFormat;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Waher.IoTGateway;
@@ -21,6 +20,8 @@ namespace TAG.Service.MicrosoftInterop
 	public class ConversionService : IConfigurableModule
 	{
 		private WordToMarkdown wordToMarkdown;
+		private AppendingMarkdownLabMd appendingMarkdownLabMd;
+		private AppendingMarkdownLabJs appendingMarkdownLabJs;
 
 		public ConversionService()
 		{
@@ -65,6 +66,15 @@ namespace TAG.Service.MicrosoftInterop
 			this.wordToMarkdown = new WordToMarkdown(Schemes.ToArray());
 			Gateway.HttpServer?.Register(this.wordToMarkdown);
 
+			Schemes.Clear();
+			Schemes.Add(new RequiredUserPrivileges(Gateway.HttpServer, "Admin.Lab.Markdown", "Admin.Lab.Script"));
+			
+			this.appendingMarkdownLabMd = new AppendingMarkdownLabMd(Schemes.ToArray());
+			Gateway.HttpServer?.Register(this.appendingMarkdownLabMd);
+
+			this.appendingMarkdownLabJs = new AppendingMarkdownLabJs(Schemes.ToArray());
+			Gateway.HttpServer?.Register(this.appendingMarkdownLabJs);
+
 			return Task.CompletedTask;
 		}
 
@@ -77,6 +87,18 @@ namespace TAG.Service.MicrosoftInterop
 			{
 				Gateway.HttpServer?.Unregister(this.wordToMarkdown);
 				this.wordToMarkdown = null;
+			}
+
+			if (!(this.appendingMarkdownLabMd is null))
+			{
+				Gateway.HttpServer?.Unregister(this.appendingMarkdownLabMd);
+				this.appendingMarkdownLabMd = null;
+			}
+
+			if (!(this.appendingMarkdownLabJs is null))
+			{
+				Gateway.HttpServer?.Unregister(this.appendingMarkdownLabJs);
+				this.appendingMarkdownLabJs = null;
 			}
 
 			return Task.CompletedTask;

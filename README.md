@@ -5,6 +5,16 @@ This repository contains services that help with interoperation with Microsoft p
 using **Open XML SDK** libraries. This SDK allows for interoperation with documents saved using
 the Open XML specification, not old legacy formats (i.e. `.docx` works, `.doc` not so).
 
+## Neuron-extensions
+
+This solution demonstrates how to create the following type of extensions for the TAG Neuron:
+
+* Installable service module package containing .NET service code, as well as file-based content.
+* .NET-based web services.
+* Internet Content Decoder
+* Internet Content Converter
+* Dynamic extension of file-based Internet Content
+
 ## Projects
 
 The solution contains the following C# projects:
@@ -42,3 +52,59 @@ The Unit Tests further use the following libraries:
 | [Waher.Content.XML](https://www.nuget.org/packages/Waher.Content.XML/)                           | Library with tools for XML processing. |
 | [Waher.Events.Console](https://www.nuget.org/packages/Waher.Events.Console/)                     | Outputs events logged to the console output. |
 | [Waher.Runtime.Inventory.Loader](https://www.nuget.org/packages/Waher.Runtime.Inventory.Loader/) | Permits the inventory and seamless integration of classes defined in all available assemblies. |
+
+## Installable Package
+
+The `TAG.Service.MicrosoftInterop` project has been made into a package that can be downloaded and installed on any 
+[TAG Neuron](https://lab.tagroot.io/Documentation/Index.md).
+To create a package, that can be distributed or installed, you begin by creating a *manifest file*. The
+`TAG.Service.MicrosoftInterop` project has a manifest file called `TAG.Service.MicrosoftInterop.manifest`. It defines the
+assemblies and content files included in the package. You then use the `Waher.Utility.Install` and `Waher.Utility.Sign` command-line
+tools in the [IoT Gateway](https://github.com/PeterWaher/IoTGateway) repository, to create a package file and cryptographically
+sign it for secure distribution across the Neuron network.
+
+The Microsoft Interop service is published as a package on TAG Neurons. If your neuron is connected to this network, you can install the
+package using the following information:
+
+| Package information                                                                                                              ||
+|:-----------------|:---------------------------------------------------------------------------------------------------------------|
+| Package          | `TAG.MicrosoftInterop.package`                                                                                 |
+| Installation key | `` |
+| More Information | TBD                                                                                                            |
+
+## Building, Compiling & Debugging
+
+The repository assumes you have the [IoT Gateway](https://github.com/PeterWaher/IoTGateway) repository cloned in a folder called
+`C:\My Projects\IoT Gateway`, and that this repository is placed in `C:\My Projects\MicrosoftInterop`. You can place the
+repositories in different folders, but you need to update the build events accordingly. To run the application, you select the
+`TAG.Service.MicrosoftInterop` project as your startup project. It will execute the console version of the
+[IoT Gateway](https://github.com/PeterWaher/IoTGateway), and make sure the compiled files of the `MicrosoftInterop` solution
+is run with it.
+
+### Gateway.config
+
+To simplify development, once the project is cloned, add a `FileFolder` reference
+to your repository folder in your [gateway.config file](https://lab.tagroot.io/Documentation/IoTGateway/GatewayConfig.md). 
+This allows you to test and run your changes to Markdown and Javascript immediately, 
+without having to synchronize the folder contents with an external 
+host, or recompile or go through the trouble of generating a distributable software 
+package just for testing purposes. Changes you make in .NET can be applied in runtime
+if you the *Hot Reload* permits, otherwise you need to recompile and re-run the
+application again.
+
+Example of how to point a web folder to your project folder:
+
+```
+<FileFolders>
+  <FileFolder webFolder="/MicrosoftInterop" folderPath="C:\My Projects\MicrosoftInterop\TAG.Service.MicrosoftInterop\Root\MicrosoftInterop"/>
+</FileFolders>
+```
+
+**Note**: Once file folder reference is added, you need to restart the IoT Gateway service for the change to take effect.
+
+**Note 2**:  Once the gateway is restarted, the source for the files is in the new location. Any changes you make in the corresponding
+`ProgramData` subfolder will have no effect on what you see via the browser.
+
+**Note 3**: This file folder is only necessary on your developer machine, to give you real-time updates as you edit the files in your
+developer folder. It is not necessary in a production environment, as the files are copied into the correct folders when the package 
+is installed.

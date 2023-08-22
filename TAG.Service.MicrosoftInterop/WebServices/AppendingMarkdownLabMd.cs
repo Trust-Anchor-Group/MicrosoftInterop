@@ -1,25 +1,27 @@
-﻿using DocumentFormat.OpenXml.Packaging;
-using System.Text;
+﻿using System.IO;
 using System.Threading.Tasks;
 using TAG.Content.Microsoft;
+using Waher.Content;
 using Waher.Content.Markdown;
+using Waher.IoTGateway;
 using Waher.Networking.HTTP;
 
 namespace TAG.Service.MicrosoftInterop.WebServices
 {
 	/// <summary>
-	/// Converts a Word document to Markdown
+	/// Appends information to the Markdown Lab Markdown page, to allow for
+	/// Word document uploads.
 	/// </summary>
-	public class WordToMarkdown : HttpSynchronousResource, IHttpPostMethod
+	public class AppendingMarkdownLabMd : HttpSynchronousResource, IHttpGetMethod
 	{
 		private readonly HttpAuthenticationScheme[] authenticationSchemes;
 
 		/// <summary>
-		/// Converts a Word document to Markdown
+		/// Appends information to the Markdown Lab Markdown page, to allow for
+		/// Word document uploads.
 		/// </summary>
-		/// <param name="AuthenticationSchemes">Authentication schemes.</param>
-		public WordToMarkdown(params HttpAuthenticationScheme[] AuthenticationSchemes)
-			: base("/MicrosoftInterop/WordToMarkdown")
+		public AppendingMarkdownLabMd(params HttpAuthenticationScheme[] AuthenticationSchemes)
+			: base("/MarkdownLab/MarkdownLab.md")
 		{
 			this.authenticationSchemes = AuthenticationSchemes;
 		}
@@ -45,31 +47,31 @@ namespace TAG.Service.MicrosoftInterop.WebServices
 		}
 
 		/// <summary>
-		/// If the POST method is supported.
+		/// If the GET method is supported.
 		/// </summary>
-		public bool AllowsPOST => true;
+		public bool AllowsGET => true;
 
 		/// <summary>
 		/// Executes the POST method
 		/// </summary>
 		/// <param name="Request">Request object.</param>
 		/// <param name="Response">Response object.</param>
-		public async Task POST(HttpRequest Request, HttpResponse Response)
+		public async Task GET(HttpRequest Request, HttpResponse Response)
 		{
-			if (!Request.HasData)
-				throw new BadRequestException("No content.");
+			string FileName1 = Path.Combine(Gateway.RootFolder, "MarkdownLab", "MarkdownLab.md");
+			string Markdown1 = await Resources.ReadAllTextAsync(FileName1);
+			int i = Markdown1.IndexOf("</section>");
 
-			object Decoded = await Request.DecodeDataAsync();
-			if (!(Decoded is WordprocessingDocument Doc))
-				throw new BadRequestException("Content not a Word document (.docx).");
+			if (i >= 0)
+			{
+				string FileName2 = Path.Combine(Gateway.RootFolder, "MicrosoftInterop", "MarkdownLabAddendum.md");
+				string Markdown2 = await Resources.ReadAllTextAsync(FileName2);
 
-			StringBuilder Markdown = new StringBuilder();
-			WordUtilities.ExtractAsMarkdown(Doc, string.Empty, Markdown);
-
-			byte[] Data = WordToMarkdownConverter.Utf8WithBOM.GetBytes(Markdown.ToString());
+				Markdown1 = Markdown1.Insert(i, Markdown2);
+			}
 
 			Response.ContentType = MarkdownCodec.ContentType + "; charset=utf-8";
-			await Response.Write(Data);
+			await Response.Write(WordToMarkdownConverter.Utf8WithBOM.GetBytes(Markdown1));
 		}
 	}
 }

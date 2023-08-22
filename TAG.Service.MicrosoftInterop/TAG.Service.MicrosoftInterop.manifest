@@ -3,4 +3,10 @@
 	<Assembly fileName="DocumentFormat.OpenXml.dll"/>
 	<Assembly fileName="TAG.Content.Microsoft.dll"/>
 	<Assembly fileName="TAG.Service.MicrosoftInterop.dll"/>
+	<Folder name="Root">
+		<Folder name="MicrosoftInterop">
+			<Content fileName="MarkdownLabAddendum.js"/>
+			<Content fileName="MarkdownLabAddendum.md"/>
+		</Folder>
+	</Folder>
 </Module>

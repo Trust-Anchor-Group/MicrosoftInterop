@@ -99,9 +99,5 @@ namespace TAG.Content.Microsoft.Test
 				}
 			}
 		}
-
-		/* 
-		 * Form Fields
-		 */
 	}
 }

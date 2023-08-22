@@ -223,7 +223,12 @@ namespace TAG.Content.Microsoft
 			return s.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
 		}
 
-		private const string MainNaemspace = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+		private const string Word2006Namespace = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+		private const string Word2010Namespace = "http://schemas.microsoft.com/office/word/2010/wordml";
+		private const string Drawing2006Namespace = "http://schemas.openxmlformats.org/drawingml/2006/main";
+		private const string Drawing2010Namespace = "http://schemas.microsoft.com/office/drawing/2010/main";
+		private const string WordprocessingDrawing2006Namespace = "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing";
+		private const string Picture2006Namespace = "http://schemas.openxmlformats.org/drawingml/2006/picture";
 
 		private static bool ExportAsMarkdown(IEnumerable<OpenXmlElement> Elements,
 			StringBuilder Markdown, FormattingStyle Style, RenderingState State)
@@ -244,1503 +249,1789 @@ namespace TAG.Content.Microsoft
 		{
 			bool HasText = false;
 
-			if (Element.NamespaceUri == MainNaemspace)
+			switch (Element.NamespaceUri)
 			{
-				switch (Element.LocalName)
-				{
-					case "body":
-						if (Element is Body Body)
-							HasText = ExportAsMarkdown(Body.Elements(), Markdown, Style, State);
-						else
-							State.UnrecognizedElement(Element);
-						break;
+				case Word2006Namespace:
+					switch (Element.LocalName)
+					{
+						case "body":
+							if (Element is Body Body)
+								HasText = ExportAsMarkdown(Body.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
 
-					case "p":
-						if (Element is Paragraph Paragraph)
-						{
-							StringBuilder ParagraphContent = new StringBuilder();
-
-							Style.NextNumber();
-
-							if (ExportAsMarkdown(Paragraph.Elements(), ParagraphContent, Style, State))
-								HasText = true;
-
-							if (Style.CodeBlock)
+						case "p":
+							if (Element is Paragraph Paragraph)
 							{
-								StringBuilder Temp = new StringBuilder();
+								StringBuilder ParagraphContent = new StringBuilder();
 
-								Temp.AppendLine("```");
-								Temp.AppendLine(ParagraphContent.ToString());
-								Temp.Append("```");
+								Style.NextNumber();
 
-								ParagraphContent = Temp;
+								if (ExportAsMarkdown(Paragraph.Elements(), ParagraphContent, Style, State))
+									HasText = true;
 
-								Style.CodeBlock = false;
-								Style.InlineCode = false;
-							}
-
-							if (Style.ParagraphType == ParagraphType.Continuation)
-							{
-								StringBuilder Temp = new StringBuilder();
-								bool First = true;
-
-								foreach (string Row in GetRows(ParagraphContent.ToString()))
+								if (Style.CodeBlock)
 								{
-									if (First)
-										First = false;
-									else
-										Temp.AppendLine();
+									StringBuilder Temp = new StringBuilder();
 
-									Indentation(Temp, Style.PrevItemNumbers?.Count ?? 0);
-									Temp.Append(Row);
+									Temp.AppendLine("```");
+									Temp.AppendLine(ParagraphContent.ToString());
+									Temp.Append("```");
+
+									ParagraphContent = Temp;
+
+									Style.CodeBlock = false;
+									Style.InlineCode = false;
 								}
 
-								ParagraphContent = Temp;
-								Style.PrevNumber();
-							}
-
-							if (State.Table is null)
-							{
-								switch (Style.ParagraphAlignment)
+								if (Style.ParagraphType == ParagraphType.Continuation)
 								{
-									case ParagraphAlignment.Right:
-										StringBuilder Temp = new StringBuilder();
-										bool First = true;
+									StringBuilder Temp = new StringBuilder();
+									bool First = true;
 
-										foreach (string Row in GetRows(ParagraphContent.ToString()))
-										{
-											if (First)
-												First = false;
-											else
-												Temp.AppendLine();
+									foreach (string Row in GetRows(ParagraphContent.ToString()))
+									{
+										if (First)
+											First = false;
+										else
+											Temp.AppendLine();
 
-											Temp.Append(Row);
-											Temp.Append(">>");
-										}
+										Indentation(Temp, Style.PrevItemNumbers?.Count ?? 0);
+										Temp.Append(Row);
+									}
 
-										ParagraphContent = Temp;
-										break;
-
-									case ParagraphAlignment.Center:
-										Temp = new StringBuilder();
-										First = true;
-
-										foreach (string Row in GetRows(ParagraphContent.ToString()))
-										{
-											if (First)
-												First = false;
-											else
-												Temp.AppendLine();
-
-											Markdown.Append(">>");
-											Markdown.Append(Row);
-											Markdown.Append("<<");
-										}
-
-										ParagraphContent = Temp;
-										break;
-
-									case ParagraphAlignment.Justified:
-										Temp = new StringBuilder();
-										First = true;
-
-										foreach (string Row in GetRows(ParagraphContent.ToString()))
-										{
-											if (First)
-												First = false;
-											else
-												Temp.AppendLine();
-
-											Markdown.Append("<<");
-											Markdown.Append(Row);
-											Markdown.Append(">>");
-										}
-
-										ParagraphContent = Temp;
-										break;
+									ParagraphContent = Temp;
+									Style.PrevNumber();
 								}
-							}
 
-							Markdown.AppendLine(ParagraphContent.ToString());
-
-							if (!(State.Table is null))
-							{
-								if (State.Table.ColumnIndex < State.Table.NrColumns)
+								if (State.Table is null)
 								{
 									switch (Style.ParagraphAlignment)
 									{
-										case ParagraphAlignment.Left:
-										case ParagraphAlignment.Justified:
-										default:
-											State.Table.ColumnAlignments[State.Table.ColumnIndex] = MarkdownModel.TextAlignment.Left;
-											break;
-
 										case ParagraphAlignment.Right:
-											State.Table.ColumnAlignments[State.Table.ColumnIndex] = MarkdownModel.TextAlignment.Right;
+											StringBuilder Temp = new StringBuilder();
+											bool First = true;
+
+											foreach (string Row in GetRows(ParagraphContent.ToString()))
+											{
+												if (First)
+													First = false;
+												else
+													Temp.AppendLine();
+
+												Temp.Append(Row);
+												Temp.Append(">>");
+											}
+
+											ParagraphContent = Temp;
 											break;
 
 										case ParagraphAlignment.Center:
-											State.Table.ColumnAlignments[State.Table.ColumnIndex] = MarkdownModel.TextAlignment.Center;
+											Temp = new StringBuilder();
+											First = true;
+
+											foreach (string Row in GetRows(ParagraphContent.ToString()))
+											{
+												if (First)
+													First = false;
+												else
+													Temp.AppendLine();
+
+												Markdown.Append(">>");
+												Markdown.Append(Row);
+												Markdown.Append("<<");
+											}
+
+											ParagraphContent = Temp;
+											break;
+
+										case ParagraphAlignment.Justified:
+											Temp = new StringBuilder();
+											First = true;
+
+											foreach (string Row in GetRows(ParagraphContent.ToString()))
+											{
+												if (First)
+													First = false;
+												else
+													Temp.AppendLine();
+
+												Markdown.Append("<<");
+												Markdown.Append(Row);
+												Markdown.Append(">>");
+											}
+
+											ParagraphContent = Temp;
 											break;
 									}
 								}
-							}
 
-							Style.ParagraphAlignment = ParagraphAlignment.Left;
-							Markdown.AppendLine();
+								Markdown.AppendLine(ParagraphContent.ToString());
 
-							if (Style.HorizontalSeparator)
-							{
-								Markdown.AppendLine(new string('-', 80));
+								if (!(State.Table is null))
+								{
+									if (State.Table.ColumnIndex < State.Table.NrColumns)
+									{
+										switch (Style.ParagraphAlignment)
+										{
+											case ParagraphAlignment.Left:
+											case ParagraphAlignment.Justified:
+											default:
+												State.Table.ColumnAlignments[State.Table.ColumnIndex] = MarkdownModel.TextAlignment.Left;
+												break;
+
+											case ParagraphAlignment.Right:
+												State.Table.ColumnAlignments[State.Table.ColumnIndex] = MarkdownModel.TextAlignment.Right;
+												break;
+
+											case ParagraphAlignment.Center:
+												State.Table.ColumnAlignments[State.Table.ColumnIndex] = MarkdownModel.TextAlignment.Center;
+												break;
+										}
+									}
+								}
+
+								Style.ParagraphAlignment = ParagraphAlignment.Left;
 								Markdown.AppendLine();
-								Style.HorizontalSeparator = false;
-							}
 
-							if (Style.NewSection.HasValue)
-							{
-								StringBuilder Section = new StringBuilder();
-
-								int NrColumns = Style.NewSection.Value;
-								Style.NewSection = null;
-
-								int NrChars = 80 / NrColumns;
-								if (NrChars < 5)
-									NrChars = 5;
-
-								string s = new string('=', NrChars);
-								int i;
-
-								for (i = 0; i < NrColumns; i++)
+								if (Style.HorizontalSeparator)
 								{
-									if (i > 0)
-										Section.Append(' ');
-
-									Section.Append(s);
+									Markdown.AppendLine(new string('-', 80));
+									Markdown.AppendLine();
+									Style.HorizontalSeparator = false;
 								}
 
-								Section.AppendLine();
-								Section.AppendLine();
-								Section.Append(Markdown.ToString());
-								Markdown.Clear();
-
-								if (State.Sections is null)
-									State.Sections = new LinkedList<string>();
-
-								State.Sections.AddLast(Section.ToString());
-								Style.NewSection = null;
-							}
-						}
-						else
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "pPr":
-						if (Element is ParagraphProperties ParagraphProperties)
-						{
-							if (!(ParagraphProperties.Justification is null) &&
-								ParagraphProperties.Justification.Val.HasValue)
-							{
-								switch (ParagraphProperties.Justification.Val.Value)
+								if (Style.NewSection.HasValue)
 								{
-									case JustificationValues.Left:
-									case JustificationValues.Start:
-										Style.ParagraphAlignment = ParagraphAlignment.Left;
-										break;
+									StringBuilder Section = new StringBuilder();
 
-									case JustificationValues.Center:
-										Style.ParagraphAlignment = ParagraphAlignment.Center;
-										break;
+									int NrColumns = Style.NewSection.Value;
+									Style.NewSection = null;
 
-									case JustificationValues.Right:
-									case JustificationValues.End:
-										Style.ParagraphAlignment = ParagraphAlignment.Right;
-										break;
+									int NrChars = 80 / NrColumns;
+									if (NrChars < 5)
+										NrChars = 5;
 
-									case JustificationValues.Both:
-									case JustificationValues.Distribute:
-										Style.ParagraphAlignment = ParagraphAlignment.Justified;
-										break;
+									string s = new string('=', NrChars);
+									int i;
 
-									case JustificationValues.MediumKashida:
-									case JustificationValues.NumTab:
-									case JustificationValues.HighKashida:
-									case JustificationValues.LowKashida:
-									case JustificationValues.ThaiDistribute:
-									default:
-										break;
-								}
-							}
-
-							Style.ParagraphStyle = true;
-							HasText = ExportAsMarkdown(ParagraphProperties.Elements(), Markdown, Style, State);
-							Style.ParagraphStyle = false;
-						}
-						else
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "r":
-						if (Element is Run Run)
-						{
-							HasText = ExportAsMarkdown(Run.Elements(), Markdown, Style, State);
-
-							if (!(Style.StyleChanges is null))
-							{
-								foreach (char ch in Style.StyleChanges)
-								{
-									switch (ch)
+									for (i = 0; i < NrColumns; i++)
 									{
-										case 'b':
-											AppendWhitespaceIfNoText(ref HasText, Markdown);
-											Markdown.Append("**");
-											Style.Bold = false;
+										if (i > 0)
+											Section.Append(' ');
+
+										Section.Append(s);
+									}
+
+									Section.AppendLine();
+									Section.AppendLine();
+									Section.Append(Markdown.ToString());
+									Markdown.Clear();
+
+									if (State.Sections is null)
+										State.Sections = new LinkedList<string>();
+
+									State.Sections.AddLast(Section.ToString());
+									Style.NewSection = null;
+								}
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "pPr":
+							if (Element is ParagraphProperties ParagraphProperties)
+							{
+								if (!(ParagraphProperties.Justification is null) &&
+									ParagraphProperties.Justification.Val.HasValue)
+								{
+									switch (ParagraphProperties.Justification.Val.Value)
+									{
+										case JustificationValues.Left:
+										case JustificationValues.Start:
+											Style.ParagraphAlignment = ParagraphAlignment.Left;
 											break;
 
-										case 'i':
-											AppendWhitespaceIfNoText(ref HasText, Markdown);
-											Markdown.Append('*');
-											Style.Italic = false;
+										case JustificationValues.Center:
+											Style.ParagraphAlignment = ParagraphAlignment.Center;
 											break;
 
-										case 'u':
-											AppendWhitespaceIfNoText(ref HasText, Markdown);
-											Markdown.Append('_');
-											Style.Underline = false;
+										case JustificationValues.Right:
+										case JustificationValues.End:
+											Style.ParagraphAlignment = ParagraphAlignment.Right;
 											break;
 
-										case 's':
-											AppendWhitespaceIfNoText(ref HasText, Markdown);
-											Markdown.Append('~');
-											Style.StrikeThrough = false;
+										case JustificationValues.Both:
+										case JustificationValues.Distribute:
+											Style.ParagraphAlignment = ParagraphAlignment.Justified;
 											break;
 
-										case 'I':
-											AppendWhitespaceIfNoText(ref HasText, Markdown);
-											Markdown.Append("__");
-											Style.Insert = false;
-											break;
-
-										case 'D':
-											AppendWhitespaceIfNoText(ref HasText, Markdown);
-											Markdown.Append("~~");
-											Style.Delete = false;
-											break;
-
-										case '^':
-											AppendWhitespaceIfNoText(ref HasText, Markdown);
-											Markdown.Append(']');
-											Style.Superscript = false;
-											break;
-
-										case 'v':
-											AppendWhitespaceIfNoText(ref HasText, Markdown);
-											Markdown.Append(']');
-											Style.Subscript = false;
-											break;
-
-										case 'c':
-											AppendWhitespaceIfNoText(ref HasText, Markdown);
-											Markdown.Append('`');
-											Style.InlineCode = false;
+										case JustificationValues.MediumKashida:
+										case JustificationValues.NumTab:
+										case JustificationValues.HighKashida:
+										case JustificationValues.LowKashida:
+										case JustificationValues.ThaiDistribute:
+										default:
 											break;
 									}
 								}
 
-								Style.StyleChanges = null;
+								Style.ParagraphStyle = true;
+								HasText = ExportAsMarkdown(ParagraphProperties.Elements(), Markdown, Style, State);
+								Style.ParagraphStyle = false;
 							}
-						}
-						else
-							State.UnrecognizedElement(Element);
-						break;
+							else
+								State.UnrecognizedElement(Element);
+							break;
 
-					case "rPr":
-						if (Element is ParagraphMarkRunProperties ParagraphMarkRunProperties)
-							HasText = ExportAsMarkdown(ParagraphMarkRunProperties.Elements(), Markdown, Style, State);
-						else if (Element is RunProperties RunProperties)
-							HasText = ExportAsMarkdown(RunProperties.Elements(), Markdown, Style, State);
-						else
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "rStyle":
-						if (!(Element is RunStyle))
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "b":
-						if (Element is Bold)
-						{
-							if (!Style.Bold && !Style.ParagraphStyle)
+						case "r":
+							if (Element is Run Run)
 							{
-								Markdown.Append("**");
-								Style.Bold = true;
-								Style.StyleChanged('b');
-							}
-						}
-						else
-							State.UnrecognizedElement(Element);
-						break;
+								HasText = ExportAsMarkdown(Run.Elements(), Markdown, Style, State);
 
-					case "bCs":
-						if (!(Element is BoldComplexScript))
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "i":
-						if (Element is Italic)
-						{
-							if (!Style.Italic && !Style.ParagraphStyle)
-							{
-								Markdown.Append('*');
-								Style.Italic = true;
-								Style.StyleChanged('i');
-							}
-						}
-						else
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "iCs":
-						if (!(Element is ItalicComplexScript))
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "strike":
-						if (Element is Strike)
-						{
-							if (!Style.StrikeThrough && !Style.ParagraphStyle)
-							{
-								Markdown.Append('~');
-								Style.StrikeThrough = true;
-								Style.StyleChanged('s');
-							}
-						}
-						else
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "dstrike":
-						if (Element is DoubleStrike)
-						{
-							if (!Style.Delete && !Style.ParagraphStyle)
-							{
-								Markdown.Append("~~");
-								Style.Delete = true;
-								Style.StyleChanged('D');
-							}
-						}
-						else
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "u":
-						if (Element is Underline Underline)
-						{
-							if (Underline.Val.HasValue && !Style.ParagraphStyle)
-							{
-								switch (Underline.Val.Value)
+								if (!(Style.StyleChanges is null))
 								{
-									case UnderlineValues.Single:
-									case UnderlineValues.Words:
-									case UnderlineValues.Dotted:
-									case UnderlineValues.Dash:
-									case UnderlineValues.DashLong:
-									case UnderlineValues.DotDash:
-									case UnderlineValues.DotDotDash:
-									case UnderlineValues.Wave:
-									default:
-										if (!Style.Underline)
-										{
-											Markdown.Append('_');
-											Style.Underline = true;
-											Style.StyleChanged('u');
-										}
-										break;
-
-									case UnderlineValues.Double:
-									case UnderlineValues.Thick:
-									case UnderlineValues.DottedHeavy:
-									case UnderlineValues.DashedHeavy:
-									case UnderlineValues.DashLongHeavy:
-									case UnderlineValues.DashDotHeavy:
-									case UnderlineValues.DashDotDotHeavy:
-									case UnderlineValues.WavyHeavy:
-									case UnderlineValues.WavyDouble:
-										if (!Style.Insert)
-										{
-											Markdown.Append("__");
-											Style.Insert = true;
-											Style.StyleChanged('I');
-										}
-										break;
-
-									case UnderlineValues.None:
-										break;
-								}
-							}
-						}
-						else
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "vertAlign":
-						if (Element is VerticalTextAlignment VerticalTextAlignment)
-						{
-							if (VerticalTextAlignment.Val.HasValue)
-							{
-								switch (VerticalTextAlignment.Val.Value)
-								{
-									case VerticalPositionValues.Superscript:
-										if (!Style.Superscript)
-										{
-											Markdown.Append("^[");
-											Style.Superscript = true;
-											Style.StyleChanged('^');
-										}
-										break;
-
-									case VerticalPositionValues.Subscript:
-										if (!Style.Subscript)
-										{
-											Markdown.Append("[");
-											Style.Subscript = true;
-											Style.StyleChanged('v');
-										}
-										break;
-
-									case VerticalPositionValues.Baseline:
-										break;
-								}
-							}
-						}
-						else
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "sz":
-						if (!(Element is FontSize))
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "szCs":
-						if (!(Element is FontSizeComplexScript))
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "t":
-						if (Element is Text Text)
-						{
-							string s = Text.InnerText;
-
-							if (!string.IsNullOrEmpty(s))
-							{
-								Markdown.Append(MarkdownDocument.Encode(Text.InnerText));
-								HasText = true;
-							}
-						}
-						else
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "tbl":
-						if (Element is Table Table)
-						{
-							TableInfo Bak = State.Table;
-							State.Table = new TableInfo();
-
-							HasText = ExportAsMarkdown(Table.Elements(), Markdown, Style, State);
-							Markdown.AppendLine();
-
-							State.Table = Bak;
-						}
-						else
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "tblPr":
-						if (Element is TableProperties TableProperties)
-							HasText = ExportAsMarkdown(TableProperties.Elements(), Markdown, Style, State);
-						else
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "tblStyle":
-						if (!(Element is TableStyle))
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "tblW":
-						if (!(Element is TableWidth))
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "tblLayout":
-						if (!(Element is TableLayout))
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "tblLook":
-						if (!(Element is TableLook))
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "tblGrid":
-						if (Element is TableGrid TableGrid)
-							HasText = ExportAsMarkdown(TableGrid.Elements(), Markdown, Style, State);
-						else
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "tblHeader":
-						if (Element is TableHeader TableHeader)
-						{
-							if (!(State.Table is null))
-							{
-								State.Table.IsHeaderRow = true;
-								State.Table.HasHeaderRows = true;
-							}
-
-							HasText = ExportAsMarkdown(TableHeader.Elements(), Markdown, Style, State);
-						}
-						else
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "gridCol":
-						if (Element is GridColumn)
-						{
-							if (!(State.Table is null))
-							{
-								State.Table.ColumnAlignments.Add(MarkdownModel.TextAlignment.Left);
-								State.Table.NrColumns++;
-							}
-						}
-						else
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "tr":
-						if (Element is TableRow TableRow)
-						{
-							if (!(State.Table is null))
-							{
-								State.Table.ColumnIndex = 0;
-								State.Table.ColumnContents.Clear();
-								State.Table.IsHeaderRow = false;
-								HasText = ExportAsMarkdown(TableRow.Elements(), Markdown, Style, State);
-
-								int i;
-
-								if (!State.Table.IsHeaderRow && !State.Table.HeaderEmitted)
-								{
-									State.Table.HeaderEmitted = true;
-
-									if (!State.Table.HasHeaderRows)
+									foreach (char ch in Style.StyleChanges)
 									{
-										Markdown.Append("| &nbsp; ");
+										switch (ch)
+										{
+											case 'b':
+												AppendWhitespaceIfNoText(ref HasText, Markdown);
+												Markdown.Append("**");
+												Style.Bold = false;
+												break;
+
+											case 'i':
+												AppendWhitespaceIfNoText(ref HasText, Markdown);
+												Markdown.Append('*');
+												Style.Italic = false;
+												break;
+
+											case 'u':
+												AppendWhitespaceIfNoText(ref HasText, Markdown);
+												Markdown.Append('_');
+												Style.Underline = false;
+												break;
+
+											case 's':
+												AppendWhitespaceIfNoText(ref HasText, Markdown);
+												Markdown.Append('~');
+												Style.StrikeThrough = false;
+												break;
+
+											case 'I':
+												AppendWhitespaceIfNoText(ref HasText, Markdown);
+												Markdown.Append("__");
+												Style.Insert = false;
+												break;
+
+											case 'D':
+												AppendWhitespaceIfNoText(ref HasText, Markdown);
+												Markdown.Append("~~");
+												Style.Delete = false;
+												break;
+
+											case '^':
+												AppendWhitespaceIfNoText(ref HasText, Markdown);
+												Markdown.Append(']');
+												Style.Superscript = false;
+												break;
+
+											case 'v':
+												AppendWhitespaceIfNoText(ref HasText, Markdown);
+												Markdown.Append(']');
+												Style.Subscript = false;
+												break;
+
+											case 'c':
+												AppendWhitespaceIfNoText(ref HasText, Markdown);
+												Markdown.Append('`');
+												Style.InlineCode = false;
+												break;
+										}
+									}
+
+									Style.StyleChanges = null;
+								}
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "rPr":
+							if (Element is ParagraphMarkRunProperties ParagraphMarkRunProperties)
+								HasText = ExportAsMarkdown(ParagraphMarkRunProperties.Elements(), Markdown, Style, State);
+							else if (Element is RunProperties RunProperties)
+								HasText = ExportAsMarkdown(RunProperties.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "rStyle":
+							if (!(Element is RunStyle))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "b":
+							if (Element is Bold)
+							{
+								if (!Style.Bold && !Style.ParagraphStyle)
+								{
+									Markdown.Append("**");
+									Style.Bold = true;
+									Style.StyleChanged('b');
+								}
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "bCs":
+							if (!(Element is BoldComplexScript))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "i":
+							if (Element is Italic)
+							{
+								if (!Style.Italic && !Style.ParagraphStyle)
+								{
+									Markdown.Append('*');
+									Style.Italic = true;
+									Style.StyleChanged('i');
+								}
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "iCs":
+							if (!(Element is ItalicComplexScript))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "strike":
+							if (Element is Strike)
+							{
+								if (!Style.StrikeThrough && !Style.ParagraphStyle)
+								{
+									Markdown.Append('~');
+									Style.StrikeThrough = true;
+									Style.StyleChanged('s');
+								}
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "dstrike":
+							if (Element is DoubleStrike)
+							{
+								if (!Style.Delete && !Style.ParagraphStyle)
+								{
+									Markdown.Append("~~");
+									Style.Delete = true;
+									Style.StyleChanged('D');
+								}
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "u":
+							if (Element is Underline Underline)
+							{
+								if (Underline.Val.HasValue && !Style.ParagraphStyle)
+								{
+									switch (Underline.Val.Value)
+									{
+										case UnderlineValues.Single:
+										case UnderlineValues.Words:
+										case UnderlineValues.Dotted:
+										case UnderlineValues.Dash:
+										case UnderlineValues.DashLong:
+										case UnderlineValues.DotDash:
+										case UnderlineValues.DotDotDash:
+										case UnderlineValues.Wave:
+										default:
+											if (!Style.Underline)
+											{
+												Markdown.Append('_');
+												Style.Underline = true;
+												Style.StyleChanged('u');
+											}
+											break;
+
+										case UnderlineValues.Double:
+										case UnderlineValues.Thick:
+										case UnderlineValues.DottedHeavy:
+										case UnderlineValues.DashedHeavy:
+										case UnderlineValues.DashLongHeavy:
+										case UnderlineValues.DashDotHeavy:
+										case UnderlineValues.DashDotDotHeavy:
+										case UnderlineValues.WavyHeavy:
+										case UnderlineValues.WavyDouble:
+											if (!Style.Insert)
+											{
+												Markdown.Append("__");
+												Style.Insert = true;
+												Style.StyleChanged('I');
+											}
+											break;
+
+										case UnderlineValues.None:
+											break;
+									}
+								}
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "vertAlign":
+							if (Element is VerticalTextAlignment VerticalTextAlignment)
+							{
+								if (VerticalTextAlignment.Val.HasValue)
+								{
+									switch (VerticalTextAlignment.Val.Value)
+									{
+										case VerticalPositionValues.Superscript:
+											if (!Style.Superscript)
+											{
+												Markdown.Append("^[");
+												Style.Superscript = true;
+												Style.StyleChanged('^');
+											}
+											break;
+
+										case VerticalPositionValues.Subscript:
+											if (!Style.Subscript)
+											{
+												Markdown.Append("[");
+												Style.Subscript = true;
+												Style.StyleChanged('v');
+											}
+											break;
+
+										case VerticalPositionValues.Baseline:
+											break;
+									}
+								}
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "sz":
+							if (!(Element is FontSize))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "szCs":
+							if (!(Element is FontSizeComplexScript))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "t":
+							if (Element is Text Text)
+							{
+								string s = Text.InnerText;
+
+								if (!string.IsNullOrEmpty(s))
+								{
+									Markdown.Append(MarkdownDocument.Encode(Text.InnerText));
+									HasText = true;
+								}
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "tbl":
+							if (Element is Table Table)
+							{
+								TableInfo Bak = State.Table;
+								State.Table = new TableInfo();
+
+								HasText = ExportAsMarkdown(Table.Elements(), Markdown, Style, State);
+								Markdown.AppendLine();
+
+								State.Table = Bak;
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "tblPr":
+							if (Element is TableProperties TableProperties)
+								HasText = ExportAsMarkdown(TableProperties.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "tblStyle":
+							if (!(Element is TableStyle))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "tblW":
+							if (!(Element is TableWidth))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "tblLayout":
+							if (!(Element is TableLayout))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "tblLook":
+							if (!(Element is TableLook))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "tblGrid":
+							if (Element is TableGrid TableGrid)
+								HasText = ExportAsMarkdown(TableGrid.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "tblHeader":
+							if (Element is TableHeader TableHeader)
+							{
+								if (!(State.Table is null))
+								{
+									State.Table.IsHeaderRow = true;
+									State.Table.HasHeaderRows = true;
+								}
+
+								HasText = ExportAsMarkdown(TableHeader.Elements(), Markdown, Style, State);
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "gridCol":
+							if (Element is GridColumn)
+							{
+								if (!(State.Table is null))
+								{
+									State.Table.ColumnAlignments.Add(MarkdownModel.TextAlignment.Left);
+									State.Table.NrColumns++;
+								}
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "tr":
+							if (Element is TableRow TableRow)
+							{
+								if (!(State.Table is null))
+								{
+									State.Table.ColumnIndex = 0;
+									State.Table.ColumnContents.Clear();
+									State.Table.IsHeaderRow = false;
+									HasText = ExportAsMarkdown(TableRow.Elements(), Markdown, Style, State);
+
+									int i;
+
+									if (!State.Table.IsHeaderRow && !State.Table.HeaderEmitted)
+									{
+										State.Table.HeaderEmitted = true;
+
+										if (!State.Table.HasHeaderRows)
+										{
+											Markdown.Append("| &nbsp; ");
+
+											for (i = 0; i < State.Table.NrColumns; i++)
+												Markdown.Append('|');
+
+											Markdown.AppendLine();
+										}
+
+										Markdown.Append('|');
 
 										for (i = 0; i < State.Table.NrColumns; i++)
-											Markdown.Append('|');
+										{
+											switch (State.Table.ColumnAlignments[i])
+											{
+												case MarkdownModel.TextAlignment.Left:
+													Markdown.Append(":---|");
+													break;
+
+												case MarkdownModel.TextAlignment.Center:
+													Markdown.Append(":--:|");
+													break;
+
+												case MarkdownModel.TextAlignment.Right:
+													Markdown.Append("---:|");
+													break;
+
+												default:
+													Markdown.Append("----|");
+													break;
+											}
+										}
 
 										Markdown.AppendLine();
 									}
 
-									Markdown.Append('|');
-
 									for (i = 0; i < State.Table.NrColumns; i++)
 									{
-										switch (State.Table.ColumnAlignments[i])
+										if (i < State.Table.ColumnContents.Count)
 										{
-											case MarkdownModel.TextAlignment.Left:
-												Markdown.Append(":---|");
-												break;
+											StringBuilder Column = State.Table.ColumnContents[i];
 
-											case MarkdownModel.TextAlignment.Center:
-												Markdown.Append(":--:|");
-												break;
-
-											case MarkdownModel.TextAlignment.Right:
-												Markdown.Append("---:|");
-												break;
-
-											default:
-												Markdown.Append("----|");
-												break;
-										}
-									}
-
-									Markdown.AppendLine();
-								}
-
-								for (i = 0; i < State.Table.NrColumns; i++)
-								{
-									if (i < State.Table.ColumnContents.Count)
-									{
-										StringBuilder Column = State.Table.ColumnContents[i];
-
-										if (Column is null)
-											Markdown.Append('|');
-										else
-										{
-											Markdown.Append("| ");
-
-											string s = Column.ToString().TrimEnd();
-											bool Simple = s.IndexOfAny(simpleCharsProhibited) < 0;
-
-											if (Simple)
-											{
-												Markdown.Append(s);
-
-												if (!s.EndsWith(" "))
-													Markdown.Append(' ');
-											}
+											if (Column is null)
+												Markdown.Append('|');
 											else
 											{
-												if (State.Footnotes is null)
-													State.Footnotes = new Dictionary<string, string>();
+												Markdown.Append("| ");
 
-												string FootnoteKey = "n" + (++State.NrFootnotes).ToString();
-												State.Footnotes[FootnoteKey] = s;
+												string s = Column.ToString().TrimEnd();
+												bool Simple = s.IndexOfAny(simpleCharsProhibited) < 0;
 
-												Markdown.Append("[^");
-												Markdown.Append(FootnoteKey);
-												Markdown.Append("] ");
+												if (Simple)
+												{
+													Markdown.Append(s);
+
+													if (!s.EndsWith(" "))
+														Markdown.Append(' ');
+												}
+												else
+												{
+													if (State.Footnotes is null)
+														State.Footnotes = new Dictionary<string, string>();
+
+													string FootnoteKey = "n" + (++State.NrFootnotes).ToString();
+													State.Footnotes[FootnoteKey] = s;
+
+													Markdown.Append("[^");
+													Markdown.Append(FootnoteKey);
+													Markdown.Append("] ");
+												}
 											}
 										}
+										else
+											Markdown.Append('|');
 									}
-									else
-										Markdown.Append('|');
-								}
 
-								Markdown.AppendLine("|");
-							}
-						}
-						else
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "trPr":
-						if (Element is TableRowProperties TableRowProperties)
-							HasText = ExportAsMarkdown(TableRowProperties.Elements(), Markdown, Style, State);
-						else
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "cnfStyle":
-						if (Element is ConditionalFormatStyle ConditionalFormatStyle)
-						{
-							if (!(State.Table is null) &&
-								!State.Table.HasHeaderRows &&
-								ConditionalFormatStyle.FirstRow.HasValue &&
-								ConditionalFormatStyle.FirstRow.Value)
-							{
-								State.Table.HasHeaderRows = true;
-								State.Table.IsHeaderRow = true;
-							}
-
-							HasText = ExportAsMarkdown(ConditionalFormatStyle.Elements(), Markdown, Style, State);
-						}
-						else
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "tc":
-						if (Element is TableCell TableCell)
-						{
-							StringBuilder CellMarkdown = new StringBuilder();
-							State.Table.ColumnContents.Add(CellMarkdown);
-							HasText = ExportAsMarkdown(TableCell.Elements(), CellMarkdown, Style, State);
-							State.Table.ColumnIndex++;
-						}
-						else
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "tcPr":
-						if (Element is TableCellProperties TableCellProperties)
-							HasText = ExportAsMarkdown(TableCellProperties.Elements(), Markdown, Style, State);
-						else
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "tcW":
-						if (!(Element is TableCellWidth))
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "gridSpan":
-						if (Element is GridSpan GridSpan)
-						{
-							HasText = ExportAsMarkdown(GridSpan.Elements(), Markdown, Style, State);
-
-							if (GridSpan.Val.HasValue && !(State.Table is null))
-							{
-								int i = GridSpan.Val.Value;
-
-								while (i-- > 1)
-								{
-									State.Table.ColumnContents.Add(null);
-									State.Table.ColumnIndex++;
+									Markdown.AppendLine("|");
 								}
 							}
-						}
-						else
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "tcBorders":
-						if (!(Element is TableCellBorders))
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "spacing":
-						if (!(Element is SpacingBetweenLines))
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "jc":
-						if (!(Element is Justification) && !(Element is TableJustification))
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "rFonts":
-						if (Element is RunFonts RunFonts)
-						{
-							if (IsCodeFont(RunFonts))
-							{
-								if (Style.ParagraphStyle)
-								{
-									Style.CodeBlock = true;
-									Style.InlineCode = true;
-								}
-								else if (!Style.InlineCode)
-								{
-									Markdown.Append('`');
-									Style.InlineCode = true;
-									Style.StyleChanged('c');
-								}
-							}
-						}
-						else
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "top":
-						if (!(Element is TopBorder))
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "bottom":
-						if (!(Element is BottomBorder))
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "br":
-						if (Element is Break)
-							Markdown.AppendLine("  ");
-						else
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "hyperlink":
-						if (Element is Hyperlink Hyperlink)
-						{
-							Markdown.Append('[');
-							HasText = ExportAsMarkdown(Hyperlink.Elements(), Markdown, Style, State);
-							Markdown.Append("](");
-
-							if (State.TryGetHyperlink(Hyperlink.Id, out string Link))
-								Markdown.Append(Link);
-
-							Markdown.Append(')');
-						}
-						else
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "pStyle":
-						if (Element is ParagraphStyleId ParagraphStyleId)
-						{
-							string StyleId = ParagraphStyleId.Val?.Value?.ToUpper() ?? string.Empty;
-
-							if (styleIds.CheckVanityResource(ref StyleId))
-							{
-								switch (StyleId)
-								{
-									case "TITLE":
-										Markdown.Append("# ");
-										HasText = true;
-										break;
-
-									case "H1":
-										Markdown.Append("## ");
-										HasText = true;
-										break;
-
-									case "H2":
-										Markdown.Append("### ");
-										HasText = true;
-										break;
-
-									case "H3":
-										Markdown.Append("#### ");
-										HasText = true;
-										break;
-
-									case "H4":
-										Markdown.Append("##### ");
-										HasText = true;
-										break;
-
-									case "H5":
-										Markdown.Append("###### ");
-										HasText = true;
-										break;
-
-									case "H6":
-										Markdown.Append("####### ");
-										HasText = true;
-										break;
-
-									case "H7":
-										Markdown.Append("######## ");
-										HasText = true;
-										break;
-
-									case "H8":
-										Markdown.Append("######### ");
-										HasText = true;
-										break;
-
-									case "H9":
-										Markdown.Append("########## ");
-										HasText = true;
-										break;
-
-									case "LIST":
-										Style.ParagraphType = ParagraphType.Continuation;
-										HasText = true;
-										break;
-
-									case "QUOTE":
-										Markdown.Append("> ");
-										HasText = true;
-										break;
-
-									case "NORMAL":
-									default:
-										HasText = false;
-										break;
-								}
-							}
-						}
-						else
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "numPr":
-						if (Element is NumberingProperties NumberingProperties)
-						{
-							Style.ItemLevel = null;
-							Style.ItemNumber = null;
-							HasText = ExportAsMarkdown(NumberingProperties.Elements(), Markdown, Style, State);
-						}
-						else
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "ilvl":
-						if (Element is NumberingLevelReference NumberingLevelReference)
-						{
-							if (NumberingLevelReference.Val.HasValue)
-								Style.ItemLevel = NumberingLevelReference.Val.Value;
 							else
-								Style.ItemLevel = null;
+								State.UnrecognizedElement(Element);
+							break;
 
-							HasText = ExportAsMarkdown(NumberingLevelReference.Elements(), Markdown, Style, State);
-						}
-						else
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "numId":
-						if (Element is NumberingId NumberingId)
-						{
-							if (!NumberingId.Val.HasValue)
-								Style.ItemNumber = null;
+						case "trPr":
+							if (Element is TableRowProperties TableRowProperties)
+								HasText = ExportAsMarkdown(TableRowProperties.Elements(), Markdown, Style, State);
 							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "cnfStyle":
+							if (Element is ConditionalFormatStyle ConditionalFormatStyle)
 							{
-								Style.ItemNumber = NumberingId.Val.Value;
-
-								if (Style.ItemLevel.HasValue)
+								if (!(State.Table is null) &&
+									!State.Table.HasHeaderRows &&
+									ConditionalFormatStyle.FirstRow.HasValue &&
+									ConditionalFormatStyle.FirstRow.Value)
 								{
-									int i = Style.ItemLevel.Value;
+									State.Table.HasHeaderRows = true;
+									State.Table.IsHeaderRow = true;
+								}
 
-									if (i > 0)
-										Indentation(Markdown, i);
+								HasText = ExportAsMarkdown(ConditionalFormatStyle.Elements(), Markdown, Style, State);
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
 
-									if (State.TryGetNumberingFormat(NumberingId.Val.Value,
-										out AbstractNum Num, out _))
+						case "tc":
+							if (Element is TableCell TableCell)
+							{
+								StringBuilder CellMarkdown = new StringBuilder();
+								State.Table.ColumnContents.Add(CellMarkdown);
+								HasText = ExportAsMarkdown(TableCell.Elements(), CellMarkdown, Style, State);
+								State.Table.ColumnIndex++;
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "tcPr":
+							if (Element is TableCellProperties TableCellProperties)
+								HasText = ExportAsMarkdown(TableCellProperties.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "tcW":
+							if (!(Element is TableCellWidth))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "gridSpan":
+							if (Element is GridSpan GridSpan)
+							{
+								HasText = ExportAsMarkdown(GridSpan.Elements(), Markdown, Style, State);
+
+								if (GridSpan.Val.HasValue && !(State.Table is null))
+								{
+									int i = GridSpan.Val.Value;
+
+									while (i-- > 1)
 									{
-										foreach (Level Lvl in Num.Elements<Level>())
-										{
-											if (i-- == 0)
-											{
-												if (!(Lvl.StartNumberingValue is null) &&
-													Lvl.StartNumberingValue.Val.HasValue)
-												{
-													Style.OrdinalNumber = Lvl.StartNumberingValue.Val.Value;
-												}
-
-												if (!(Lvl.NumberingFormat?.Val is null))
-												{
-
-													switch (Lvl.NumberingFormat.Val.Value)
-													{
-														case NumberFormatValues.Decimal:
-														case NumberFormatValues.UpperRoman:
-														case NumberFormatValues.LowerRoman:
-														case NumberFormatValues.Ordinal:
-														case NumberFormatValues.JapaneseCounting:
-														case NumberFormatValues.DecimalFullWidth:
-														case NumberFormatValues.DecimalHalfWidth:
-														case NumberFormatValues.JapaneseLegal:
-														case NumberFormatValues.JapaneseDigitalTenThousand:
-														case NumberFormatValues.DecimalEnclosedCircle:
-														case NumberFormatValues.DecimalFullWidth2:
-														case NumberFormatValues.DecimalZero:
-														case NumberFormatValues.Ganada:
-														case NumberFormatValues.Chosung:
-														case NumberFormatValues.DecimalEnclosedFullstop:
-														case NumberFormatValues.DecimalEnclosedParen:
-														case NumberFormatValues.DecimalEnclosedCircleChinese:
-														case NumberFormatValues.TaiwaneseCounting:
-														case NumberFormatValues.TaiwaneseCountingThousand:
-														case NumberFormatValues.TaiwaneseDigital:
-														case NumberFormatValues.ChineseCounting:
-														case NumberFormatValues.ChineseCountingThousand:
-														case NumberFormatValues.KoreanDigital:
-														case NumberFormatValues.KoreanCounting:
-														case NumberFormatValues.KoreanLegal:
-														case NumberFormatValues.KoreanDigital2:
-														case NumberFormatValues.VietnameseCounting:
-														case NumberFormatValues.NumberInDash:
-														case NumberFormatValues.Hebrew1:
-														case NumberFormatValues.ArabicAbjad:
-														case NumberFormatValues.HindiNumbers:
-														case NumberFormatValues.HindiCounting:
-														case NumberFormatValues.ThaiNumbers:
-														case NumberFormatValues.ThaiCounting:
-															Style.ParagraphType = ParagraphType.OrderedList;
-															HasText = true;
-
-															if (Style.SameNubmering || !Style.OrdinalNumber.HasValue)
-																Markdown.Append("#.\t");
-															else
-															{
-																Markdown.Append(Style.OrdinalNumber.Value.ToString());
-																Markdown.Append(".\t");
-															}
-															break;
-
-														case NumberFormatValues.UpperLetter:
-														case NumberFormatValues.LowerLetter:
-														case NumberFormatValues.CardinalText:
-														case NumberFormatValues.OrdinalText:
-														case NumberFormatValues.Hex:
-														case NumberFormatValues.Chicago:
-														case NumberFormatValues.IdeographDigital:
-														case NumberFormatValues.Aiueo:
-														case NumberFormatValues.Iroha:
-														case NumberFormatValues.AiueoFullWidth:
-														case NumberFormatValues.IrohaFullWidth:
-														case NumberFormatValues.Bullet:
-														case NumberFormatValues.IdeographEnclosedCircle:
-														case NumberFormatValues.IdeographTraditional:
-														case NumberFormatValues.IdeographZodiac:
-														case NumberFormatValues.IdeographZodiacTraditional:
-														case NumberFormatValues.IdeographLegalTraditional:
-														case NumberFormatValues.ChineseLegalSimplified:
-														case NumberFormatValues.RussianLower:
-														case NumberFormatValues.RussianUpper:
-														case NumberFormatValues.Hebrew2:
-														case NumberFormatValues.ArabicAlpha:
-														case NumberFormatValues.HindiVowels:
-														case NumberFormatValues.HindiConsonants:
-														case NumberFormatValues.ThaiLetters:
-														case NumberFormatValues.BahtText:
-														case NumberFormatValues.DollarText:
-														case NumberFormatValues.Custom:
-														default:
-															Style.ParagraphType = ParagraphType.BulletList;
-															HasText = true;
-
-															if (Style.ItemLevel.HasValue)
-															{
-																switch (Style.ItemLevel.Value % 3)
-																{
-																	case 0:
-																		Markdown.Append("*\t");
-																		break;
-
-																	case 1:
-																		Markdown.Append("-\t");
-																		break;
-
-																	case 2:
-																		Markdown.Append("+\t");
-																		break;
-																}
-															}
-															else
-																Markdown.Append("*\t");
-															break;
-
-														case NumberFormatValues.None:
-															Style.ParagraphType = ParagraphType.Continuation;
-															HasText = true;
-															Markdown.Append('\t');
-															break;
-													}
-												}
-												else if (Lvl.LevelText.Val.HasValue)
-												{
-													if (Lvl.LevelText.Val.Value.Contains("%"))
-														Style.ItemNumber = -1;
-													else
-														Style.ItemNumber = null;
-												}
-
-												break;
-											}
-										}
+										State.Table.ColumnContents.Add(null);
+										State.Table.ColumnIndex++;
 									}
 								}
 							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
 
-							HasText = ExportAsMarkdown(NumberingId.Elements(), Markdown, Style, State);
-						}
-						else
-							State.UnrecognizedElement(Element);
-						break;
+						case "tcBorders":
+							if (!(Element is TableCellBorders))
+								State.UnrecognizedElement(Element);
+							break;
 
-					case "ind":
-						if (!(Element is Indentation))
-							State.UnrecognizedElement(Element);
-						break;
+						case "spacing":
+							if (!(Element is SpacingBetweenLines))
+								State.UnrecognizedElement(Element);
+							break;
 
-					case "lastRenderedPageBreak":
-						if (!(Element is LastRenderedPageBreak))
-							State.UnrecognizedElement(Element);
-						break;
+						case "jc":
+							if (!(Element is Justification) && !(Element is TableJustification))
+								State.UnrecognizedElement(Element);
+							break;
 
-					case "bookmarkStart":
-						if (!(Element is BookmarkStart))
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "bookmarkEnd":
-						if (!(Element is BookmarkEnd))
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "tblBorders":
-						if (!(Element is TableBorders))
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "left":
-						if (!(Element is LeftBorder))
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "right":
-						if (!(Element is RightBorder))
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "insideH":
-						if (!(Element is InsideHorizontalBorder))
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "insideV":
-						if (!(Element is InsideVerticalBorder))
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "sectPr":
-						if (Element is SectionProperties SectionProperties)
-						{
-							HasText = ExportAsMarkdown(SectionProperties.Elements(), Markdown, Style, State);
-							if (!Style.NewSection.HasValue)
-								Style.NewSection = 1;
-						}
-						else
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "type":
-						if (Element is SectionType SectionType)
-						{
-							if (SectionType.Val.HasValue)
+						case "rFonts":
+							if (Element is RunFonts RunFonts)
 							{
-								switch (SectionType.Val.Value)
+								if (IsCodeFont(RunFonts))
 								{
-									case SectionMarkValues.EvenPage:
-									case SectionMarkValues.OddPage:
-									case SectionMarkValues.Continuous:
-									case SectionMarkValues.NextPage:
-										Style.NewSection = 1;
-										break;
-
-									case SectionMarkValues.NextColumn:
-									default:
-										break;
+									if (Style.ParagraphStyle)
+									{
+										Style.CodeBlock = true;
+										Style.InlineCode = true;
+									}
+									else if (!Style.InlineCode)
+									{
+										Markdown.Append('`');
+										Style.InlineCode = true;
+										Style.StyleChanged('c');
+									}
 								}
 							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
 
-							HasText = ExportAsMarkdown(SectionType.Elements(), Markdown, Style, State);
-						}
-						else
-							State.UnrecognizedElement(Element);
-						break;
+						case "top":
+							if (!(Element is TopBorder))
+								State.UnrecognizedElement(Element);
+							break;
 
-					case "col":
-						if (!(Element is Column))
-							State.UnrecognizedElement(Element);
-						break;
+						case "bottom":
+							if (!(Element is BottomBorder))
+								State.UnrecognizedElement(Element);
+							break;
 
-					case "pgSz":
-						if (Element is PageSize PageSize)
-							HasText = ExportAsMarkdown(PageSize.Elements(), Markdown, Style, State);
-						else
-							State.UnrecognizedElement(Element);
-						break;
+						case "br":
+							if (Element is Break)
+								Markdown.AppendLine("  ");
+							else
+								State.UnrecognizedElement(Element);
+							break;
 
-					case "pgMar":
-						if (Element is PageMargin PageMargin)
-							HasText = ExportAsMarkdown(PageMargin.Elements(), Markdown, Style, State);
-						else
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "cols":
-						if (Element is Columns Columns)
-						{
-							if (Style.NewSection.HasValue && !(Columns.ColumnCount is null) && Columns.ColumnCount.HasValue)
-								Style.NewSection = Columns.ColumnCount.Value;
-
-							HasText = ExportAsMarkdown(Columns.Elements(), Markdown, Style, State);
-						}
-						else
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "pBdr":
-						if (Element is ParagraphBorders ParagraphBorders)
-						{
-							if (!(ParagraphBorders.BottomBorder is null))
-								Style.HorizontalSeparator = true;
-						}
-						else
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "footerReference":
-						if (!(Element is FooterReference))
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "docGrid":
-						if (!(Element is DocGrid))
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "lang":
-						if (!(Element is Languages))
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "proofErr":
-						if (!(Element is ProofError))
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "shd":
-						if (!(Element is Shading))
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "color":
-						if (!(Element is Color))
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "kern":
-						if (!(Element is Kern))
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "keepNext":
-						if (!(Element is KeepNext))
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "fldSimple":
-						if (Element is SimpleField SimpleField)
-						{
-							if (!(SimpleField.Instruction is null))
+						case "hyperlink":
+							if (Element is Hyperlink Hyperlink)
 							{
-								string Instruction = SimpleField.Instruction.Value;
-								Match M = simpleFieldInstruction.Match(Instruction);
-								if (M.Success && M.Index == 0 && M.Length == Instruction.Length)
+								Markdown.Append('[');
+								HasText = ExportAsMarkdown(Hyperlink.Elements(), Markdown, Style, State);
+								Markdown.Append("](");
+
+								if (State.TryGetHyperlink(Hyperlink.Id, out string Link))
+									Markdown.Append(Link);
+
+								Markdown.Append(')');
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "pStyle":
+							if (Element is ParagraphStyleId ParagraphStyleId)
+							{
+								string StyleId = ParagraphStyleId.Val?.Value?.ToUpper() ?? string.Empty;
+
+								if (styleIds.CheckVanityResource(ref StyleId))
 								{
-									string Command = M.Groups["Command"].Value;
-									string Argument = M.Groups["Argument"].Value;
-									//string Type = M.Groups["Type"].Value;
-									string Argument2 = M.Groups["Argument2"].Value;
-									string Content = null;
-
-									// Ref: http://officeopenxml.com/WPfieldInstructions.php
-									switch (Command.ToUpper())
+									switch (StyleId)
 									{
-										case "DATE":
-										case "TIME":
-											Content = ToString(DateTime.Now, Argument2);
-											break;
-
-										case "CREATEDATE":
-											Content = ToString(State.Doc.PackageProperties.Created, Argument2);
-											break;
-
-										case "EDITTIME":
-										case "SAVEDATE":
-											Content = ToString(State.Doc.PackageProperties.Modified, Argument2);
-											break;
-
-										case "PRINTDATE":
-											Content = ToString(State.Doc.PackageProperties.LastPrinted, Argument2);
-											break;
-
-										case "SUBJECT":
-											Content = MarkdownDocument.Encode(State.Doc.PackageProperties.Subject);
-											break;
-
 										case "TITLE":
-											Content = MarkdownDocument.Encode(State.Doc.PackageProperties.Title);
+											Markdown.Append("# ");
+											HasText = true;
 											break;
 
-										case "REVNUM":
-											Content = MarkdownDocument.Encode(State.Doc.PackageProperties.Revision);
+										case "H1":
+											Markdown.Append("## ");
+											HasText = true;
 											break;
 
-										case "AUTHOR":
-											Content = MarkdownDocument.Encode(State.Doc.PackageProperties.Creator);
+										case "H2":
+											Markdown.Append("### ");
+											HasText = true;
 											break;
 
-										case "LASTSAVEDBY":
-											Content = MarkdownDocument.Encode(State.Doc.PackageProperties.LastModifiedBy);
+										case "H3":
+											Markdown.Append("#### ");
+											HasText = true;
 											break;
 
-										case "FILENAME":
-											Content = MarkdownDocument.Encode(State.FileName);
+										case "H4":
+											Markdown.Append("##### ");
+											HasText = true;
 											break;
 
-										case "FILESIZE":
-											Content = ToString(State.FileSize, Argument2);
+										case "H5":
+											Markdown.Append("###### ");
+											HasText = true;
 											break;
 
-										case "KEYWORDS":
-											Content = MarkdownDocument.Encode(State.Doc.PackageProperties.Keywords);
+										case "H6":
+											Markdown.Append("####### ");
+											HasText = true;
 											break;
 
-										case "SEQ":
-											if (State.Sequences is null)
-												State.Sequences = new Dictionary<string, int>();
-
-											if (!State.Sequences.TryGetValue(Argument, out int i))
-												i = 0;
-
-											State.Sequences[Argument] = ++i;
-											Content = ToString(i, Argument2);
+										case "H7":
+											Markdown.Append("######## ");
+											HasText = true;
 											break;
 
-										case "FORMCHECKBOX":
-										case "FORMDROPDOWN":
-										case "FORMTEXT":
-										case "TOC":
-										case "HYPERLINK":
-										case "SECTION":
+										case "H8":
+											Markdown.Append("######### ");
+											HasText = true;
+											break;
 
-										case "COMPARE":
-										case "DOCVARIABLE":
-										case "GOTOBUTTON":
-										case "IF":
-										case "MACROBUTTON":
-										case "PRINT":
-										case "COMMENTS":
-										case "DOCPROPERTY":
-										case "NUMCHARS":
-										case "NUMPAGES":
-										case "NUMWORDS":
-										case "TEMPLATE":
-										case "ADVANCE":
-										case "SYMBOL":
-										case "INDEX":
-										case "RD":
-										case "TA":
-										case "TC":
-										case "XE":
-										case "AUTOTEXT":
-										case "AUTOTEXTLIST":
-										case "BIBLIOGRAPHY":
-										case "CITATION":
-										case "INCLUDEPICTURE":
-										case "INCLUDETEXT":
-										case "LINK":
-										case "NOTEREF":
-										case "PAGEREF":
+										case "H9":
+											Markdown.Append("########## ");
+											HasText = true;
+											break;
+
+										case "LIST":
+											Style.ParagraphType = ParagraphType.Continuation;
+											HasText = true;
+											break;
+
 										case "QUOTE":
-										case "REF":
-										case "STYLEREF":
-										case "ADDRESSBLOCK":
-										case "ASK":
-										case "DATABASE":
-										case "FILLIN":
-										case "GREETINGLINE":
-										case "MERGEFIELD":
-										case "MERGEREC":
-										case "MERGESEQ":
-										case "NEXT":
-										case "NEXTIF":
-										case "SET":
-										case "SKIPIF":
-										case "LISTNUM":
-										case "PAGE":
-										case "SECTIONPAGES":
-										case "USERADDRESS":
-										case "USERINITIALS":
-										case "USERNAME":
+											Markdown.Append("> ");
+											HasText = true;
+											break;
+
+										case "NORMAL":
+										default:
+											HasText = false;
 											break;
 									}
-
-									if (!string.IsNullOrEmpty(Content))
-										Markdown.Append(Content);
 								}
 							}
-						}
-						else
-							State.UnrecognizedElement(Element);
-						break;
+							else
+								State.UnrecognizedElement(Element);
+							break;
 
-					case "sdt":
-						if (Element is SdtBlock SdtBlock)
-						{
-							Style.DocPartGallery = null;
-							HasText = ExportAsMarkdown(SdtBlock.Elements(), Markdown, Style, State);
-						}
-						else
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "sdtPr":
-						if (Element is SdtProperties SdtProperties)
-							HasText = ExportAsMarkdown(SdtProperties.Elements(), Markdown, Style, State);
-						else
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "sdtEndPr":
-						if (Element is SdtEndCharProperties SdtEndCharProperties)
-							HasText = ExportAsMarkdown(SdtEndCharProperties.Elements(), Markdown, Style, State);
-						else
-							State.UnrecognizedElement(Element);
-						break;
-
-					case "sdtContent":
-						if (Element is SdtContentBlock SdtContentBlock)
-						{
-							switch (Style.DocPartGallery)
+						case "numPr":
+							if (Element is NumberingProperties NumberingProperties)
 							{
-								case "Table of Contents":
-									Markdown.AppendLine("![](toc)");
-									Markdown.AppendLine();
-									HasText = true;
-									break;
-
-								default:
-									HasText = ExportAsMarkdown(SdtContentBlock.Elements(), Markdown, Style, State);
-									break;
+								Style.ItemLevel = null;
+								Style.ItemNumber = null;
+								HasText = ExportAsMarkdown(NumberingProperties.Elements(), Markdown, Style, State);
 							}
-						}
-						else
-							State.UnrecognizedElement(Element);
-						break;
+							else
+								State.UnrecognizedElement(Element);
+							break;
 
-					case "id":
-						if (!(Element is SdtId))
-							State.UnrecognizedElement(Element);
-						break;
+						case "ilvl":
+							if (Element is NumberingLevelReference NumberingLevelReference)
+							{
+								if (NumberingLevelReference.Val.HasValue)
+									Style.ItemLevel = NumberingLevelReference.Val.Value;
+								else
+									Style.ItemLevel = null;
 
-					case "docPartObj":
-						if (Element is SdtContentDocPartObject SdtContentDocPartObject)
-							HasText = ExportAsMarkdown(SdtContentDocPartObject.Elements(), Markdown, Style, State);
-						else
-							State.UnrecognizedElement(Element);
-						break;
+								HasText = ExportAsMarkdown(NumberingLevelReference.Elements(), Markdown, Style, State);
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
 
-					case "docPartGallery":
-						if (Element is DocPartGallery DocPartGallery)
-						{
-							Style.DocPartGallery = DocPartGallery.Val?.Value ?? string.Empty;
-							HasText = ExportAsMarkdown(DocPartGallery.Elements(), Markdown, Style, State);
-						}
-						else
-							State.UnrecognizedElement(Element);
-						break;
+						case "numId":
+							if (Element is NumberingId NumberingId)
+							{
+								if (!NumberingId.Val.HasValue)
+									Style.ItemNumber = null;
+								else
+								{
+									Style.ItemNumber = NumberingId.Val.Value;
 
-					case "docPartUnique":
-						if(!(Element is DocPartUnique))
-							State.UnrecognizedElement(Element);
-						break;
+									if (Style.ItemLevel.HasValue)
+									{
+										int i = Style.ItemLevel.Value;
 
-					case "tabs":
-						if (!(Element is Tabs))
-							State.UnrecognizedElement(Element);
-						break;
+										if (i > 0)
+											Indentation(Markdown, i);
 
-					case "noProof":
-						if (!(Element is NoProof))
-							State.UnrecognizedElement(Element);
-						break;
+										if (State.TryGetNumberingFormat(NumberingId.Val.Value,
+											out AbstractNum Num, out _))
+										{
+											foreach (Level Lvl in Num.Elements<Level>())
+											{
+												if (i-- == 0)
+												{
+													if (!(Lvl.StartNumberingValue is null) &&
+														Lvl.StartNumberingValue.Val.HasValue)
+													{
+														Style.OrdinalNumber = Lvl.StartNumberingValue.Val.Value;
+													}
 
-					case "fldChar":
-						if (!(Element is FieldChar))
-							State.UnrecognizedElement(Element);
-						break;
+													if (!(Lvl.NumberingFormat?.Val is null))
+													{
 
-					case "instrText":
-						if (!(Element is FieldCode))
-							State.UnrecognizedElement(Element);
-						break;
+														switch (Lvl.NumberingFormat.Val.Value)
+														{
+															case NumberFormatValues.Decimal:
+															case NumberFormatValues.UpperRoman:
+															case NumberFormatValues.LowerRoman:
+															case NumberFormatValues.Ordinal:
+															case NumberFormatValues.JapaneseCounting:
+															case NumberFormatValues.DecimalFullWidth:
+															case NumberFormatValues.DecimalHalfWidth:
+															case NumberFormatValues.JapaneseLegal:
+															case NumberFormatValues.JapaneseDigitalTenThousand:
+															case NumberFormatValues.DecimalEnclosedCircle:
+															case NumberFormatValues.DecimalFullWidth2:
+															case NumberFormatValues.DecimalZero:
+															case NumberFormatValues.Ganada:
+															case NumberFormatValues.Chosung:
+															case NumberFormatValues.DecimalEnclosedFullstop:
+															case NumberFormatValues.DecimalEnclosedParen:
+															case NumberFormatValues.DecimalEnclosedCircleChinese:
+															case NumberFormatValues.TaiwaneseCounting:
+															case NumberFormatValues.TaiwaneseCountingThousand:
+															case NumberFormatValues.TaiwaneseDigital:
+															case NumberFormatValues.ChineseCounting:
+															case NumberFormatValues.ChineseCountingThousand:
+															case NumberFormatValues.KoreanDigital:
+															case NumberFormatValues.KoreanCounting:
+															case NumberFormatValues.KoreanLegal:
+															case NumberFormatValues.KoreanDigital2:
+															case NumberFormatValues.VietnameseCounting:
+															case NumberFormatValues.NumberInDash:
+															case NumberFormatValues.Hebrew1:
+															case NumberFormatValues.ArabicAbjad:
+															case NumberFormatValues.HindiNumbers:
+															case NumberFormatValues.HindiCounting:
+															case NumberFormatValues.ThaiNumbers:
+															case NumberFormatValues.ThaiCounting:
+																Style.ParagraphType = ParagraphType.OrderedList;
+																HasText = true;
 
-					case "webHidden":
-						if (!(Element is WebHidden))
-							State.UnrecognizedElement(Element);
-						break;
+																if (Style.SameNubmering || !Style.OrdinalNumber.HasValue)
+																	Markdown.Append("#.\t");
+																else
+																{
+																	Markdown.Append(Style.OrdinalNumber.Value.ToString());
+																	Markdown.Append(".\t");
+																}
+																break;
 
-					case "tab":
-						if (Element is TabChar)
-							Markdown.Append('\t');
-						else
-							State.UnrecognizedElement(Element);
-						break;
+															case NumberFormatValues.UpperLetter:
+															case NumberFormatValues.LowerLetter:
+															case NumberFormatValues.CardinalText:
+															case NumberFormatValues.OrdinalText:
+															case NumberFormatValues.Hex:
+															case NumberFormatValues.Chicago:
+															case NumberFormatValues.IdeographDigital:
+															case NumberFormatValues.Aiueo:
+															case NumberFormatValues.Iroha:
+															case NumberFormatValues.AiueoFullWidth:
+															case NumberFormatValues.IrohaFullWidth:
+															case NumberFormatValues.Bullet:
+															case NumberFormatValues.IdeographEnclosedCircle:
+															case NumberFormatValues.IdeographTraditional:
+															case NumberFormatValues.IdeographZodiac:
+															case NumberFormatValues.IdeographZodiacTraditional:
+															case NumberFormatValues.IdeographLegalTraditional:
+															case NumberFormatValues.ChineseLegalSimplified:
+															case NumberFormatValues.RussianLower:
+															case NumberFormatValues.RussianUpper:
+															case NumberFormatValues.Hebrew2:
+															case NumberFormatValues.ArabicAlpha:
+															case NumberFormatValues.HindiVowels:
+															case NumberFormatValues.HindiConsonants:
+															case NumberFormatValues.ThaiLetters:
+															case NumberFormatValues.BahtText:
+															case NumberFormatValues.DollarText:
+															case NumberFormatValues.Custom:
+															default:
+																Style.ParagraphType = ParagraphType.BulletList;
+																HasText = true;
 
-					default:
-						State.UnrecognizedElement(Element);
-						break;
-				}
+																if (Style.ItemLevel.HasValue)
+																{
+																	switch (Style.ItemLevel.Value % 3)
+																	{
+																		case 0:
+																			Markdown.Append("*\t");
+																			break;
+
+																		case 1:
+																			Markdown.Append("-\t");
+																			break;
+
+																		case 2:
+																			Markdown.Append("+\t");
+																			break;
+																	}
+																}
+																else
+																	Markdown.Append("*\t");
+																break;
+
+															case NumberFormatValues.None:
+																Style.ParagraphType = ParagraphType.Continuation;
+																HasText = true;
+																Markdown.Append('\t');
+																break;
+														}
+													}
+													else if (Lvl.LevelText.Val.HasValue)
+													{
+														if (Lvl.LevelText.Val.Value.Contains("%"))
+															Style.ItemNumber = -1;
+														else
+															Style.ItemNumber = null;
+													}
+
+													break;
+												}
+											}
+										}
+									}
+								}
+
+								HasText = ExportAsMarkdown(NumberingId.Elements(), Markdown, Style, State);
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "ind":
+							if (!(Element is Indentation))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "lastRenderedPageBreak":
+							if (!(Element is LastRenderedPageBreak))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "bookmarkStart":
+							if (!(Element is BookmarkStart))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "bookmarkEnd":
+							if (!(Element is BookmarkEnd))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "tblBorders":
+							if (!(Element is TableBorders))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "left":
+							if (!(Element is LeftBorder))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "right":
+							if (!(Element is RightBorder))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "insideH":
+							if (!(Element is InsideHorizontalBorder))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "insideV":
+							if (!(Element is InsideVerticalBorder))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "sectPr":
+							if (Element is SectionProperties SectionProperties)
+							{
+								HasText = ExportAsMarkdown(SectionProperties.Elements(), Markdown, Style, State);
+								if (!Style.NewSection.HasValue)
+									Style.NewSection = 1;
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "type":
+							if (Element is SectionType SectionType)
+							{
+								if (SectionType.Val.HasValue)
+								{
+									switch (SectionType.Val.Value)
+									{
+										case SectionMarkValues.EvenPage:
+										case SectionMarkValues.OddPage:
+										case SectionMarkValues.Continuous:
+										case SectionMarkValues.NextPage:
+											Style.NewSection = 1;
+											break;
+
+										case SectionMarkValues.NextColumn:
+										default:
+											break;
+									}
+								}
+
+								HasText = ExportAsMarkdown(SectionType.Elements(), Markdown, Style, State);
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "col":
+							if (!(Element is Column))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "pgSz":
+							if (Element is PageSize PageSize)
+								HasText = ExportAsMarkdown(PageSize.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "pgMar":
+							if (Element is PageMargin PageMargin)
+								HasText = ExportAsMarkdown(PageMargin.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "cols":
+							if (Element is Columns Columns)
+							{
+								if (Style.NewSection.HasValue && !(Columns.ColumnCount is null) && Columns.ColumnCount.HasValue)
+									Style.NewSection = Columns.ColumnCount.Value;
+
+								HasText = ExportAsMarkdown(Columns.Elements(), Markdown, Style, State);
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "pBdr":
+							if (Element is ParagraphBorders ParagraphBorders)
+							{
+								if (!(ParagraphBorders.BottomBorder is null))
+									Style.HorizontalSeparator = true;
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "footerReference":
+							if (!(Element is FooterReference))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "docGrid":
+							if (!(Element is DocGrid))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "lang":
+							if (!(Element is Languages))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "proofErr":
+							if (!(Element is ProofError))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "shd":
+							if (!(Element is Shading))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "color":
+							if (!(Element is Color))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "kern":
+							if (!(Element is Kern))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "keepNext":
+							if (!(Element is KeepNext))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "fldSimple":
+							if (Element is SimpleField SimpleField)
+							{
+								if (!(SimpleField.Instruction is null))
+								{
+									string Instruction = SimpleField.Instruction.Value;
+									Match M = simpleFieldInstruction.Match(Instruction);
+									if (M.Success && M.Index == 0 && M.Length == Instruction.Length)
+									{
+										string Command = M.Groups["Command"].Value;
+										string Argument = M.Groups["Argument"].Value;
+										//string Type = M.Groups["Type"].Value;
+										string Argument2 = M.Groups["Argument2"].Value;
+										string Content = null;
+
+										// Ref: http://officeopenxml.com/WPfieldInstructions.php
+										switch (Command.ToUpper())
+										{
+											case "DATE":
+											case "TIME":
+												Content = ToString(DateTime.Now, Argument2);
+												break;
+
+											case "CREATEDATE":
+												Content = ToString(State.Doc.PackageProperties.Created, Argument2);
+												break;
+
+											case "EDITTIME":
+											case "SAVEDATE":
+												Content = ToString(State.Doc.PackageProperties.Modified, Argument2);
+												break;
+
+											case "PRINTDATE":
+												Content = ToString(State.Doc.PackageProperties.LastPrinted, Argument2);
+												break;
+
+											case "SUBJECT":
+												Content = MarkdownDocument.Encode(State.Doc.PackageProperties.Subject);
+												break;
+
+											case "TITLE":
+												Content = MarkdownDocument.Encode(State.Doc.PackageProperties.Title);
+												break;
+
+											case "REVNUM":
+												Content = MarkdownDocument.Encode(State.Doc.PackageProperties.Revision);
+												break;
+
+											case "AUTHOR":
+												Content = MarkdownDocument.Encode(State.Doc.PackageProperties.Creator);
+												break;
+
+											case "LASTSAVEDBY":
+												Content = MarkdownDocument.Encode(State.Doc.PackageProperties.LastModifiedBy);
+												break;
+
+											case "FILENAME":
+												Content = MarkdownDocument.Encode(State.FileName);
+												break;
+
+											case "FILESIZE":
+												Content = ToString(State.FileSize, Argument2);
+												break;
+
+											case "KEYWORDS":
+												Content = MarkdownDocument.Encode(State.Doc.PackageProperties.Keywords);
+												break;
+
+											case "SEQ":
+												if (State.Sequences is null)
+													State.Sequences = new Dictionary<string, int>();
+
+												if (!State.Sequences.TryGetValue(Argument, out int i))
+													i = 0;
+
+												State.Sequences[Argument] = ++i;
+												Content = ToString(i, Argument2);
+												break;
+
+											case "FORMCHECKBOX":
+											case "FORMDROPDOWN":
+											case "FORMTEXT":
+											case "TOC":
+											case "HYPERLINK":
+											case "SECTION":
+
+											case "COMPARE":
+											case "DOCVARIABLE":
+											case "GOTOBUTTON":
+											case "IF":
+											case "MACROBUTTON":
+											case "PRINT":
+											case "COMMENTS":
+											case "DOCPROPERTY":
+											case "NUMCHARS":
+											case "NUMPAGES":
+											case "NUMWORDS":
+											case "TEMPLATE":
+											case "ADVANCE":
+											case "SYMBOL":
+											case "INDEX":
+											case "RD":
+											case "TA":
+											case "TC":
+											case "XE":
+											case "AUTOTEXT":
+											case "AUTOTEXTLIST":
+											case "BIBLIOGRAPHY":
+											case "CITATION":
+											case "INCLUDEPICTURE":
+											case "INCLUDETEXT":
+											case "LINK":
+											case "NOTEREF":
+											case "PAGEREF":
+											case "QUOTE":
+											case "REF":
+											case "STYLEREF":
+											case "ADDRESSBLOCK":
+											case "ASK":
+											case "DATABASE":
+											case "FILLIN":
+											case "GREETINGLINE":
+											case "MERGEFIELD":
+											case "MERGEREC":
+											case "MERGESEQ":
+											case "NEXT":
+											case "NEXTIF":
+											case "SET":
+											case "SKIPIF":
+											case "LISTNUM":
+											case "PAGE":
+											case "SECTIONPAGES":
+											case "USERADDRESS":
+											case "USERINITIALS":
+											case "USERNAME":
+												break;
+										}
+
+										if (!string.IsNullOrEmpty(Content))
+											Markdown.Append(Content);
+									}
+								}
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "sdt":
+							if (Element is SdtBlock SdtBlock)
+							{
+								Style.DocPartGallery = null;
+								HasText = ExportAsMarkdown(SdtBlock.Elements(), Markdown, Style, State);
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "sdtPr":
+							if (Element is SdtProperties SdtProperties)
+								HasText = ExportAsMarkdown(SdtProperties.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "sdtEndPr":
+							if (Element is SdtEndCharProperties SdtEndCharProperties)
+								HasText = ExportAsMarkdown(SdtEndCharProperties.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "sdtContent":
+							if (Element is SdtContentBlock SdtContentBlock)
+							{
+								switch (Style.DocPartGallery)
+								{
+									case "Table of Contents":
+										Markdown.AppendLine("![](toc)");
+										Markdown.AppendLine();
+										HasText = true;
+										break;
+
+									default:
+										HasText = ExportAsMarkdown(SdtContentBlock.Elements(), Markdown, Style, State);
+										break;
+								}
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "id":
+							if (!(Element is SdtId))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "docPartObj":
+							if (Element is SdtContentDocPartObject SdtContentDocPartObject)
+								HasText = ExportAsMarkdown(SdtContentDocPartObject.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "docPartGallery":
+							if (Element is DocPartGallery DocPartGallery)
+							{
+								Style.DocPartGallery = DocPartGallery.Val?.Value ?? string.Empty;
+								HasText = ExportAsMarkdown(DocPartGallery.Elements(), Markdown, Style, State);
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "docPartUnique":
+							if (!(Element is DocPartUnique))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "tabs":
+							if (!(Element is Tabs))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "noProof":
+							if (!(Element is NoProof))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "fldChar":
+							if (!(Element is FieldChar))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "instrText":
+							if (!(Element is FieldCode))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "webHidden":
+							if (!(Element is WebHidden))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "tab":
+							if (Element is TabChar)
+								Markdown.Append('\t');
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "drawing":
+							if (Element is Drawing Drawing)
+								HasText = ExportAsMarkdown(Drawing.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						default:
+							State.UnrecognizedElement(Element);
+							break;
+					}
+					break;
+
+				case Word2010Namespace:
+					switch (Element.LocalName)
+					{
+						case "ligatures":
+							if (Element is DocumentFormat.OpenXml.Office2010.Word.Ligatures Ligatures)
+								HasText = ExportAsMarkdown(Ligatures.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						default:
+							State.UnrecognizedElement(Element);
+							break;
+					}
+					break;
+
+				case Drawing2006Namespace:
+					switch (Element.LocalName)
+					{
+						case "graphicFrameLocks":
+							if (Element is DocumentFormat.OpenXml.Drawing.GraphicFrameLocks GraphicFrameLocks)
+								HasText = ExportAsMarkdown(GraphicFrameLocks.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "graphic":
+							if (Element is DocumentFormat.OpenXml.Drawing.Graphic Graphic)
+								HasText = ExportAsMarkdown(Graphic.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "graphicData":
+							if (Element is DocumentFormat.OpenXml.Drawing.GraphicData GraphicData)
+								HasText = ExportAsMarkdown(GraphicData.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "blip":
+							if (Element is DocumentFormat.OpenXml.Drawing.Blip Blip)
+							{
+								if (Blip.Embed.HasValue)
+								{
+									OpenXmlPart Part = State.Doc.MainDocumentPart.GetPartById(Blip.Embed.Value);
+									if (Part is ImagePart ImagePart)
+									{
+										using (Stream ImageStream = ImagePart.GetStream())
+										{
+											int c = (int)Math.Min(ImageStream.Length, int.MaxValue);
+											byte[] Bin = new byte[c];
+
+											ImageStream.Read(Bin, 0, c);
+
+											Markdown.Append("![](data:");
+											Markdown.Append(ImagePart.ContentType);
+											Markdown.Append(";base64,");
+											Markdown.Append(Convert.ToBase64String(Bin));
+											Markdown.Append(")");
+										}
+									}
+								}
+
+								HasText = ExportAsMarkdown(Blip.Elements(), Markdown, Style, State);
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "srcRect":
+							if (Element is DocumentFormat.OpenXml.Drawing.SourceRectangle SourceRectangle)
+								HasText = ExportAsMarkdown(SourceRectangle.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "stretch":
+							if (Element is DocumentFormat.OpenXml.Drawing.Stretch Stretch)
+								HasText = ExportAsMarkdown(Stretch.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "xfrm":
+							if (Element is DocumentFormat.OpenXml.Drawing.Transform2D Transform2D)
+								HasText = ExportAsMarkdown(Transform2D.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "prstGeom":
+							if (Element is DocumentFormat.OpenXml.Drawing.PresetGeometry PresetGeometry)
+								HasText = ExportAsMarkdown(PresetGeometry.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "noFill":
+							if (Element is DocumentFormat.OpenXml.Drawing.NoFill NoFill)
+								HasText = ExportAsMarkdown(NoFill.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "ln":
+							if (Element is DocumentFormat.OpenXml.Drawing.Outline Outline)
+								HasText = ExportAsMarkdown(Outline.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "picLocks":
+							if (Element is DocumentFormat.OpenXml.Drawing.PictureLocks PictureLocks)
+								HasText = ExportAsMarkdown(PictureLocks.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "extLst":
+							if (Element is DocumentFormat.OpenXml.Drawing.BlipExtensionList BlipExtensionList)
+								HasText = ExportAsMarkdown(BlipExtensionList.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "fillRect":
+							if (Element is DocumentFormat.OpenXml.Drawing.FillRectangle FillRectangle)
+								HasText = ExportAsMarkdown(FillRectangle.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "off":
+							if (Element is DocumentFormat.OpenXml.Drawing.Offset Offset)
+								HasText = ExportAsMarkdown(Offset.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "ext":
+							if (Element is DocumentFormat.OpenXml.Drawing.Extents Extents)
+								HasText = ExportAsMarkdown(Extents.Elements(), Markdown, Style, State);
+							else if (Element is DocumentFormat.OpenXml.Drawing.BlipExtension BlipExtension)
+								HasText = ExportAsMarkdown(BlipExtension.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "avLst":
+							if (Element is DocumentFormat.OpenXml.Drawing.AdjustValueList AdjustValueList)
+								HasText = ExportAsMarkdown(AdjustValueList.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						default:
+							State.UnrecognizedElement(Element);
+							break;
+					}
+					break;
+
+				case Drawing2010Namespace:
+					switch (Element.LocalName)
+					{
+						case "useLocalDpi":
+							if (Element is DocumentFormat.OpenXml.Office2010.Drawing.UseLocalDpi UseLocalDpi)
+								HasText = ExportAsMarkdown(UseLocalDpi.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						default:
+							State.UnrecognizedElement(Element);
+							break;
+					}
+					break;
+
+				case Picture2006Namespace:
+					switch (Element.LocalName)
+					{
+						case "pic":
+							if (Element is DocumentFormat.OpenXml.Drawing.Pictures.Picture Picture)
+								HasText = ExportAsMarkdown(Picture.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "nvPicPr":
+							if (Element is DocumentFormat.OpenXml.Drawing.Pictures.NonVisualPictureProperties NonVisualPictureProperties)
+								HasText = ExportAsMarkdown(NonVisualPictureProperties.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "blipFill":
+							if (Element is DocumentFormat.OpenXml.Drawing.Pictures.BlipFill BlipFill)
+								HasText = ExportAsMarkdown(BlipFill.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "spPr":
+							if (Element is DocumentFormat.OpenXml.Drawing.Pictures.ShapeProperties ShapeProperties)
+								HasText = ExportAsMarkdown(ShapeProperties.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "cNvPr":
+							if (Element is DocumentFormat.OpenXml.Drawing.Pictures.NonVisualDrawingProperties NonVisualDrawingProperties)
+								HasText = ExportAsMarkdown(NonVisualDrawingProperties.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "cNvPicPr":
+							if (Element is DocumentFormat.OpenXml.Drawing.Pictures.NonVisualPictureDrawingProperties NonVisualPictureDrawingProperties)
+								HasText = ExportAsMarkdown(NonVisualPictureDrawingProperties.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						default:
+							State.UnrecognizedElement(Element);
+							break;
+					}
+					break;
+
+				case WordprocessingDrawing2006Namespace:
+					switch (Element.LocalName)
+					{
+						case "inline":
+							if (Element is DocumentFormat.OpenXml.Drawing.Wordprocessing.Inline Inline)
+								HasText = ExportAsMarkdown(Inline.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "extent":
+							if (Element is DocumentFormat.OpenXml.Drawing.Wordprocessing.Extent Extent)
+								HasText = ExportAsMarkdown(Extent.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "effectExtent":
+							if (Element is DocumentFormat.OpenXml.Drawing.Wordprocessing.EffectExtent EffectExtent)
+								HasText = ExportAsMarkdown(EffectExtent.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "docPr":
+							if (Element is DocumentFormat.OpenXml.Drawing.Wordprocessing.DocProperties DocProperties)
+								HasText = ExportAsMarkdown(DocProperties.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "cNvGraphicFramePr":
+							if (Element is DocumentFormat.OpenXml.Drawing.Wordprocessing.NonVisualGraphicFrameDrawingProperties NonVisualGraphicFrameDrawingProperties)
+								HasText = ExportAsMarkdown(NonVisualGraphicFrameDrawingProperties.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						default:
+							State.UnrecognizedElement(Element);
+							break;
+					}
+					break;
+
+				default:
+					State.UnrecognizedElement(Element);
+					break;
 			}
 
 			return HasText;
@@ -1975,10 +2266,15 @@ namespace TAG.Content.Microsoft
 				if (this.Unrecognized is null)
 					this.Unrecognized = new Dictionary<string, Dictionary<string, int>>();
 
-				if (!this.Unrecognized.TryGetValue(Element.LocalName, out Dictionary<string, int> ByType))
+				string Key = Element.LocalName;
+
+				if (Element.NamespaceUri != Word2006Namespace)
+					Key = Element.NamespaceUri + "#" + Key;
+
+				if (!this.Unrecognized.TryGetValue(Key, out Dictionary<string, int> ByType))
 				{
 					ByType = new Dictionary<string, int>();
-					this.Unrecognized[Element.LocalName] = ByType;
+					this.Unrecognized[Key] = ByType;
 				}
 
 				string s = Element.GetType().FullName;

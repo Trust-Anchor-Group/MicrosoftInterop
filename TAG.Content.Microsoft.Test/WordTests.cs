@@ -47,6 +47,7 @@ namespace TAG.Content.Microsoft.Test
 		[DataRow("TableOfContents")]
 		[DataRow("Figures")]
 		[DataRow("Frames")]
+		[DataRow("Notes")]
 		public void Convert_To_Markdown(string FileName)
 		{
 			Assert.IsNotNull(inputFolder);
@@ -100,8 +101,6 @@ namespace TAG.Content.Microsoft.Test
 
 		/* 
 		 * Form Fields
-		 * Footnotes
-		 * Endnotes
 		 */
 	}
 }

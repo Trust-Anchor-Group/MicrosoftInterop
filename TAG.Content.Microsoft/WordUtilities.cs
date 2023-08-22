@@ -103,9 +103,9 @@ namespace TAG.Content.Microsoft
 
 			ExportAsMarkdown(MainDocument.Elements(), Markdown, Style, State);
 
-			if (!(State.Footnotes is null))
+			if (!(State.TableFootnotes is null))
 			{
-				foreach (KeyValuePair<string, string> P in State.Footnotes)
+				foreach (KeyValuePair<string, string> P in State.TableFootnotes)
 				{
 					Markdown.AppendLine();
 					Markdown.Append("[^");
@@ -113,6 +113,46 @@ namespace TAG.Content.Microsoft
 					Markdown.Append("]:");
 
 					foreach (string Row in GetRows(P.Value))
+					{
+						Markdown.Append('\t');
+						Markdown.AppendLine(Row);
+					}
+				}
+			}
+
+			if (!(State.Footnotes is null))
+			{
+				foreach (KeyValuePair<long, KeyValuePair<string, bool>> P in State.Footnotes)
+				{
+					if (!P.Value.Value)
+						continue;
+
+					Markdown.AppendLine();
+					Markdown.Append("[^fn");
+					Markdown.Append(P.Key.ToString());
+					Markdown.Append("]:");
+
+					foreach (string Row in GetRows(P.Value.Key))
+					{
+						Markdown.Append('\t');
+						Markdown.AppendLine(Row);
+					}
+				}
+			}
+
+			if (!(State.Endnotes is null))
+			{
+				foreach (KeyValuePair<long, KeyValuePair<string, bool>> P in State.Endnotes)
+				{
+					if (!P.Value.Value)
+						continue;
+
+					Markdown.AppendLine();
+					Markdown.Append("[^en");
+					Markdown.Append(P.Key.ToString());
+					Markdown.Append("]:");
+
+					foreach (string Row in GetRows(P.Value.Key))
 					{
 						Markdown.Append('\t');
 						Markdown.AppendLine(Row);
@@ -906,11 +946,11 @@ namespace TAG.Content.Microsoft
 												}
 												else
 												{
-													if (State.Footnotes is null)
-														State.Footnotes = new Dictionary<string, string>();
+													if (State.TableFootnotes is null)
+														State.TableFootnotes = new Dictionary<string, string>();
 
-													string FootnoteKey = "n" + (++State.NrFootnotes).ToString();
-													State.Footnotes[FootnoteKey] = s;
+													string FootnoteKey = "n" + (State.TableFootnotes.Count + 1).ToString();
+													State.TableFootnotes[FootnoteKey] = s;
 
 													Markdown.Append("[^");
 													Markdown.Append(FootnoteKey);
@@ -1768,6 +1808,68 @@ namespace TAG.Content.Microsoft
 								State.UnrecognizedElement(Element);
 							break;
 
+						case "footnoteReference":
+							if (Element is FootnoteReference FootnoteReference)
+							{
+								if (FootnoteReference.Id.HasValue &&
+									State.TryGetFootnote(FootnoteReference.Id.Value, State, out _))
+								{
+									Markdown.Append("[^fn");
+									Markdown.Append(FootnoteReference.Id.Value.ToString());
+									Markdown.Append(']');
+									HasText = true;
+								}
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "endnoteReference":
+							if (Element is EndnoteReference EndnoteReference)
+							{
+								if (EndnoteReference.Id.HasValue &&
+									State.TryGetEndnote(EndnoteReference.Id.Value, State, out _))
+								{
+									Markdown.Append("[^en");
+									Markdown.Append(EndnoteReference.Id.Value.ToString());
+									Markdown.Append(']');
+									HasText = true;
+								}
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "separator":
+							if (Element is SeparatorMark)
+							{
+								Markdown.AppendLine("****************");
+								Markdown.AppendLine();
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "continuationSeparator":
+							if (Element is ContinuationSeparatorMark)
+							{
+								Markdown.AppendLine("****************");
+								Markdown.AppendLine();
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "footnoteRef":
+							if (!(Element is FootnoteReferenceMark))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "endnoteRef":
+							if (!(Element is EndnoteReferenceMark))
+								State.UnrecognizedElement(Element);
+							break;
+
 						default:
 							State.UnrecognizedElement(Element);
 							break;
@@ -2497,10 +2599,11 @@ namespace TAG.Content.Microsoft
 		{
 			public WordprocessingDocument Doc;
 			public TableInfo Table = null;
-			public Dictionary<string, string> Footnotes = null;
+			public Dictionary<string, string> TableFootnotes = null;
 			public Dictionary<string, string> Links = null;
+			public Dictionary<long, KeyValuePair<string, bool>> Footnotes = null;
+			public Dictionary<long, KeyValuePair<string, bool>> Endnotes = null;
 			public Dictionary<int, KeyValuePair<AbstractNum, NumberingInstance>> NumberingFormats = null;
-			public int NrFootnotes = 0;
 			public Dictionary<string, Dictionary<string, int>> Unrecognized = null;
 			public Dictionary<string, int> Sequences = null;
 			public LinkedList<string> Sections = null;
@@ -2550,6 +2653,64 @@ namespace TAG.Content.Microsoft
 				}
 
 				return this.Links.TryGetValue(Id, out Link);
+			}
+
+			public bool TryGetFootnote(long? Id, RenderingState State, out string Content)
+			{
+				return this.TryGetNote<Footnote>(Id, State, out Content,
+					this.Doc.MainDocumentPart?.FootnotesPart.Footnotes,
+					ref this.Footnotes);
+			}
+
+			public bool TryGetEndnote(long? Id, RenderingState State, out string Content)
+			{
+				return this.TryGetNote<Endnote>(Id, State, out Content,
+					this.Doc.MainDocumentPart?.EndnotesPart.Endnotes,
+					ref this.Endnotes);
+			}
+
+			private bool TryGetNote<T>(long? Id, RenderingState State, out string Content,
+				TypedOpenXmlPartRootElement Root, ref Dictionary<long, KeyValuePair<string, bool>> Notes)
+				where T : FootnoteEndnoteType
+			{
+				if (!Id.HasValue)
+				{
+					Content = null;
+					return false;
+				}
+
+				if (Notes is null)
+				{
+					Notes = new Dictionary<long, KeyValuePair<string, bool>>();
+
+					StringBuilder sb = new StringBuilder();
+
+					foreach (T Note in Root.Elements<T>() ?? Array.Empty<T>())
+					{
+						if (Note.Id.HasValue)
+						{
+							FormattingStyle Style = new FormattingStyle();
+
+							sb.Clear();
+							ExportAsMarkdown(Note.Elements(), sb, Style, State);
+
+							Notes[Note.Id.Value] = new KeyValuePair<string, bool>(sb.ToString(), false);
+						}
+					}
+				}
+
+				if (!Notes.TryGetValue(Id.Value, out KeyValuePair<string, bool> P))
+				{
+					Content = null;
+					return false;
+				}
+
+				Content = P.Key;
+
+				if (!P.Value)
+					Notes[Id.Value] = new KeyValuePair<string, bool>(P.Key, true);
+
+				return true;
 			}
 
 			public bool TryGetNumberingFormat(int Id, out AbstractNum Numbering,

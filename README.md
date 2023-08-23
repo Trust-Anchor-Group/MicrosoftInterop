@@ -69,7 +69,7 @@ package using the following information:
 | Package information                                                                                                              ||
 |:-----------------|:---------------------------------------------------------------------------------------------------------------|
 | Package          | `TAG.MicrosoftInterop.package`                                                                                 |
-| Installation key | `` |
+| Installation key | `Y/0hf+O003/pMh6CDnQTowb3DMJj3X28Xu0H0/bOPsIdGo+XOGY2kWsEyxkpKMSNdAOjSGDlxUIA00c066163c7125123382bdd308a2ad35` |
 | More Information | TBD                                                                                                            |
 
 ## Building, Compiling & Debugging

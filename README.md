@@ -70,7 +70,7 @@ package using the following information:
 |:-----------------|:---------------------------------------------------------------------------------------------------------------|
 | Package          | `TAG.MicrosoftInterop.package`                                                                                 |
 | Installation key | `Y/0hf+O003/pMh6CDnQTowb3DMJj3X28Xu0H0/bOPsIdGo+XOGY2kWsEyxkpKMSNdAOjSGDlxUIA00c066163c7125123382bdd308a2ad35` |
-| More Information | TBD                                                                                                            |
+| More Information | https://lab.tagroot.io/Community/Post/Microsoft_Interoperability_API                                           |
 
 ## Building, Compiling & Debugging
 

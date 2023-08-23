@@ -6,6 +6,24 @@
 
 	<PropertyGroup>
 		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+		<Version>1.0.0</Version>
+		<PackageId>TAG.MicrosoftInterop</PackageId>
+		<Company>Trust Anchor Group AB</Company>
+		<Authors>Peter Waher</Authors>
+		<Product></Product>
+		<Description>Help applications convert Microsoft Word documents (saved using Open XML SDK, i.e. in .docx files) to Markdown.
+
+Syntax of Markdown supported:
+https://lab.tagroot.io/Markdown.md</Description>
+		<Copyright>Copyright © Trust Anchor Group AB 2023. All rights reserved.</Copyright>
+		<PackageProjectUrl>https://github.com/Trust-Anchor-Group/MicrosoftInterop</PackageProjectUrl>
+		<PackageIcon>Tag64x64.png</PackageIcon>
+		<PackageTags>Word Markdown docx md Conversion Open XML</PackageTags>
+		<AssemblyVersion>1.0.0</AssemblyVersion>
+		<FileVersion>1.0.0</FileVersion>
+		<PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
 	</PropertyGroup>
 	
   <ItemGroup>
@@ -16,6 +34,17 @@
     <EmbeddedResource Include="StyleMap.xml">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\IoTBroker\Waher.Networking.XMPP.EDaler\Tag64x64.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\..\IoTBroker\Waher.Networking.XMPP.NeuroFeatures\LICENSE.txt">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
   </ItemGroup>
 
   <ItemGroup>

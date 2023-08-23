@@ -72,10 +72,15 @@ namespace TAG.Content.Microsoft
 		/// <returns>Decoded object.</returns>
 		public Task<object> DecodeAsync(string ContentType, byte[] Data, Encoding Encoding, KeyValuePair<string, string>[] Fields, Uri BaseUri)
 		{
-			using (MemoryStream ms = new MemoryStream(Data))
-			{
-				return Task.FromResult<object>(WordprocessingDocument.Open(ms, false));
-			}
+			MemoryStream ms = new MemoryStream(Data);
+			WordprocessingDocument Doc = WordprocessingDocument.Open(ms, false);
+
+			// Note: Do not dispose MemoryStream. The document needs the stream to remain open.
+			//       This incurrs no memory loss while using only the MemoryStream, as no
+			//       unmanaged resources are used. The GC will reclaim unused memory once
+			//       no longer using the document.
+				
+			return Task.FromResult<object>(Doc);
 		}
 
 		/// <summary>

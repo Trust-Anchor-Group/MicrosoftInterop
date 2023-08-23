@@ -1,7 +1,9 @@
 ﻿using System.IO;
 using System.Threading.Tasks;
+using System.Web;
 using TAG.Content.Microsoft;
 using Waher.Content;
+using Waher.Content.Html;
 using Waher.Content.Markdown;
 using Waher.IoTGateway;
 using Waher.Networking.HTTP;
@@ -70,8 +72,19 @@ namespace TAG.Service.MicrosoftInterop.WebServices
 				Markdown1 = Markdown1.Insert(i, Markdown2);
 			}
 
-			Response.ContentType = MarkdownCodec.ContentType + "; charset=utf-8";
-			await Response.Write(WordToMarkdownConverter.Utf8WithBOM.GetBytes(Markdown1));
+			MarkdownSettings Settings = new MarkdownSettings()
+			{
+				ResourceMap = Gateway.HttpServer,
+				Variables = Request.Session
+			};
+			MarkdownDocument Doc = await MarkdownDocument.CreateAsync(Markdown1, Settings, string.Empty, 
+				this.ResourceName, Gateway.GetUrl(this.ResourceName));
+
+			string Html = await Doc.GenerateHTML();
+			byte[] Bin = WordToMarkdownConverter.Utf8WithBOM.GetBytes(Html);
+
+			Response.ContentType = HtmlCodec.HtmlContentTypes[0] + "; charset=utf-8";
+			await Response.Write(Bin);
 		}
 	}
 }

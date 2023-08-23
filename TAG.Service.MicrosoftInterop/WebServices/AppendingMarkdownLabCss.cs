@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using TAG.Content.Microsoft;
 using Waher.Content;
+using Waher.Content.Html.Css;
 using Waher.Content.Html.Javascript;
 using Waher.IoTGateway;
 using Waher.Networking.HTTP;
@@ -9,19 +10,19 @@ using Waher.Networking.HTTP;
 namespace TAG.Service.MicrosoftInterop.WebServices
 {
 	/// <summary>
-	/// Appends information to the Markdown Lab Javascript file, to allow for
+	/// Appends information to the Markdown Lab CSS file, to allow for
 	/// Word document uploads.
 	/// </summary>
-	public class AppendingMarkdownLabJs : HttpSynchronousResource, IHttpGetMethod
+	public class AppendingMarkdownLabCss : HttpSynchronousResource, IHttpGetMethod
 	{
 		private readonly HttpAuthenticationScheme[] authenticationSchemes;
 
 		/// <summary>
-		/// Appends information to the Markdown Lab Javascript file, to allow for
+		/// Appends information to the Markdown Lab CSS file, to allow for
 		/// Word document uploads.
 		/// </summary>
-		public AppendingMarkdownLabJs(params HttpAuthenticationScheme[] AuthenticationSchemes)
-			: base("/MarkdownLab/MarkdownLab.js")
+		public AppendingMarkdownLabCss(params HttpAuthenticationScheme[] AuthenticationSchemes)
+			: base("/MarkdownLab/MarkdownLab.css")
 		{
 			this.authenticationSchemes = AuthenticationSchemes;
 		}
@@ -58,16 +59,13 @@ namespace TAG.Service.MicrosoftInterop.WebServices
 		/// <param name="Response">Response object.</param>
 		public async Task GET(HttpRequest Request, HttpResponse Response)
 		{
-			string FileName1 = Path.Combine(Gateway.RootFolder, "MarkdownLab", "MarkdownLab.js");
-			string Javascript1 = await Resources.ReadAllTextAsync(FileName1);
+			string FileName = Path.Combine(Gateway.RootFolder, "MarkdownLab", "MarkdownLab.Css");
+			string Css = await Resources.ReadAllTextAsync(FileName);
 
-			string FileName2 = Path.Combine(Gateway.RootFolder, "MicrosoftInterop", "MarkdownLabAddendum.js");
-			string Javascript2 = await Resources.ReadAllTextAsync(FileName2);
+			Css = Css.Replace("min-height:60vh;", "min-height:50vh;");
 
-			Javascript1 += Javascript2;
-
-			Response.ContentType = JavascriptCodec.JavascriptContentTypes[0] + "; charset=utf-8";
-			await Response.Write(WordToMarkdownConverter.Utf8WithBOM.GetBytes(Javascript1));
+			Response.ContentType = CssCodec.CssContentTypes[0] + "; charset=utf-8";
+			await Response.Write(WordToMarkdownConverter.Utf8WithBOM.GetBytes(Css));
 		}
 	}
 }

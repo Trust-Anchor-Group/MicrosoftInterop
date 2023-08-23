@@ -22,6 +22,7 @@ namespace TAG.Service.MicrosoftInterop
 		private WordToMarkdown wordToMarkdown;
 		private AppendingMarkdownLabMd appendingMarkdownLabMd;
 		private AppendingMarkdownLabJs appendingMarkdownLabJs;
+		private AppendingMarkdownLabCss appendingMarkdownLabCss;
 
 		public ConversionService()
 		{
@@ -67,13 +68,16 @@ namespace TAG.Service.MicrosoftInterop
 			Gateway.HttpServer?.Register(this.wordToMarkdown);
 
 			Schemes.Clear();
-			Schemes.Add(new RequiredUserPrivileges(Gateway.HttpServer, "Admin.Lab.Markdown", "Admin.Lab.Script"));
-			
+			Schemes.Add(new RequiredUserPrivileges("User", "/Login.md", Gateway.HttpServer, "Admin.Lab.Markdown", "Admin.Lab.Script"));
+
 			this.appendingMarkdownLabMd = new AppendingMarkdownLabMd(Schemes.ToArray());
 			Gateway.HttpServer?.Register(this.appendingMarkdownLabMd);
 
 			this.appendingMarkdownLabJs = new AppendingMarkdownLabJs(Schemes.ToArray());
 			Gateway.HttpServer?.Register(this.appendingMarkdownLabJs);
+
+			this.appendingMarkdownLabCss = new AppendingMarkdownLabCss(Schemes.ToArray());
+			Gateway.HttpServer?.Register(this.appendingMarkdownLabCss);
 
 			return Task.CompletedTask;
 		}
@@ -99,6 +103,12 @@ namespace TAG.Service.MicrosoftInterop
 			{
 				Gateway.HttpServer?.Unregister(this.appendingMarkdownLabJs);
 				this.appendingMarkdownLabJs = null;
+			}
+
+			if (!(this.appendingMarkdownLabCss is null))
+			{
+				Gateway.HttpServer?.Unregister(this.appendingMarkdownLabCss);
+				this.appendingMarkdownLabCss = null;
 			}
 
 			return Task.CompletedTask;

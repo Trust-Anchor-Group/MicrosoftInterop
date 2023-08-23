@@ -13,7 +13,7 @@ This solution demonstrates how to create the following type of extensions for th
 * .NET-based web services.
 * Internet Content Decoder
 * Internet Content Converter
-* Dynamic extension of file-based Internet Content
+* Dynamic extension of file-based Internet Content (Markdown, Javacript, CSS, etc.)
 
 ## Projects
 

@@ -2,26 +2,44 @@
 RTF Control Type: String
 Text Control: Klicka eller tryck här för att ange text\.
 Text Control Type: String
-CheckboxControl: ☐
-CheckboxControl Type: CheckBox
+CheckboxControl: true
+CheckboxControl Type: Boolean
+ComboBoxControl: Välj ett objekt\.
+ComboBoxControl Type: StringWithOptions
+ListBoxControl: Välj ett objekt\.
+ListBoxControl Type: ListOfOptions
+Date Picker: Klicka eller tryck här för att ange datum\.
+Date Picker Type: Date
+LegacyText: Text Value
+LegacyText Type: String
+LegacyNumber: 100
+LegacyNumber Type: Number
+LegacyDate: 2001-01-01
+LegacyDate Type: Date
+LegacyCheckbox: true
+LegacyCheckbox Type: Boolean
+LegacyComboBox: 
+LegacyComboBox Type: StringWithOptions
 ComboBoxControl Item1 Value: 1
 ComboBoxControl Item1 Display: Item 1
 ComboBoxControl Item2 Value: 2
 ComboBoxControl Item2 Display: Item 2
 ComboBoxControl Item3 Value: 3
 ComboBoxControl Item3 Display: Item 3
-ComboBoxControl: Välj ett objekt\.
-ComboBoxControl Type: ComboBox
 ListBoxControl Item1 Value: A
 ListBoxControl Item1 Display: Item A
 ListBoxControl Item2 Value: B
 ListBoxControl Item2 Display: Item B
 ListBoxControl Item3 Value: C
 ListBoxControl Item3 Display: Item C
-ListBoxControl: Välj ett objekt\.
-ListBoxControl Type: ListBox
-Date Picker: Klicka eller tryck här för att ange datum\.
-Date Picker Type: DatePicker
+LegacyText MaxLen: 10
+LegacyNumber MaxLen: 3
+LegacyComboBox Item1 Value: Item 1
+LegacyComboBox Item1 Display: Item 1
+LegacyComboBox Item2 Value: Item 2
+LegacyComboBox Item2 Display: Item 2
+LegacyComboBox Item3 Value: Item 3
+LegacyComboBox Item3 Display: Item 3
 
 ## Form Fields
 
@@ -43,6 +61,20 @@ List\-box\:
 
 Date picker\:  
 [%Date Picker]
+
+Legacy Text input\:  
+[%LegacyText]Text Value
+
+Legacy Number input\:  
+[%LegacyNumber]100
+
+Legacy Date input\:  
+[%LegacyDate]2001\-01\-01
+
+[%LegacyCheckbox] Legacy checkbox
+
+Legacy ComboBox\:  
+[%LegacyComboBox]
 
 ## Document Properties
 

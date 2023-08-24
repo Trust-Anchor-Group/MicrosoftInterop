@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using static TAG.Content.Microsoft.ContractUtilities;
 
 namespace TAG.Content.Microsoft
 {
@@ -32,5 +31,10 @@ namespace TAG.Content.Microsoft
 		/// Type of parameter
 		/// </summary>
 		public ParameterType Type;
+
+		/// <summary>
+		/// Any maximum length information available.
+		/// </summary>
+		public int? MaxLength;
 	}
 }

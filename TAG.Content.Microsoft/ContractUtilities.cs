@@ -68,6 +68,15 @@ namespace TAG.Content.Microsoft
 
 									Handled = true;
 								}
+								else if (s == "MaxLen")
+								{
+									if (int.TryParse(Value, out int MaxLength))
+										P.Value.MaxLength = MaxLength;
+									else
+										P.Value.MaxLength = null;
+
+									Handled = true;
+								}
 								else if (s.StartsWith("Item") &&
 									s.EndsWith(" Value") &&
 									int.TryParse(s.Substring(4, s.Length - 10), out int ItemIndex))

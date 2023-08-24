@@ -13,21 +13,31 @@
 		/// <summary>
 		/// Checkbox
 		/// </summary>
-		CheckBox,
+		Boolean,
 
 		/// <summary>
 		/// ComboBox with drop-down list.
 		/// </summary>
-		ComboBox,
+		StringWithOptions,
 
 		/// <summary>
 		/// List-box
 		/// </summary>
-		ListBox,
+		ListOfOptions,
 
 		/// <summary>
 		/// Date picker.
 		/// </summary>
-		DatePicker
+		Date,
+
+		/// <summary>
+		/// Time entry.
+		/// </summary>
+		Time,
+
+		/// <summary>
+		/// Number entry.
+		/// </summary>
+		Number
 	}
 }

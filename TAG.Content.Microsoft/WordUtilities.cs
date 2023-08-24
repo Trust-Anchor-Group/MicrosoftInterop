@@ -14,6 +14,7 @@ using Waher.Content.Xml;
 using Waher.Events;
 using MarkdownModel = Waher.Content.Markdown.Model;
 using Waher.Runtime.Text;
+using System.Runtime.CompilerServices;
 
 namespace TAG.Content.Microsoft
 {
@@ -1480,6 +1481,36 @@ namespace TAG.Content.Microsoft
 
 								HasText = ExportAsMarkdown(SectionType.Elements(), Markdown, Style, State);
 							}
+							else if (Element is TextBoxFormFieldType TextBoxFormFieldType)
+							{
+								if (TextBoxFormFieldType.Val.HasValue)
+								{
+									switch (TextBoxFormFieldType.Val.Value)
+									{
+										case TextBoxFormFieldValues.Calculated:
+											Style.ParameterType = null;
+											break;
+
+										case TextBoxFormFieldValues.CurrentTime:
+											Style.ParameterType = ParameterType.Time;
+											break;
+
+										case TextBoxFormFieldValues.CurrentDate:
+										case TextBoxFormFieldValues.Date:
+											Style.ParameterType = ParameterType.Date;
+											break;
+
+										case TextBoxFormFieldValues.Number:
+											Style.ParameterType = ParameterType.Number;
+											break;
+
+										case TextBoxFormFieldValues.Regular:
+										default:
+											Style.ParameterType = ParameterType.String;
+											break;
+									}
+								}
+							}
 							else
 								State.UnrecognizedElement(Element);
 							break;
@@ -1723,6 +1754,7 @@ namespace TAG.Content.Microsoft
 								Style.Alias = null;
 								Style.ParameterType = ParameterType.String;
 								Style.ItemCount = null;
+								Style.DefaultValue = null;
 
 								HasText = ExportAsMarkdown(SdtRun.Elements(), Markdown, Style, State);
 							}
@@ -1771,9 +1803,17 @@ namespace TAG.Content.Microsoft
 									StringBuilder Description = new StringBuilder();
 									ExportAsMarkdown(SdtContentRun.Elements(), Description, Style, State);
 
-									State.AddMetaData(Style.Alias, Description.ToString());
-									State.AddMetaData(Style.Alias + " Type", Style.ParameterType.Value.ToString());
+									if (Style.ParameterType.Value == ParameterType.Boolean &&
+										Style.Checked.HasValue)
+									{
+										State.AddMetaData(Style.Alias, CommonTypes.Encode(Style.Checked.Value));
+									}
+									else if (!string.IsNullOrEmpty(Style.DefaultValue))
+										State.AddMetaData(Style.Alias, Style.DefaultValue);
+									else
+										State.AddMetaData(Style.Alias, Description.ToString());
 
+									State.AddMetaData(Style.Alias + " Type", Style.ParameterType.Value.ToString());
 									HasText = true;
 								}
 								else
@@ -1828,12 +1868,140 @@ namespace TAG.Content.Microsoft
 							break;
 
 						case "fldChar":
-							if (!(Element is FieldChar))
+							if (Element is FieldChar FieldChar)
+							{
+								Style.Alias = null;
+								Style.ParameterType = ParameterType.String;
+								Style.ItemCount = null;
+								Style.DefaultValue = null;
+
+								StringBuilder Description = new StringBuilder();
+
+								ExportAsMarkdown(FieldChar.Elements(), Description, Style, State);
+
+								if (!string.IsNullOrEmpty(Style.Alias) && Style.ParameterType.HasValue)
+								{
+									Markdown.Append("[%");
+									Markdown.Append(Style.Alias);
+									Markdown.Append(']');
+
+									if (string.IsNullOrEmpty(Style.DefaultValue))
+										State.AddMetaData(Style.Alias, Description.ToString());
+									else
+										State.AddMetaData(Style.Alias, Style.DefaultValue);
+
+									State.AddMetaData(Style.Alias + " Type", Style.ParameterType.Value.ToString());
+
+									HasText = true;
+								}
+								else
+								{
+									string s = Description.ToString();
+									if (!string.IsNullOrEmpty(s))
+									{
+										Markdown.Append(s);
+										HasText = true;
+									}
+								}
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "ffData":
+							if (Element is FormFieldData FormFieldData)
+								HasText = ExportAsMarkdown(FormFieldData.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "name":
+							if (Element is FormFieldName FormFieldName)
+							{
+								if (FormFieldName.Val.HasValue)
+									Style.Alias = FormFieldName.Val.Value;
+
+								HasText = ExportAsMarkdown(FormFieldName.Elements(), Markdown, Style, State);
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "textInput":
+							if (Element is TextInput TextInput)
+								HasText = ExportAsMarkdown(TextInput.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "checkBox":
+							if (Element is CheckBox CheckBox)
+							{
+								Style.ParameterType = ParameterType.Boolean;
+								HasText = ExportAsMarkdown(CheckBox.Elements(), Markdown, Style, State);
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "ddList":
+							if (Element is DropDownListFormField DropDownListFormField)
+							{
+								Style.ParameterType = ParameterType.StringWithOptions;
+								HasText = ExportAsMarkdown(DropDownListFormField.Elements(), Markdown, Style, State);
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "enabled":
+							if (!(Element is Enabled))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "calcOnExit":
+							if (!(Element is CalculateOnExit))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "sizeAuto":
+							if (!(Element is AutomaticallySizeFormField))
 								State.UnrecognizedElement(Element);
 							break;
 
 						case "instrText":
 							if (!(Element is FieldCode))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "default":
+							if (Element is DefaultTextBoxFormFieldString DefaultTextBoxFormFieldString)
+							{
+								if (DefaultTextBoxFormFieldString.Val.HasValue &&
+									!string.IsNullOrEmpty(Style.Alias))
+								{
+									Style.DefaultValue = DefaultTextBoxFormFieldString.Val.Value;
+								}
+							}
+							else if (Element is DefaultCheckBoxFormFieldState DefaultCheckBoxFormFieldState)
+							{
+								if (DefaultCheckBoxFormFieldState.Val.HasValue &&
+									!string.IsNullOrEmpty(Style.Alias))
+								{
+									Style.DefaultValue = CommonTypes.Encode(DefaultCheckBoxFormFieldState.Val.Value);
+								}
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "maxLength":
+							if (Element is MaxLength MaxLength)
+							{
+								if (MaxLength.Val.HasValue && !string.IsNullOrEmpty(Style.Alias))
+									State.AddMetaData2(Style.Alias + " MaxLen", MaxLength.Val.Value.ToString());
+							}
+							else
 								State.UnrecognizedElement(Element);
 							break;
 
@@ -1986,7 +2154,7 @@ namespace TAG.Content.Microsoft
 						case "date":
 							if (Element is SdtContentDate SdtContentDate)
 							{
-								Style.ParameterType = ParameterType.DatePicker;
+								Style.ParameterType = ParameterType.Date;
 								HasText = ExportAsMarkdown(SdtContentDate.Elements(), Markdown, Style, State);
 							}
 							else
@@ -2017,7 +2185,7 @@ namespace TAG.Content.Microsoft
 						case "comboBox":
 							if (Element is SdtContentComboBox SdtContentComboBox)
 							{
-								Style.ParameterType = ParameterType.ComboBox;
+								Style.ParameterType = ParameterType.StringWithOptions;
 								Style.ItemCount = null;
 
 								HasText = ExportAsMarkdown(SdtContentComboBox.Elements(), Markdown, Style, State);
@@ -2029,7 +2197,7 @@ namespace TAG.Content.Microsoft
 						case "dropDownList":
 							if (Element is SdtContentDropDownList SdtContentDropDownList)
 							{
-								Style.ParameterType = ParameterType.ListBox;
+								Style.ParameterType = ParameterType.ListOfOptions;
 								Style.ItemCount = null;
 
 								HasText = ExportAsMarkdown(SdtContentDropDownList.Elements(), Markdown, Style, State);
@@ -2068,6 +2236,29 @@ namespace TAG.Content.Microsoft
 								State.UnrecognizedElement(Element);
 							break;
 
+						case "listEntry":
+							if (Element is ListEntryFormField ListEntryFormField)
+							{
+								if (ListEntryFormField.Val.HasValue &&
+									!string.IsNullOrEmpty(ListEntryFormField.Val.Value) &&
+									!string.IsNullOrEmpty(Style.Alias) &&
+									Style.ParameterType.HasValue)
+								{
+									int i = Style.ItemCount ?? 0;
+
+									Style.ItemCount = ++i;
+									string Key = Style.Alias + " Item" + i.ToString();
+
+									State.AddMetaData2(Key + " Value", ListEntryFormField.Val.Value);
+									State.AddMetaData2(Key + " Display", ListEntryFormField.Val.Value);
+								}
+
+								HasText = ExportAsMarkdown(ListEntryFormField.Elements(), Markdown, Style, State);
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
 						default:
 							State.UnrecognizedElement(Element);
 							break;
@@ -2087,7 +2278,8 @@ namespace TAG.Content.Microsoft
 						case "checkbox":
 							if (Element is DocumentFormat.OpenXml.Office2010.Word.SdtContentCheckBox SdtContentCheckBox)
 							{
-								Style.ParameterType = ParameterType.CheckBox;
+								Style.ParameterType = ParameterType.Boolean;
+								Style.Checked = null;
 								HasText = ExportAsMarkdown(SdtContentCheckBox.Elements(), Markdown, Style, State);
 							}
 							else
@@ -2096,7 +2288,29 @@ namespace TAG.Content.Microsoft
 
 						case "checked":
 							if (Element is DocumentFormat.OpenXml.Office2010.Word.Checked Checked)
+							{
+								if (Checked.Val.HasValue)
+								{
+									switch (Checked.Val.Value)
+									{
+										case DocumentFormat.OpenXml.Office2010.Word.OnOffValues.One:
+										case DocumentFormat.OpenXml.Office2010.Word.OnOffValues.True:
+											Style.Checked = true;
+											break;
+
+										case DocumentFormat.OpenXml.Office2010.Word.OnOffValues.Zero:
+										case DocumentFormat.OpenXml.Office2010.Word.OnOffValues.False:
+											Style.Checked = false;
+											break;
+
+										default:
+											Style.Checked = null;
+											break;
+									}
+								}
+
 								HasText = ExportAsMarkdown(Checked.Elements(), Markdown, Style, State);
+							}
 							else
 								State.UnrecognizedElement(Element);
 							break;
@@ -2721,6 +2935,8 @@ namespace TAG.Content.Microsoft
 			public string Alias;
 			public ParameterType? ParameterType;
 			public int? ItemCount;
+			public string DefaultValue;
+			public bool? Checked;
 			public ParagraphAlignment ParagraphAlignment;
 			public LinkedList<char> StyleChanges;
 

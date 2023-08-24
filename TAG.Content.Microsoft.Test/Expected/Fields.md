@@ -63,13 +63,13 @@ Date picker\:
 [%Date Picker]
 
 Legacy Text input\:  
-[%LegacyText]Text Value
+[%LegacyText]
 
 Legacy Number input\:  
-[%LegacyNumber]100
+[%LegacyNumber]
 
 Legacy Date input\:  
-[%LegacyDate]2001\-01\-01
+[%LegacyDate]
 
 [%LegacyCheckbox] Legacy checkbox
 

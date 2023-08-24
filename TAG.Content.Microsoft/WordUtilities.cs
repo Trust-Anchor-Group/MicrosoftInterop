@@ -508,6 +508,8 @@ namespace TAG.Content.Microsoft
 									State.Sections.AddLast(Section.ToString());
 									Style.NewSection = null;
 								}
+
+								State.SupressNextBookmark = false;
 							}
 							else
 								State.UnrecognizedElement(Element);
@@ -1414,12 +1416,16 @@ namespace TAG.Content.Microsoft
 							break;
 
 						case "bookmarkStart":
-							if (!(Element is BookmarkStart))
+							if (Element is BookmarkStart)
+								State.StartBookmark(Markdown);
+							else
 								State.UnrecognizedElement(Element);
 							break;
 
 						case "bookmarkEnd":
-							if (!(Element is BookmarkEnd))
+							if (Element is BookmarkEnd)
+								State.EndBookmark(Markdown);
+							else
 								State.UnrecognizedElement(Element);
 							break;
 
@@ -1874,6 +1880,7 @@ namespace TAG.Content.Microsoft
 								Style.ParameterType = ParameterType.String;
 								Style.ItemCount = null;
 								Style.DefaultValue = null;
+								State.SupressNextBookmark = true;
 
 								StringBuilder Description = new StringBuilder();
 
@@ -3060,8 +3067,10 @@ namespace TAG.Content.Microsoft
 			public LinkedList<string> Sections = null;
 			public LinkedList<KeyValuePair<string, string>> MetaData = null;
 			public LinkedList<KeyValuePair<string, string>> MetaData2 = null;
+			public LinkedList<string> Bookmarks = null;
 			public string FileName;
 			public long? FileSize;
+			public bool SupressNextBookmark = false;
 
 			public void UnrecognizedElement(OpenXmlElement Element)
 			{
@@ -3221,6 +3230,30 @@ namespace TAG.Content.Microsoft
 
 				foreach (string Row in GetRows(Value.Trim()))
 					this.MetaData2.AddLast(new KeyValuePair<string, string>(Key, Row));
+			}
+
+			public void StartBookmark(StringBuilder Markdown)
+			{
+				if (this.Bookmarks is null)
+					this.Bookmarks = new LinkedList<string>();
+
+				this.Bookmarks.AddLast(Markdown.ToString());
+				Markdown.Clear();
+			}
+
+			public void EndBookmark(StringBuilder Markdown)
+			{
+				string Bookmarked = Markdown.ToString();
+				Markdown.Clear();
+
+				if (!(this.Bookmarks?.Last is null))
+				{
+					Markdown.Append(this.Bookmarks.Last.Value);
+					this.Bookmarks.RemoveLast();
+				}
+
+				if (!this.SupressNextBookmark)
+					Markdown.Append(Bookmarked);
 			}
 		}
 

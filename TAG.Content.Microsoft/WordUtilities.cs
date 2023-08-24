@@ -161,7 +161,7 @@ namespace TAG.Content.Microsoft
 				}
 			}
 
-			if (!(State.Sections is null) || !(State.MetaData is null))
+			if (!(State.Sections is null) || !(State.MetaData is null) || !(State.MetaData2 is null))
 			{
 				string End = Markdown.ToString();
 				string Start;
@@ -184,9 +184,20 @@ namespace TAG.Content.Microsoft
 						Markdown.Append(": ");
 						Markdown.AppendLine(Header.Value);
 					}
-
-					Markdown.AppendLine();
 				}
+
+				if (!(State.MetaData2 is null))
+				{
+					foreach (KeyValuePair<string, string> Header in State.MetaData2)
+					{
+						Markdown.Append(Header.Key);
+						Markdown.Append(": ");
+						Markdown.AppendLine(Header.Value);
+					}
+				}
+
+				if (!(State.MetaData is null) || !(State.MetaData2 is null))
+					Markdown.AppendLine();
 
 				Markdown.Append(Start);
 
@@ -2047,8 +2058,8 @@ namespace TAG.Content.Microsoft
 									Style.ItemCount = ++i;
 									string Key = Style.Alias + " Item" + i.ToString();
 
-									State.AddMetaData(Key + " Value", ListItem.Value.Value);
-									State.AddMetaData(Key + " Display", ListItem.DisplayText.Value);
+									State.AddMetaData2(Key + " Value", ListItem.Value.Value);
+									State.AddMetaData2(Key + " Display", ListItem.DisplayText.Value);
 								}
 
 								HasText = ExportAsMarkdown(ListItem.Elements(), Markdown, Style, State);
@@ -2686,15 +2697,6 @@ namespace TAG.Content.Microsoft
 			Continuation
 		}
 
-		private enum ParameterType
-		{
-			String,
-			CheckBox,
-			ComboBox,
-			ListBox,
-			DatePicker
-		}
-
 		private class FormattingStyle
 		{
 			public bool Bold;
@@ -2841,6 +2843,7 @@ namespace TAG.Content.Microsoft
 			public Dictionary<string, int> Sequences = null;
 			public LinkedList<string> Sections = null;
 			public LinkedList<KeyValuePair<string, string>> MetaData = null;
+			public LinkedList<KeyValuePair<string, string>> MetaData2 = null;
 			public string FileName;
 			public long? FileSize;
 
@@ -2993,6 +2996,15 @@ namespace TAG.Content.Microsoft
 
 				foreach (string Row in GetRows(Value.Trim()))
 					this.MetaData.AddLast(new KeyValuePair<string, string>(Key, Row));
+			}
+
+			public void AddMetaData2(string Key, string Value)
+			{
+				if (this.MetaData2 is null)
+					this.MetaData2 = new LinkedList<KeyValuePair<string, string>>();
+
+				foreach (string Row in GetRows(Value.Trim()))
+					this.MetaData2.AddLast(new KeyValuePair<string, string>(Key, Row));
 			}
 		}
 

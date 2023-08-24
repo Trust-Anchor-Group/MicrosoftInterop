@@ -64,7 +64,7 @@ namespace TAG.Service.MicrosoftInterop.WebServices
 				throw new BadRequestException("Content not a Word document (.docx).");
 
 			StringBuilder Markdown = new StringBuilder();
-			WordUtilities.ExtractAsMarkdown(Doc, string.Empty, Markdown);
+			WordUtilities.ExtractAsMarkdown(Doc, string.Empty, Markdown, out _);
 
 			byte[] Data = WordToMarkdownConverter.Utf8WithBOM.GetBytes(Markdown.ToString());
 

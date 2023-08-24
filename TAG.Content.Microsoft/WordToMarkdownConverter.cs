@@ -44,7 +44,7 @@ namespace TAG.Content.Microsoft
 			using (WordprocessingDocument Doc = WordprocessingDocument.Open(State.From, false))
 			{
 				StringBuilder Markdown = new StringBuilder();
-				WordUtilities.ExtractAsMarkdown(Doc, string.Empty, Markdown);
+				WordUtilities.ExtractAsMarkdown(Doc, string.Empty, Markdown, out _);
 
 				byte[] Data = Utf8WithBOM.GetBytes(Markdown.ToString());
 

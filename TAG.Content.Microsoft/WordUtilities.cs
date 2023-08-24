@@ -80,8 +80,7 @@ namespace TAG.Content.Microsoft
 		{
 			using (WordprocessingDocument Doc = WordprocessingDocument.Open(WordFileName, false))
 			{
-				Language = Doc.PackageProperties.Language;
-				ExtractAsMarkdown(Doc, WordFileName, Markdown);
+				ExtractAsMarkdown(Doc, WordFileName, Markdown, out Language);
 			}
 		}
 
@@ -91,7 +90,9 @@ namespace TAG.Content.Microsoft
 		/// <param name="Doc">Document to convert</param>
 		/// <param name="WordFileName">File name of Word document.</param>
 		/// <param name="Markdown">Markdown will be output here.</param>
-		public static void ExtractAsMarkdown(WordprocessingDocument Doc, string WordFileName, StringBuilder Markdown)
+		/// <param name="Language">Language of document.</param>
+		public static void ExtractAsMarkdown(WordprocessingDocument Doc, string WordFileName, StringBuilder Markdown,
+			out string Language)
 		{
 			Document MainDocument = Doc.MainDocumentPart.Document;
 			FormattingStyle Style = new FormattingStyle();
@@ -103,7 +104,23 @@ namespace TAG.Content.Microsoft
 			};
 			int StartLen = Markdown.Length;
 
+			Language = Doc.PackageProperties.Language;
+
 			ExportAsMarkdown(MainDocument.Elements(), Markdown, Style, State);
+
+			if (string.IsNullOrEmpty(Language))
+			{
+				int Best = 0;
+
+				foreach (KeyValuePair<string, int> P in State.LanguageCounts)
+				{
+					if (P.Value > Best)
+					{
+						Best = P.Value;
+						Language = P.Key;
+					}
+				}
+			}
 
 			if (!(State.TableFootnotes is null))
 			{
@@ -1573,7 +1590,12 @@ namespace TAG.Content.Microsoft
 							break;
 
 						case "lang":
-							if (!(Element is Languages))
+							if (Element is Languages Languages)
+							{
+								if (Languages.Val?.HasValue ?? false)
+									State.IncLangCount(Languages.Val.Value);
+							}
+							else
 								State.UnrecognizedElement(Element);
 							break;
 
@@ -3064,6 +3086,7 @@ namespace TAG.Content.Microsoft
 			public Dictionary<int, KeyValuePair<AbstractNum, NumberingInstance>> NumberingFormats = null;
 			public Dictionary<string, Dictionary<string, int>> Unrecognized = null;
 			public Dictionary<string, int> Sequences = null;
+			public Dictionary<string, int> LanguageCounts = new Dictionary<string, int>();
 			public LinkedList<string> Sections = null;
 			public LinkedList<KeyValuePair<string, string>> MetaData = null;
 			public LinkedList<KeyValuePair<string, string>> MetaData2 = null;
@@ -3254,6 +3277,18 @@ namespace TAG.Content.Microsoft
 
 				if (!this.SupressNextBookmark)
 					Markdown.Append(Bookmarked);
+			}
+
+			public void IncLangCount(string Language)
+			{
+				int i = Language.IndexOf('-');
+				if (i >= 0)
+					Language = Language.Substring(0, i);
+
+				if (!this.LanguageCounts.TryGetValue(Language, out i))
+					i = 0;
+
+				this.LanguageCounts[Language] = ++i;
 			}
 		}
 

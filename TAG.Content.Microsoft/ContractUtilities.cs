@@ -70,7 +70,7 @@ namespace TAG.Content.Microsoft
 								}
 								else if (s.StartsWith("Item") &&
 									s.EndsWith(" Value") &&
-									int.TryParse(s.Substring(4, s.Length - 6), out int ItemIndex))
+									int.TryParse(s.Substring(4, s.Length - 10), out int ItemIndex))
 								{
 									if (P.Value.Options is null)
 										P.Value.Options = new List<OptionInformation>();
@@ -83,7 +83,7 @@ namespace TAG.Content.Microsoft
 								}
 								else if (s.StartsWith("Item") &&
 									s.EndsWith(" Display") &&
-									int.TryParse(s.Substring(4, s.Length - 8), out ItemIndex))
+									int.TryParse(s.Substring(4, s.Length - 12), out ItemIndex))
 								{
 									if (P.Value.Options is null)
 										P.Value.Options = new List<OptionInformation>();

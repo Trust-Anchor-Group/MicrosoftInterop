@@ -14,7 +14,6 @@ using Waher.Content.Xml;
 using Waher.Events;
 using MarkdownModel = Waher.Content.Markdown.Model;
 using Waher.Runtime.Text;
-using System.Runtime.CompilerServices;
 
 namespace TAG.Content.Microsoft
 {

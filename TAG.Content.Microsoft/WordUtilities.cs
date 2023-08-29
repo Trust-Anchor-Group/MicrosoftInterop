@@ -292,20 +292,6 @@ namespace TAG.Content.Microsoft
 #endif
 				Log.Warning(Msg.ToString(), WordFileName);
 			}
-#if DEBUG
-			else
-			{
-				StringBuilder Msg = new StringBuilder();
-
-				Msg.AppendLine("Open XML-document converted to Markdown.");
-				Msg.AppendLine();
-				Msg.AppendLine("```");
-				Msg.AppendLine(CapLength(XML.PrettyXml(MainDocument.OuterXml), 256 * 1024));
-				Msg.AppendLine("```");
-
-				Log.Informational(Msg.ToString(), WordFileName);
-			}
-#endif
 		}
 
 		private static long? GetFileSize(string FileName)
@@ -1126,7 +1112,7 @@ namespace TAG.Content.Microsoft
 							break;
 
 						case "spacing":
-							if (!(Element is SpacingBetweenLines))
+							if (!(Element is SpacingBetweenLines) && !(Element is Spacing))
 								State.UnrecognizedElement(Element);
 							break;
 

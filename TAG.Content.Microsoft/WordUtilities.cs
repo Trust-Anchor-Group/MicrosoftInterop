@@ -87,6 +87,41 @@ namespace TAG.Content.Microsoft
 		/// Extracts the contents of a Word file to Markdown.
 		/// </summary>
 		/// <param name="Doc">Document to convert</param>
+		/// <returns>Markdown</returns>
+		public static string ExtractAsMarkdown(WordprocessingDocument Doc)
+		{
+			return ExtractAsMarkdown(Doc, out _);
+		}
+
+		/// <summary>
+		/// Extracts the contents of a Word file to Markdown.
+		/// </summary>
+		/// <param name="Doc">Document to convert</param>
+		/// <param name="Language">Language of document.</param>
+		/// <returns>Markdown</returns>
+		public static string ExtractAsMarkdown(WordprocessingDocument Doc, out string Language)
+		{
+			return ExtractAsMarkdown(Doc, string.Empty, out Language);
+		}
+
+		/// <summary>
+		/// Extracts the contents of a Word file to Markdown.
+		/// </summary>
+		/// <param name="Doc">Document to convert</param>
+		/// <param name="WordFileName">File name of Word document.</param>
+		/// <param name="Language">Language of document.</param>
+		/// <returns>Markdown</returns>
+		public static string ExtractAsMarkdown(WordprocessingDocument Doc, string WordFileName, out string Language)
+		{
+			StringBuilder Markdown = new StringBuilder();
+			ExtractAsMarkdown(Doc, WordFileName, Markdown, out Language);
+			return Markdown.ToString();
+		}
+
+		/// <summary>
+		/// Extracts the contents of a Word file to Markdown.
+		/// </summary>
+		/// <param name="Doc">Document to convert</param>
 		/// <param name="WordFileName">File name of Word document.</param>
 		/// <param name="Markdown">Markdown will be output here.</param>
 		/// <param name="Language">Language of document.</param>

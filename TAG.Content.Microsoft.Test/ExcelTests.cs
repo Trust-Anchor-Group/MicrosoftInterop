@@ -28,6 +28,7 @@ namespace TAG.Content.Microsoft.Test
 		[DataTestMethod]
 		[DataRow("SimpleSheet")]
 		[DataRow("MultipleSheets")]
+		[DataRow("SparseMatrix")]
 		public async Task Convert_To_Script(string FileName)
 		{
 			Assert.IsNotNull(inputFolder);
@@ -97,11 +98,6 @@ namespace TAG.Content.Microsoft.Test
 		}
 
 		/* TODO:
-		 * - Data types: Compare string "10" with number 10.
-		 * - Normalized strings
-		 * - Sparse matrices
-		 * - Leading empty rows/columns
-		 * - Multi-character columns & rows
 		 * - Diagrams
 		 */
 	}

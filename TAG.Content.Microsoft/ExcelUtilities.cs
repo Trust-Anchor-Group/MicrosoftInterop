@@ -246,11 +246,32 @@ namespace TAG.Content.Microsoft
 
 								Script.Append("',");
 								State.NewLine();
-								Script.Append("'Data':");
-								State.NrTabs++;
 
 								OpenXmlPart Part = State.Doc.WorkbookPart.GetPartById(Sheet.Id);
 								HasText = ExportAsScript(Part.RootElement, Script, State);
+
+								Script.Append("'Left':");
+								Script.Append(State.Left.ToString());
+								Script.Append(',');
+								State.NewLine();
+
+								Script.Append("'Top':");
+								Script.Append(State.Top.ToString());
+								Script.Append(',');
+								State.NewLine();
+
+								Script.Append("'Right':");
+								Script.Append(State.Right.ToString());
+								Script.Append(',');
+								State.NewLine();
+
+								Script.Append("'Bottom':");
+								Script.Append(State.Bottom.ToString());
+								Script.Append(',');
+								State.NewLine();
+
+								Script.Append("'Data':");
+								State.NrTabs++;
 
 								if (State.Cells is null)
 									Script.Append("null");
@@ -723,6 +744,8 @@ namespace TAG.Content.Microsoft
 
 		private static bool ParseCellReference(string Ref, out int Column, out int Row)
 		{
+			bool HasColumn = false;
+			bool HasRow = false;
 			char ch2;
 			int i;
 
@@ -737,11 +760,13 @@ namespace TAG.Content.Microsoft
 				{
 					i = Column;
 
-					Column *= 25;
-					Column += ch2 - 'A';
+					Column *= 26;
+					Column += ch2 - 'A' + 1;
 
 					if (Column < i)
 						return false;
+
+					HasColumn = true;
 				}
 				else if (ch2 >= '0' && ch2 <= '9')
 				{
@@ -752,14 +777,14 @@ namespace TAG.Content.Microsoft
 
 					if (Row < i)
 						return false;
+
+					HasRow = true;
 				}
 				else
 					return false;
 			}
 
-			Column++;
-
-			return true;
+			return HasColumn && HasRow;
 		}
 
 		private class RenderingState

@@ -2,6 +2,10 @@
 	'Multiplication Table':
 		{
 			'Name':'Multiplication Table',
+			'Left':1,
+			'Top':1,
+			'Right':11,
+			'Bottom':13,
 			'Data':
 				[["This is a simple spreadsheet containing the multiplication table",,,,,,,,,,],
 				 [,,,,,,,,,,],

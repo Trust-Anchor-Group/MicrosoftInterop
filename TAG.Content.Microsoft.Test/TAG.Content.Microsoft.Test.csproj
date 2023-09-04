@@ -31,6 +31,7 @@
     <None Remove="Expected\SimpleText.md" />
     <None Remove="Expected\TableOfContents.md" />
     <None Remove="Expected\Tables.md" />
+    <None Remove="Spreadsheets\SimpleSheet.xlsx" />
   </ItemGroup>
 
   <ItemGroup>
@@ -64,34 +65,37 @@
     <Content Include="Documents\Tables.docx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Expected\Fields.md">
+    <Content Include="Expected\Markdown\Fields.md">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Expected\Figures.md">
+    <Content Include="Expected\Markdown\Figures.md">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Expected\Frames.md">
+    <Content Include="Expected\Markdown\Frames.md">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Expected\Lists.md">
+    <Content Include="Expected\Markdown\Lists.md">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Expected\Notes.md">
+    <Content Include="Expected\Markdown\Notes.md">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Expected\Paragraphs.md">
+    <Content Include="Expected\Markdown\Paragraphs.md">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Expected\Sections.md">
+    <Content Include="Expected\Markdown\Sections.md">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Expected\SimpleText.md">
+    <Content Include="Expected\Markdown\SimpleText.md">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Expected\TableOfContents.md">
+    <Content Include="Expected\Markdown\TableOfContents.md">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Expected\Tables.md">
+    <Content Include="Expected\Markdown\Tables.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Spreadsheets\SimpleSheet.xlsx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
@@ -115,6 +119,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\TAG.Content.Microsoft\TAG.Content.Microsoft.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Expected\Script\" />
   </ItemGroup>
 
 </Project>

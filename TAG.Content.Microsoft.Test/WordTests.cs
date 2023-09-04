@@ -30,7 +30,7 @@ namespace TAG.Content.Microsoft.Test
 		{
 			inputFolder = Path.Combine(Environment.CurrentDirectory, "Documents");
 			outputFolder = Path.Combine(Environment.CurrentDirectory, "Output");
-			expectedFolder = Path.Combine(Environment.CurrentDirectory, "Expected");
+			expectedFolder = Path.Combine(Environment.CurrentDirectory, "Expected", "Markdown");
 
 			if (!Directory.Exists(outputFolder))
 				Directory.CreateDirectory(outputFolder);

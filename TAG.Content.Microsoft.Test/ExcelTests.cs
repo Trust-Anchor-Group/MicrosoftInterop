@@ -1,9 +1,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Text;
-using Waher.Events;
-using Waher.Events.Console;
-using Waher.Runtime.Inventory.Loader;
 using Waher.Runtime.Text;
+using Waher.Script;
 
 namespace TAG.Content.Microsoft.Test
 {
@@ -29,7 +27,7 @@ namespace TAG.Content.Microsoft.Test
 
 		[DataTestMethod]
 		[DataRow("SimpleSheet")]
-		public void Convert_To_Script(string FileName)
+		public async Task Convert_To_Script(string FileName)
 		{
 			Assert.IsNotNull(inputFolder);
 			Assert.IsNotNull(outputFolder);
@@ -37,13 +35,30 @@ namespace TAG.Content.Microsoft.Test
 
 			string InputFileName = Path.Combine(inputFolder, FileName + ".xlsx");
 			string OutputFileName = Path.Combine(outputFolder, FileName + ".script");
+			string OutputFileName2 = Path.Combine(outputFolder, FileName + "2.script");
 			string ExpectedFileName = Path.Combine(expectedFolder, FileName + ".script");
 
-			ExcelUtilities.ConvertExcelToScript(InputFileName, OutputFileName);
+			ExcelUtilities.ConvertExcelToScript(InputFileName, OutputFileName, true);
+			ExcelUtilities.ConvertExcelToScript(InputFileName, OutputFileName2, false);
+
+			string Output = File.ReadAllText(OutputFileName);
+			string Output2 = File.ReadAllText(OutputFileName2);
+
+			Expression Exp1 = new(Output);
+			Expression Exp2 = new(Output2);
+
+			Variables Variables1 = new();
+			object Result1 = await Exp1.EvaluateAsync(Variables1);
+			string s1 = Expression.ToString(Result1);
+
+			Variables Variables2 = new();
+			object Result2 = await Exp2.EvaluateAsync(Variables2);
+			string s2 = Expression.ToString(Result2);
+
+			Assert.AreEqual(s1, s2);
 
 			if (File.Exists(ExpectedFileName))
 			{
-				string Output = File.ReadAllText(OutputFileName);
 				string Expected = File.ReadAllText(ExpectedFileName);
 
 				if (Expected != Output)
@@ -79,5 +94,15 @@ namespace TAG.Content.Microsoft.Test
 				}
 			}
 		}
+
+		/* TODO:
+		 * - Multiple sheets
+		 * - References
+		 * - Data types: Compare string "10" with number 10.
+		 * - Normalized strings
+		 * - Sparse matrices
+		 * - Leading empty rows/columns
+		 * - Multi-character columns & rows
+		 */
 	}
 }

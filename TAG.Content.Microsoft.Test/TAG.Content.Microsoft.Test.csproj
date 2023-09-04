@@ -27,10 +27,13 @@
     <None Remove="Expected\Lists.md" />
     <None Remove="Expected\Notes.md" />
     <None Remove="Expected\Paragraphs.md" />
+    <None Remove="Expected\Script\MultipleSheets.script" />
+    <None Remove="Expected\Script\SimpleSheet.script" />
     <None Remove="Expected\Sections.md" />
     <None Remove="Expected\SimpleText.md" />
     <None Remove="Expected\TableOfContents.md" />
     <None Remove="Expected\Tables.md" />
+    <None Remove="Spreadsheets\MultipleSheets.xlsx" />
     <None Remove="Spreadsheets\SimpleSheet.xlsx" />
   </ItemGroup>
 
@@ -95,6 +98,15 @@
     <Content Include="Expected\Markdown\Tables.md">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Expected\Script\MultipleSheets.script">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Expected\Script\SimpleSheet.script">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Spreadsheets\MultipleSheets.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Spreadsheets\SimpleSheet.xlsx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -119,10 +131,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\TAG.Content.Microsoft\TAG.Content.Microsoft.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Expected\Script\" />
   </ItemGroup>
 
 </Project>

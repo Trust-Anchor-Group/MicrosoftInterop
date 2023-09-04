@@ -33,7 +33,7 @@ namespace TAG.Content.Microsoft
 			File.WriteAllText(MarkdownFileName, Markdown, utf8BomEncoding);
 		}
 
-		private static readonly Encoding utf8BomEncoding = new UTF8Encoding(true);
+		internal static readonly Encoding utf8BomEncoding = new UTF8Encoding(true);
 
 		/// <summary>
 		/// Extracts the contents of a Word file to Markdown.
@@ -316,7 +316,7 @@ namespace TAG.Content.Microsoft
 			}
 		}
 
-		private static string CapLength(string s, int MaxLength)
+		internal static string CapLength(string s, int MaxLength)
 		{
 			if (s.Length > MaxLength)
 				return s.Substring(0, MaxLength) + "...";

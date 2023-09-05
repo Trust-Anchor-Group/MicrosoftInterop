@@ -27,6 +27,7 @@
     <None Remove="Expected\Lists.md" />
     <None Remove="Expected\Notes.md" />
     <None Remove="Expected\Paragraphs.md" />
+    <None Remove="Expected\Script\Diagram.script" />
     <None Remove="Expected\Script\MultipleSheets.script" />
     <None Remove="Expected\Script\SimpleSheet.script" />
     <None Remove="Expected\Script\SparseMatrix.script" />
@@ -34,6 +35,7 @@
     <None Remove="Expected\SimpleText.md" />
     <None Remove="Expected\TableOfContents.md" />
     <None Remove="Expected\Tables.md" />
+    <None Remove="Spreadsheets\Diagram.xlsx" />
     <None Remove="Spreadsheets\MultipleSheets.xlsx" />
     <None Remove="Spreadsheets\SimpleSheet.xlsx" />
     <None Remove="Spreadsheets\SparseMatrix.xlsx" />
@@ -100,6 +102,9 @@
     <Content Include="Expected\Markdown\Tables.md">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Expected\Script\Diagram.script">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Expected\Script\MultipleSheets.script">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -107,6 +112,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Expected\Script\SparseMatrix.script">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Spreadsheets\Diagram.xlsx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Spreadsheets\MultipleSheets.xlsx">
@@ -135,6 +143,7 @@
     <PackageReference Include="Waher.Runtime.Inventory" Version="1.1.5" />
     <PackageReference Include="Waher.Runtime.Inventory.Loader" Version="1.0.9" />
     <PackageReference Include="Waher.Runtime.Text" Version="1.1.0" />
+    <PackageReference Include="Waher.Script.Content" Version="2.1.1" />
   </ItemGroup>
 
   <ItemGroup>

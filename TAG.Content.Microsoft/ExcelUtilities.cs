@@ -1,6 +1,5 @@
 ﻿using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Office2013.ExcelAc;
-using DocumentFormat.OpenXml.Office2019.Excel.CalcFeatures;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
 using System;
@@ -313,6 +312,47 @@ namespace TAG.Content.Microsoft
 									Script.Append(']');
 								}
 
+								Script.Append(',');
+								State.NrTabs--;
+								State.NewLine();
+
+								Script.Append("'Images':");
+								State.NrTabs++;
+
+								if (State.Images is null)
+									Script.Append("null");
+								else
+								{
+									State.NewLine();
+									Script.Append('{');
+									State.NrTabs++;
+
+									bool First = true;
+
+									foreach (KeyValuePair<string, string> P in State.Images)
+									{
+										if (First)
+											First = false;
+										else
+											Script.Append(',');
+
+										State.NewLine();
+										Script.Append('\'');
+										Script.Append(JSON.Encode(P.Key));
+										Script.Append("':Get('");
+										Script.Append(P.Value);
+										Script.Append("')");
+									}
+
+									State.Images = null;
+
+									State.NrTabs--;
+									if (!First)
+										State.NewLine();
+
+									Script.Append('}');
+								}
+
 								State.NrTabs -= 2;
 								State.NewLine();
 								Script.Append('}');
@@ -441,6 +481,8 @@ namespace TAG.Content.Microsoft
 						case "sheetViews":
 							if (Element is SheetViews SheetViews)
 								HasText = ExportAsScript(SheetViews.Elements(), Script, State);
+							else if (Element is ChartSheetViews ChartSheetViews)
+								HasText = ExportAsScript(ChartSheetViews.Elements(), Script, State);
 							else
 								State.UnrecognizedElement(Element);
 							break;
@@ -483,6 +525,8 @@ namespace TAG.Content.Microsoft
 						case "sheetView":
 							if (Element is SheetView SheetView)
 								HasText = ExportAsScript(SheetView.Elements(), Script, State);
+							else if (Element is ChartSheetView ChartSheetView)
+								HasText = ExportAsScript(ChartSheetView.Elements(), Script, State);
 							else
 								State.UnrecognizedElement(Element);
 							break;
@@ -621,6 +665,52 @@ namespace TAG.Content.Microsoft
 								State.UnrecognizedElement(Element);
 							break;
 
+						case "chartsheet":
+							if (Element is Chartsheet Chartsheet)
+								HasText = ExportAsScript(Chartsheet.Elements(), Script, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "drawing":
+							if (Element is Drawing Drawing)
+							{
+								if (Drawing.Id.HasValue)
+								{
+									OpenXmlPart Part = State.Doc.WorkbookPart.GetPartById(Drawing.Id.Value);
+									if (Part is ChartsheetPart ChartsheetPart)
+									{
+										foreach (IdPartPair P in ChartsheetPart.DrawingsPart.Parts)
+										{
+											if (P.OpenXmlPart is ImagePart ImagePart)
+											{
+												using (Stream ImageStream = ImagePart.GetStream())
+												{
+													int c = (int)Math.Min(ImageStream.Length, int.MaxValue);
+													byte[] Bin = new byte[c];
+													ImageStream.Read(Bin, 0, c);
+													State.AddImage(Drawing.Id.Value, ChartsheetPart.ContentType, Bin);
+												}
+
+												break;
+											}
+										}
+									}
+								}
+
+								HasText = ExportAsScript(Drawing.Elements(), Script, State);
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "sheetPr":
+							if (Element is ChartSheetProperties ChartSheetProperties)
+								HasText = ExportAsScript(ChartSheetProperties.Elements(), Script, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+	
 						default:
 							State.UnrecognizedElement(Element);
 							break;
@@ -793,6 +883,7 @@ namespace TAG.Content.Microsoft
 			public StringBuilder Script;
 			public Dictionary<string, Dictionary<string, int>> Unrecognized = null;
 			public Dictionary<string, int> LanguageCounts = new Dictionary<string, int>();
+			public Dictionary<string, string> Images = null;
 			public List<string> SharedStrings = null;
 			public bool Indentation;
 			public string[,] Cells;
@@ -877,6 +968,21 @@ namespace TAG.Content.Microsoft
 					Value = this.SharedStrings[Index];
 					return true;
 				}
+			}
+
+			public void AddImage(string Id, string ContentType, byte[] Data)
+			{
+				StringBuilder sb = new StringBuilder();
+
+				sb.Append("data:");
+				sb.Append(ContentType);
+				sb.Append(";base64,");
+				sb.Append(Convert.ToBase64String(Data));
+
+				if (this.Images is null)
+					this.Images = new Dictionary<string, string>();
+
+				this.Images[Id] = sb.ToString();
 			}
 		}
 	}

@@ -29,6 +29,7 @@ namespace TAG.Content.Microsoft.Test
 		[DataRow("SimpleSheet")]
 		[DataRow("MultipleSheets")]
 		[DataRow("SparseMatrix")]
+		[DataRow("Diagram")]
 		public async Task Convert_To_Script(string FileName)
 		{
 			Assert.IsNotNull(inputFolder);
@@ -97,8 +98,7 @@ namespace TAG.Content.Microsoft.Test
 			}
 		}
 
-		/* TODO:
-		 * - Diagrams
-		 */
+		// TODO:
+		//		Image
 	}
 }

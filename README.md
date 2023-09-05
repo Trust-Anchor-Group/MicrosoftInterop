@@ -52,6 +52,8 @@ The Unit Tests further use the following libraries:
 | [Waher.Content.XML](https://www.nuget.org/packages/Waher.Content.XML/)                           | Library with tools for XML processing. |
 | [Waher.Events.Console](https://www.nuget.org/packages/Waher.Events.Console/)                     | Outputs events logged to the console output. |
 | [Waher.Runtime.Inventory.Loader](https://www.nuget.org/packages/Waher.Runtime.Inventory.Loader/) | Permits the inventory and seamless integration of classes defined in all available assemblies. |
+| [Waher.Script](https://www.nuget.org/packages/Waher.Script/)                                     | Library with an extensible script processing architecture. |
+| [Waher.Script.Content](https://www.nuget.org/packages/Waher.Script.Content/)                     | Extends the scripting environment with content-related script extensions. |
 
 ## Installable Package
 

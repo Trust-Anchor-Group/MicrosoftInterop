@@ -114,3 +114,19 @@ Example of how to point a web folder to your project folder:
 **Note 3**: This file folder is only necessary on your developer machine, to give you real-time updates as you edit the files in your
 developer folder. It is not necessary in a production environment, as the files are copied into the correct folders when the package 
 is installed.
+
+## Converting documents in script
+
+You can convert Microsoft documents using script, by calling any of the following functions. First, you need to have the decoded
+document accessible to the script. This can be achieved in various ways, for eaxmple by receving it in a POST, accessible using the
+[Posted variable](http://lab.tagroot.io/Script.md#specialWebVariables), or by using the 
+[LoadFile function](http://lab.tagroot.io/Script.md#contentRelatedFunctionsWaherScriptContent), or by retrieving it from the
+Internet using the [Get function](http://lab.tagroot.io/Script.md#contentRelatedFunctionsWaherScriptContent), or similar method.
+Once you have the document, you can use it as an argument when calling any of the following functions:
+
+| Function              | Description                                           |
+|-----------------------|-------------------------------------------------------|
+| `WordToMarkdown(Doc)` | Converts a Word document to [Markdown](/Markdown.md). |
+| `ExcelToScript(Doc)`  | Converts an Excel document to Script.                 |
+
+The function returns the converted artefact, which you can use in further processing in script.

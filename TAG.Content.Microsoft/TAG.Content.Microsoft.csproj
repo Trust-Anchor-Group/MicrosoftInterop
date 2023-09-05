@@ -37,11 +37,11 @@ https://lab.tagroot.io/Markdown.md</Description>
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\..\IoTBroker\Waher.Networking.XMPP.EDaler\Tag64x64.png">
+    <None Include="Tag64x64.png">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
-    <None Include="..\..\IoTBroker\Waher.Networking.XMPP.NeuroFeatures\LICENSE.txt">
+    <None Include="LICENSE.txt">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>

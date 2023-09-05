@@ -3,7 +3,8 @@ Microsoft Interoperation
 
 This repository contains services that help with interoperation with Microsoft products,
 using **Open XML SDK** libraries. This SDK allows for interoperation with documents saved using
-the Open XML specification, not old legacy formats (i.e. `.docx` works, `.doc` not so).
+the Open XML specification, not old legacy formats (i.e. `.docx` and `.xlsx` works, `.doc` or
+`.xls` not so).
 
 ## Neuron-extensions
 
@@ -11,9 +12,11 @@ This solution demonstrates how to create the following type of extensions for th
 
 * Installable service module package containing .NET service code, as well as file-based content.
 * .NET-based web services.
-* Internet Content Decoder
-* Internet Content Converter
-* Dynamic extension of file-based Internet Content (Markdown, Javacript, CSS, etc.)
+* Internet Content Decoder for Word and Excel documents.
+* Internet Content Converter for Word to Markdown.
+* Dynamic extension of file-based Internet Content (Markdown, Javacript, CSS, etc.).
+	* The MarkdownLab is extended to allow for uploading and conversion of Word documents.
+	* The script Prompts is extended to allow for uploading and conversion of Excel documents.
 
 ## Projects
 
@@ -21,7 +24,7 @@ The solution contains the following C# projects:
 
 | Project                        | Framework         | Description |
 |:-------------------------------|:------------------|:------------|
-| `TAG.Content.Microsoft`        | .NET Standard 2.0 | Class library for conversion of Microsoft artefacts (such as Word documents), using [Open XML SDK](https://sv.wikipedia.org/wiki/Office_Open_XML). |
+| `TAG.Content.Microsoft`        | .NET Standard 2.0 | Class library for conversion of Microsoft artefacts (such as Word and Excel documents), using [Open XML SDK](https://sv.wikipedia.org/wiki/Office_Open_XML). |
 | `TAG.Content.Microsoft.Test`   | .NET 6.0          | Unit tests for the `TAG.Content.Microsoft` library. |
 | `TAG.Service.MicrosoftInterop` | .NET Standard 2.0 | Service module for the [TAG Neuron](https://lab.tagroot.io/Documentation/Index.md), providing web services for conversion of Microsoft documents. |
 

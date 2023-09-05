@@ -2,14 +2,15 @@
 using System.Text;
 using System.Threading.Tasks;
 using TAG.Content.Microsoft;
+using TAG.Content.Microsoft.Content;
 using Waher.Networking.HTTP;
 
 namespace TAG.Service.MicrosoftInterop.WebServices
 {
-	/// <summary>
-	/// Converts a Excel document to Script
-	/// </summary>
-	public class ExcelToScript : HttpSynchronousResource, IHttpPostMethod
+    /// <summary>
+    /// Converts a Excel document to Script
+    /// </summary>
+    public class ExcelToScript : HttpSynchronousResource, IHttpPostMethod
 	{
 		private readonly HttpAuthenticationScheme[] authenticationSchemes;
 

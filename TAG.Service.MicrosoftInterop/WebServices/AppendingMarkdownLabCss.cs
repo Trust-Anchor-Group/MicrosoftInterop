@@ -1,6 +1,6 @@
 ﻿using System.IO;
 using System.Threading.Tasks;
-using TAG.Content.Microsoft;
+using TAG.Content.Microsoft.Content;
 using Waher.Content;
 using Waher.Content.Html.Css;
 using Waher.Content.Html.Javascript;
@@ -9,11 +9,11 @@ using Waher.Networking.HTTP;
 
 namespace TAG.Service.MicrosoftInterop.WebServices
 {
-	/// <summary>
-	/// Appends information to the Markdown Lab CSS file, to allow for
-	/// Word document uploads.
-	/// </summary>
-	public class AppendingMarkdownLabCss : HttpSynchronousResource, IHttpGetMethod
+    /// <summary>
+    /// Appends information to the Markdown Lab CSS file, to allow for
+    /// Word document uploads.
+    /// </summary>
+    public class AppendingMarkdownLabCss : HttpSynchronousResource, IHttpGetMethod
 	{
 		private readonly HttpAuthenticationScheme[] authenticationSchemes;
 

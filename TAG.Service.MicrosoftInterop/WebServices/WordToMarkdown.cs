@@ -2,15 +2,16 @@
 using System.Text;
 using System.Threading.Tasks;
 using TAG.Content.Microsoft;
+using TAG.Content.Microsoft.Content;
 using Waher.Content.Markdown;
 using Waher.Networking.HTTP;
 
 namespace TAG.Service.MicrosoftInterop.WebServices
 {
-	/// <summary>
-	/// Converts a Word document to Markdown
-	/// </summary>
-	public class WordToMarkdown : HttpSynchronousResource, IHttpPostMethod
+    /// <summary>
+    /// Converts a Word document to Markdown
+    /// </summary>
+    public class WordToMarkdown : HttpSynchronousResource, IHttpPostMethod
 	{
 		private readonly HttpAuthenticationScheme[] authenticationSchemes;
 

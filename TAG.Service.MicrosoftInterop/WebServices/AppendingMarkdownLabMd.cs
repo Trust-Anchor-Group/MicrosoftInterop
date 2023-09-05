@@ -1,6 +1,6 @@
 ﻿using System.IO;
 using System.Threading.Tasks;
-using TAG.Content.Microsoft;
+using TAG.Content.Microsoft.Content;
 using Waher.Content;
 using Waher.Content.Markdown.Web;
 using Waher.IoTGateway;
@@ -8,11 +8,11 @@ using Waher.Networking.HTTP;
 
 namespace TAG.Service.MicrosoftInterop.WebServices
 {
-	/// <summary>
-	/// Appends information to the Markdown Lab Markdown page, to allow for
-	/// Word document uploads.
-	/// </summary>
-	public class AppendingMarkdownLabMd : HttpSynchronousResource, IHttpGetMethod
+    /// <summary>
+    /// Appends information to the Markdown Lab Markdown page, to allow for
+    /// Word document uploads.
+    /// </summary>
+    public class AppendingMarkdownLabMd : HttpSynchronousResource, IHttpGetMethod
 	{
 		private readonly HttpAuthenticationScheme[] authenticationSchemes;
 

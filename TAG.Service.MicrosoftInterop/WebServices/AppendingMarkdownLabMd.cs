@@ -2,8 +2,7 @@
 using System.Threading.Tasks;
 using TAG.Content.Microsoft;
 using Waher.Content;
-using Waher.Content.Html;
-using Waher.Content.Markdown;
+using Waher.Content.Markdown.Web;
 using Waher.IoTGateway;
 using Waher.Networking.HTTP;
 
@@ -71,19 +70,43 @@ namespace TAG.Service.MicrosoftInterop.WebServices
 				Markdown1 = Markdown1.Insert(i, Markdown2);
 			}
 
-			MarkdownSettings Settings = new MarkdownSettings()
+			await SendMarkdownAsHtml(Request, Response, Markdown1, FileName1);
+		}
+
+		/// <summary>
+		/// Converts Markdown to HTML and returns it to the client.
+		/// </summary>
+		/// <param name="Request">Request object.</param>
+		/// <param name="Response">Response object.</param>
+		/// <param name="Markdown">Markdown to process.</param>
+		/// <param name="FileName">Name of markdown file.</param>
+		public static async Task SendMarkdownAsHtml(HttpRequest Request, HttpResponse Response,
+			string Markdown, string FileName)
+		{
+			MarkdownToHtmlConverter Converter = new MarkdownToHtmlConverter();
+			byte[] Bin = WordToMarkdownConverter.Utf8WithBOM.GetBytes(Markdown);
+			using (MemoryStream Input = new MemoryStream(Bin))
 			{
-				ResourceMap = Gateway.HttpServer,
-				Variables = Request.Session
-			};
-			MarkdownDocument Doc = await MarkdownDocument.CreateAsync(Markdown1, Settings, string.Empty, 
-				this.ResourceName, Gateway.GetUrl(this.ResourceName));
+				using (MemoryStream Output = new MemoryStream())
+				{
+					string MarkdownContentType = Converter.FromContentTypes[0];
+					string HtmlContentType = Converter.ToContentTypes[0];
 
-			string Html = await Doc.GenerateHTML();
-			byte[] Bin = WordToMarkdownConverter.Utf8WithBOM.GetBytes(Html);
+					ConversionState State = new ConversionState(MarkdownContentType, Input, FileName,
+						Request.Header.Resource, Request.Header.GetURL(), HtmlContentType, Output, 
+						Request.Session, Converter.ToContentTypes);
 
-			Response.ContentType = HtmlCodec.HtmlContentTypes[0] + "; charset=utf-8";
-			await Response.Write(Bin);
+					Request.Session["Request"] = Request;
+					Request.Session["Response"] = Response;
+
+					await Converter.ConvertAsync(State);
+
+					Bin = Output.ToArray();
+
+					Response.ContentType = State.ToContentType;
+					await Response.Write(Bin);
+				}
+			}
 		}
 	}
 }

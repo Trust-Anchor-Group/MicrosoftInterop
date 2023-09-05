@@ -39,6 +39,7 @@ They can also be used standalone.
 |:---------------------------------------------------------------------------------------------------|:------------|
 | [Waher.Content](https://www.nuget.org/packages/Waher.Content/)                                     | Pluggable architecture for accessing, encoding and decoding Internet Content. |
 | [Waher.Content.Markdown](https://www.nuget.org/packages/Waher.Content.Markdown/)                   | Library for parsing Markdown, and rendering it into different formats. |
+| [Waher.Content.Markdown.Web](https://www.nuget.org/packages/Waher.Content.MarkdownWeb/)            | Library for converting Markdown documents to HTML in a web environment. |
 | [Waher.Events](https://www.nuget.org/packages/Waher.Events/)                                       | An extensible architecture for event logging in the application. |
 | [Waher.IoTGateway](https://www.nuget.org/packages/Waher.IoTGateway/)                               | Contains the [IoT Gateway](https://github.com/PeterWaher/IoTGateway) hosting environment. |
 | [Waher.Networking](https://www.nuget.org/packages/Waher.Networking/)                               | Tools for working with communication, including troubleshooting. |

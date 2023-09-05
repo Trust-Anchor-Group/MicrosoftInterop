@@ -20,9 +20,12 @@ namespace TAG.Service.MicrosoftInterop
 	public class ConversionService : IConfigurableModule
 	{
 		private WordToMarkdown wordToMarkdown;
+		private ExcelToScript excelToScript;
 		private AppendingMarkdownLabMd appendingMarkdownLabMd;
 		private AppendingMarkdownLabJs appendingMarkdownLabJs;
 		private AppendingMarkdownLabCss appendingMarkdownLabCss;
+		private AppendingPromptMd appendingPromptMd;
+		private AppendingPromptJs appendingPromptJs;
 
 		public ConversionService()
 		{
@@ -67,6 +70,9 @@ namespace TAG.Service.MicrosoftInterop
 			this.wordToMarkdown = new WordToMarkdown(Schemes.ToArray());
 			Gateway.HttpServer?.Register(this.wordToMarkdown);
 
+			this.excelToScript = new ExcelToScript(Schemes.ToArray());
+			Gateway.HttpServer?.Register(this.excelToScript);
+
 			Schemes.Clear();
 			Schemes.Add(new RequiredUserPrivileges("User", "/Login.md", Gateway.HttpServer, "Admin.Lab.Markdown", "Admin.Lab.Script"));
 
@@ -78,6 +84,15 @@ namespace TAG.Service.MicrosoftInterop
 
 			this.appendingMarkdownLabCss = new AppendingMarkdownLabCss(Schemes.ToArray());
 			Gateway.HttpServer?.Register(this.appendingMarkdownLabCss);
+
+			Schemes.Clear();
+			Schemes.Add(new RequiredUserPrivileges("User", "/Login.md", Gateway.HttpServer, "Admin.Lab.Script"));
+
+			this.appendingPromptMd = new AppendingPromptMd(Schemes.ToArray());
+			Gateway.HttpServer?.Register(this.appendingPromptMd);
+
+			this.appendingPromptJs = new AppendingPromptJs(Schemes.ToArray());
+			Gateway.HttpServer?.Register(this.appendingPromptJs);
 
 			return Task.CompletedTask;
 		}
@@ -91,6 +106,12 @@ namespace TAG.Service.MicrosoftInterop
 			{
 				Gateway.HttpServer?.Unregister(this.wordToMarkdown);
 				this.wordToMarkdown = null;
+			}
+
+			if (!(this.excelToScript is null))
+			{
+				Gateway.HttpServer?.Unregister(this.excelToScript);
+				this.excelToScript = null;
 			}
 
 			if (!(this.appendingMarkdownLabMd is null))
@@ -109,6 +130,18 @@ namespace TAG.Service.MicrosoftInterop
 			{
 				Gateway.HttpServer?.Unregister(this.appendingMarkdownLabCss);
 				this.appendingMarkdownLabCss = null;
+			}
+
+			if (!(this.appendingPromptMd is null))
+			{
+				Gateway.HttpServer?.Unregister(this.appendingPromptMd);
+				this.appendingPromptMd = null;
+			}
+
+			if (!(this.appendingPromptJs is null))
+			{
+				Gateway.HttpServer?.Unregister(this.appendingPromptJs);
+				this.appendingPromptJs = null;
 			}
 
 			return Task.CompletedTask;

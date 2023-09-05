@@ -8,6 +8,8 @@
 		<Folder name="MicrosoftInterop">
 			<Content fileName="MarkdownLabAddendum.js"/>
 			<Content fileName="MarkdownLabAddendum.md"/>
+			<Content fileName="PromptAddendum.js"/>
+			<Content fileName="PromptAddendum.md"/>
 		</Folder>
 	</Folder>
 </Module>

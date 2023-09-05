@@ -11,10 +11,18 @@
 	<ItemGroup>
 	  <None Remove="Root\MicrosoftInterop\MarkdownLabAddendum.js" />
 	  <None Remove="Root\MicrosoftInterop\MarkdownLabAddendum.md" />
+	  <None Remove="Root\MicrosoftInterop\PromptAddendum.js" />
+	  <None Remove="Root\MicrosoftInterop\PromptAddendum.md" />
 	  <None Remove="TAG.Service.MicrosoftInterop.manifest" />
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Content Include="Root\MicrosoftInterop\PromptAddendum.js">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	  <Content Include="Root\MicrosoftInterop\PromptAddendum.md">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
 	  <Content Include="Root\MicrosoftInterop\MarkdownLabAddendum.js">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>

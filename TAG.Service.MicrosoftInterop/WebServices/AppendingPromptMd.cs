@@ -10,19 +10,19 @@ using Waher.Networking.HTTP;
 namespace TAG.Service.MicrosoftInterop.WebServices
 {
 	/// <summary>
-	/// Appends information to the Markdown Lab Markdown page, to allow for
-	/// Word document uploads.
+	/// Appends information to the Prompt Markdown page, to allow for
+	/// Excel document uploads.
 	/// </summary>
-	public class AppendingMarkdownLabMd : HttpSynchronousResource, IHttpGetMethod
+	public class AppendingPromptMd : HttpSynchronousResource, IHttpGetMethod
 	{
 		private readonly HttpAuthenticationScheme[] authenticationSchemes;
 
 		/// <summary>
-		/// Appends information to the Markdown Lab Markdown page, to allow for
-		/// Word document uploads.
+		/// Appends information to the Prompt Markdown page, to allow for
+		/// Excel document uploads.
 		/// </summary>
-		public AppendingMarkdownLabMd(params HttpAuthenticationScheme[] AuthenticationSchemes)
-			: base("/MarkdownLab/MarkdownLab.md")
+		public AppendingPromptMd(params HttpAuthenticationScheme[] AuthenticationSchemes)
+			: base("/Prompt.md")
 		{
 			this.authenticationSchemes = AuthenticationSchemes;
 		}
@@ -59,16 +59,16 @@ namespace TAG.Service.MicrosoftInterop.WebServices
 		/// <param name="Response">Response object.</param>
 		public async Task GET(HttpRequest Request, HttpResponse Response)
 		{
-			string FileName1 = Path.Combine(Gateway.RootFolder, "MarkdownLab", "MarkdownLab.md");
+			string FileName1 = Path.Combine(Gateway.RootFolder, "Prompt.md");
 			string Markdown1 = await Resources.ReadAllTextAsync(FileName1);
-			int i = Markdown1.IndexOf("</section>");
+			int i = Markdown1.IndexOf("\r\n\r\n=====================================================");
 
 			if (i >= 0)
 			{
-				string FileName2 = Path.Combine(Gateway.RootFolder, "MicrosoftInterop", "MarkdownLabAddendum.md");
+				string FileName2 = Path.Combine(Gateway.RootFolder, "MicrosoftInterop", "PromptAddendum.md");
 				string Markdown2 = await Resources.ReadAllTextAsync(FileName2);
 
-				Markdown1 = Markdown1.Insert(i, Markdown2);
+				Markdown1 = Markdown1.Insert(i + 2, Markdown2);
 			}
 
 			MarkdownSettings Settings = new MarkdownSettings()

@@ -13,7 +13,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TAG.Content.Microsoft", "TA
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TAG.Content.Microsoft.Test", "TAG.Content.Microsoft.Test\TAG.Content.Microsoft.Test.csproj", "{D84B7D7F-C407-48BD-86E5-0BAE0F7FE935}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TAG.Service.MicrosoftInterop", "TAG.Service.MicrosoftInterop\TAG.Service.MicrosoftInterop.csproj", "{0CC9CA49-3CD7-46BC-8062-F4CF81C40D6A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TAG.Service.MicrosoftInterop", "TAG.Service.MicrosoftInterop\TAG.Service.MicrosoftInterop.csproj", "{0CC9CA49-3CD7-46BC-8062-F4CF81C40D6A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WordToMarkdown", "WordToMarkdown\WordToMarkdown.csproj", "{DA61264E-FA9D-4AB1-A13E-A86821ECBF26}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{0CC9CA49-3CD7-46BC-8062-F4CF81C40D6A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0CC9CA49-3CD7-46BC-8062-F4CF81C40D6A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0CC9CA49-3CD7-46BC-8062-F4CF81C40D6A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DA61264E-FA9D-4AB1-A13E-A86821ECBF26}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DA61264E-FA9D-4AB1-A13E-A86821ECBF26}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DA61264E-FA9D-4AB1-A13E-A86821ECBF26}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DA61264E-FA9D-4AB1-A13E-A86821ECBF26}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

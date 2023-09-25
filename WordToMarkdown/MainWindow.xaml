@@ -1,0 +1,26 @@
+﻿<Window x:Class="WordToMarkdown.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:WordToMarkdown"
+        mc:Ignorable="d" WindowStartupLocation="CenterScreen"
+        Title="Word to Markdown converter" Height="216" Width="600">
+	<DockPanel LastChildFill="True" Margin="10">
+		<Label DockPanel.Dock="Top">Word file(s):</Label>
+		<DockPanel DockPanel.Dock="Top" LastChildFill="True">
+			<Button DockPanel.Dock="Right" Padding="5,2" Margin="5,0,0,0" Click="BrowseWordDocuments">...</Button>
+			<TextBox DockPanel.Dock="Left" Text="{Binding InputFileName}" ToolTip="Input Word file. Can include wildcards *."/>
+		</DockPanel>
+		<Label DockPanel.Dock="Top" Margin="0,10,0,0">Markdown file(s):</Label>
+		<DockPanel DockPanel.Dock="Top" LastChildFill="True">
+			<Button DockPanel.Dock="Right" Padding="5,2" Margin="5,0,0,0">...</Button>
+			<TextBox Text="{Binding OutputFileName}" ToolTip="Output Markdown file. Can be empty, or include same amount of wildcards as input."/>
+		</DockPanel>
+		<CheckBox DockPanel.Dock="Top" Content="Include subfolders in wildcard searches." Margin="0,10,0,0" IsChecked="{Binding Recursive}"/>
+		<StackPanel DockPanel.Dock="Top" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,10,0,0">
+			<Button Width="100" IsDefault="True" Click="ConvertButtonClicked">Convert</Button>
+			<Button Width="100" IsCancel="True" Margin="10,0,0,0" Click="CloseButtonClicked">Close</Button>
+		</StackPanel>
+	</DockPanel>
+</Window>

@@ -27,6 +27,7 @@ The solution contains the following C# projects:
 | `TAG.Content.Microsoft`        | .NET Standard 2.0 | Class library for conversion of Microsoft artefacts (such as Word and Excel documents), using [Open XML SDK](https://sv.wikipedia.org/wiki/Office_Open_XML). |
 | `TAG.Content.Microsoft.Test`   | .NET 6.0          | Unit tests for the `TAG.Content.Microsoft` library. |
 | `TAG.Service.MicrosoftInterop` | .NET Standard 2.0 | Service module for the [TAG Neuron](https://lab.tagroot.io/Documentation/Index.md), providing web services for conversion of Microsoft documents. |
+| `WordToMarkdown`               | .NET 6.0          | Utility that helps the user convert Word documents to Markdown. Can be run of the command-line, or as a Windows application. |
 
 ## Nugets
 

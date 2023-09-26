@@ -39,9 +39,9 @@ namespace WordToMarkdown
 				List<KeyValuePair<string, string>>? Headers = null;
 				string? InputFileName = null;
 				string? OutputFileName = null;
-				bool Error = false;
+				string Error = null;
 
-				while (i < c)
+				while (i < c && Error is null)
 				{
 					switch (e.Args[i++].ToLower())
 					{
@@ -53,16 +53,10 @@ namespace WordToMarkdown
 								if (i < c)
 									InputFileName = e.Args[i++];
 								else
-								{
-									Error = true;
-									Console.Error.WriteLine("Missing input file name.");
-								}
+									Error = "Missing input file name.";
 							}
 							else
-							{
-								Error = true;
-								Console.Error.WriteLine("Input file name already provided.");
-							}
+								Error = "Input file name already provided.";
 							break;
 
 						case "-o":
@@ -74,16 +68,10 @@ namespace WordToMarkdown
 								if (i < c)
 									OutputFileName = e.Args[i++];
 								else
-								{
-									Error = true;
-									Console.Error.WriteLine("Missing output file name.");
-								}
+									Error = "Missing output file name.";
 							}
 							else
-							{
-								Error = true;
-								Console.Error.WriteLine("Output file name already provided.");
-							}
+								Error = "Output file name already provided.";
 							break;
 
 						case "-meta":
@@ -94,10 +82,7 @@ namespace WordToMarkdown
 								int j = s.IndexOf('=');
 
 								if (j < 0)
-								{
-									Error = true;
-									Console.Out.WriteLine("Invalid meta-data header: " + s);
-								}
+									Error = "Invalid meta-data header: " + s;
 								else
 								{
 									string Key = s[..j].Trim();
@@ -108,10 +93,7 @@ namespace WordToMarkdown
 								}
 							}
 							else
-							{
-								Error = true;
-								Console.Error.WriteLine("Missing meta-data header.");
-							}
+								Error = "Missing meta-data header.";
 							break;
 
 						case "-r":
@@ -122,52 +104,26 @@ namespace WordToMarkdown
 						case "-?":
 						case "-h":
 						case "-help":
-							Console.Out.WriteLine("This tool converts a Word document to a Markdown document.");
-							Console.Out.WriteLine();
-							Console.Out.WriteLine("Syntax: WordToMarkdown -input WORD_FILENAME -output MARKDOWN_FILENAME");
-							Console.Out.WriteLine();
-							Console.Out.WriteLine("Following switches are recognized:");
-							Console.Out.WriteLine();
-							Console.Out.WriteLine("-i FILENAME        Defines the filename of the Word document. The");
-							Console.Out.WriteLine("-input FILENAME    Word document must be saved using the Open XML");
-							Console.Out.WriteLine("-word FILENAME     SDK (i.e. in .docx file format). Filename can");
-							Console.Out.WriteLine("                   contain wildcards (*).");
-							Console.Out.WriteLine("-o FILENAME        Defines the filename of the Markdown document");
-							Console.Out.WriteLine("-output FILENAME   that will be generated. This switch is optional.");
-							Console.Out.WriteLine("-md FILENAME       If not provided, the same file name as the Word");
-							Console.Out.WriteLine("-markdown FILENAME document will be used, with the file extension .md.");
-							Console.Out.WriteLine("                   Filename can contain wildcards matching input");
-							Console.Out.WriteLine("                   filename.");
-							Console.Out.WriteLine("-meta KEY=VALUE    Adds a Markdown header to the output. Reference:");
-							Console.Out.WriteLine("-header KEY=VALUE  https://lab.tagroot.io/Markdown.md#metadata");
-							Console.Out.WriteLine("-r                 Recursive search for documents.");
-							Console.Out.WriteLine("-recursive         Same as -r.");
-							Console.Out.WriteLine("-?, -h, -help:     Shows this help.");
-							break;
+							HelpWindow HelpWindow = new();
+							HelpWindow.ShowDialog();
+							this.Shutdown(0);
+							return;
 
 						default:
-							Error = true;
-							Console.Error.WriteLine("Unrecognized switch: " + e.Args[i - 1]);
+							Error = "Unrecognized switch: " + e.Args[i - 1];
 							break;
 					}
-
-					if (Error)
-						break;
 				}
 
-				if (!Error)
+				if (Error is null)
 				{
 					if (string.IsNullOrEmpty(InputFileName))
-					{
-						Error = true;
-						Console.Error.WriteLine("Missing input file name.");
-					}
+						Error = "Missing input file name.";
 					else if (!string.IsNullOrEmpty(OutputFileName) &&
 						OutputFileName.Contains('*') &&
 						InputFileName.Split('*').Length != OutputFileName.Split('*').Length)
 					{
-						Error = true;
-						Console.Error.WriteLine("Number of wildcards do not match.");
+						Error = "Number of wildcards do not match.";
 					}
 					else
 					{
@@ -181,13 +137,18 @@ namespace WordToMarkdown
 						}
 						catch (Exception ex)
 						{
-							Console.Out.WriteLine(ex.Message);
-							Error = true;
+							Error = ex.Message;
 						}
 					}
 				}
 
-				this.Shutdown(Error ? 1 : 0);
+				if (!string.IsNullOrEmpty(Error))
+				{
+					MessageBox.Show(Error, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+					this.Shutdown(1);
+				}
+				else
+					this.Shutdown(0);
 			}
 		}
 

@@ -84,6 +84,41 @@ namespace TAG.Content.Microsoft
 		}
 
 		/// <summary>
+		/// Returns an OpenXML Settings object that ignores any relationship errors found in objects being loaded.
+		/// </summary>
+		/// <returns></returns>
+		public static OpenSettings GetFailSafePackageSettings()
+		{
+			return new OpenSettings()
+			{
+				AutoSave = false,
+				MaxCharactersInPart = 0,
+				MarkupCompatibilityProcessSettings = new MarkupCompatibilityProcessSettings(MarkupCompatibilityProcessMode.ProcessAllParts, FileFormatVersions.Microsoft365), 
+				RelationshipErrorHandlerFactory = RelationshipHandlerFactory
+			};
+		}
+
+		private static RelationshipErrorHandler RelationshipHandlerFactory(OpenXmlPackage Package) => ignoreErrors;
+
+		private class IgnoreErrors : RelationshipErrorHandler
+		{
+			public override string Rewrite(Uri partUri, string id, string uri)
+			{
+				try
+				{
+					Uri Uri = new Uri(uri);
+					return uri;
+				}
+				catch (Exception)
+				{
+					return "http://example.com/";
+				}
+			}
+		}
+
+		private static readonly IgnoreErrors ignoreErrors = new IgnoreErrors();
+
+		/// <summary>
 		/// Extracts the contents of a Word file to Markdown.
 		/// </summary>
 		/// <param name="Doc">Document to convert</param>
@@ -3061,7 +3096,10 @@ namespace TAG.Content.Microsoft
 					int c = this.PrevItemNumbers.Count;
 
 					while (c < i - 1)
+					{
 						this.PrevItemNumbers.Add(null);
+						c++;
+					}
 
 					if (c <= i)
 						this.PrevItemNumbers.Add(this.ItemNumber);

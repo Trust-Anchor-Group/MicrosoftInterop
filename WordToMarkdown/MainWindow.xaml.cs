@@ -1,7 +1,9 @@
 ﻿using Microsoft.Win32;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Input;
 using Waher.Events;
 
 namespace WordToMarkdown
@@ -62,14 +64,24 @@ namespace WordToMarkdown
 
 		private void ConvertButtonClicked(object sender, RoutedEventArgs e)
 		{
+			Mouse.OverrideCursor = Cursors.Wait;
 			try
 			{
-				App.ConvertWithWildcard(this.InputFileName, this.OutputFileName, this.Recursive);
+				KeyValuePair<int, int> P = App.ConvertWithWildcard(this.InputFileName, this.OutputFileName, this.Recursive);
+				int NrConverted = P.Key;
+				int NrNotConverted = P.Value;
+				string Message = App.GetMessage(NrConverted, NrNotConverted);
 
-				MessageBox.Show(this, "Conversion performed successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+				Mouse.OverrideCursor = null;
+
+				if (NrNotConverted>0)
+					MessageBox.Show(this, Message, "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+				else
+					MessageBox.Show(this, Message, "Information", MessageBoxButton.OK, MessageBoxImage.Information);
 			}
 			catch (Exception ex)
 			{
+				Mouse.OverrideCursor = null;
 				ex = Log.UnnestException(ex);
 				MessageBox.Show(this, ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 			}

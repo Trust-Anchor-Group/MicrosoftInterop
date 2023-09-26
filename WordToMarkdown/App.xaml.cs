@@ -1,6 +1,8 @@
-﻿using DocumentFormat.OpenXml.Packaging;
+﻿using DocumentFormat.OpenXml;
+using DocumentFormat.OpenXml.Packaging;
 using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -164,6 +166,7 @@ namespace WordToMarkdown
 						Console.Error.WriteLine("Missing input file name.");
 					}
 					else if (!string.IsNullOrEmpty(OutputFileName) &&
+						OutputFileName.Contains('*') &&
 						InputFileName.Split('*').Length != OutputFileName.Split('*').Length)
 					{
 						Error = true;
@@ -173,7 +176,11 @@ namespace WordToMarkdown
 					{
 						try
 						{
-							ConvertWithWildcard(InputFileName, OutputFileName, Recursive, Headers?.ToArray());
+							KeyValuePair<int, int> P = ConvertWithWildcard(InputFileName, OutputFileName, Recursive, Headers?.ToArray());
+							int NrConverted = P.Key;
+							int NrNotConverted = P.Value;
+
+							Console.Out.WriteLine(GetMessage(NrConverted, NrNotConverted));
 						}
 						catch (Exception ex)
 						{
@@ -187,6 +194,36 @@ namespace WordToMarkdown
 			}
 		}
 
+		public static string GetMessage(int NrConverted, int NrNotConverted)
+		{
+			if (NrConverted == 0)
+			{
+				if (NrNotConverted == 0)
+					return "No files processed.";
+				else if (NrNotConverted == 1)
+					return "File not converted.";
+				else
+					return NrNotConverted.ToString() + " files found, bot not converted.";
+			}
+			else if (NrNotConverted == 0)
+			{
+				if (NrConverted == 0)
+					return "No files processed.";
+				else if (NrConverted == 1)
+					return "File converted.";
+				else
+					return NrConverted.ToString() + " files converted.";
+			}
+			else
+			{
+				int NrFiles = NrConverted + NrNotConverted;
+
+				return NrFiles.ToString() + " file(s) found, " +
+					NrConverted.ToString() + " where converted, " +
+					NrNotConverted.ToString() + " where not converted.";
+			}
+		}
+
 		/// <summary>
 		/// Converts a collection of Word documents to Markdown.
 		/// </summary>
@@ -194,7 +231,8 @@ namespace WordToMarkdown
 		/// <param name="OutputFileName">optional Output file name, possibly containing wildcards (the same amount as for the input file name).</param>
 		/// <param name="Recursive">If search should be recursive.</param>
 		/// <param name="Headers">Additional headers to add to Markdown output.</param>
-		public static void ConvertWithWildcard(string InputFileName, string? OutputFileName, bool Recursive,
+		/// <returns>Number of files converted, number of files not converted.</returns>
+		public static KeyValuePair<int, int> ConvertWithWildcard(string InputFileName, string? OutputFileName, bool Recursive,
 			params KeyValuePair<string, string>[]? Headers)
 		{
 			string? Folder = Path.GetDirectoryName(InputFileName);
@@ -205,85 +243,102 @@ namespace WordToMarkdown
 
 			string FileName = Path.GetFileName(InputFileName);
 			string[] Parts = FileName.Split('*', StringSplitOptions.None);
+			int NrConverted = 0;
+			int NrNotConverted = 0;
+
 			if (Parts.Length == 1 && !Recursive)
 			{
-				ConvertIndividualFile(InputFileName, OutputFileName, Headers);
-				return;
-			}
-
-			StringBuilder RegexBuilder = new();
-			bool First = true;
-			int NrParameters = 0;
-			int i, j, c;
-
-			RegexBuilder.Append('^');
-
-			foreach (string Part in Parts)
-			{
-				if (First)
-					First = false;
+				if (ConvertIndividualFile(InputFileName, OutputFileName, Headers))
+					NrConverted++;
 				else
+					NrNotConverted++;
+			}
+			else
+			{
+				StringBuilder RegexBuilder = new();
+				bool First = true;
+				int NrParameters = 0;
+				int i, j, c;
+
+				RegexBuilder.Append('^');
+
+				foreach (string Part in Parts)
 				{
-					RegexBuilder.Append("(?'P");
-					RegexBuilder.Append(NrParameters++);
-					RegexBuilder.Append("'.*)");
+					if (First)
+						First = false;
+					else
+					{
+						RegexBuilder.Append("(?'P");
+						RegexBuilder.Append(NrParameters++);
+						RegexBuilder.Append("'.*)");
+					}
+
+					i = 0;
+					c = Part.Length;
+					while (i < c)
+					{
+						j = Part.IndexOfAny(regexSpecialCharaters, i);
+						if (j < i)
+						{
+							RegexBuilder.Append(Part[i..]);
+							i = c;
+						}
+						else
+						{
+							if (j > i)
+								RegexBuilder.Append(Part[i..j]);
+
+							RegexBuilder.Append('\\');
+							RegexBuilder.Append(Part[j]);
+
+							i = j + 1;
+						}
+					}
 				}
 
-				i = 0;
-				c = Part.Length;
-				while (i < c)
+				RegexBuilder.Append('$');
+
+				Regex Parsed = new(RegexBuilder.ToString(), RegexOptions.Singleline | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+				string[] Files = Directory.GetFiles(Folder, FileName, Recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly);
+
+				foreach (string File in Files)
 				{
-					j = Part.IndexOfAny(regexSpecialCharaters, i);
-					if (j < i)
+					if (string.IsNullOrEmpty(OutputFileName))
 					{
-						RegexBuilder.Append(Part[i..]);
-						i = c;
+						if (ConvertIndividualFile(File, null, Headers))
+							NrConverted++;
+						else
+							NrNotConverted++;
 					}
 					else
 					{
-						if (j > i)
-							RegexBuilder.Append(Part[i..j]);
+						Match M = Parsed.Match(Path.GetFileName(File));
+						if (!M.Success)
+							continue;
 
-						RegexBuilder.Append('\\');
-						RegexBuilder.Append(Part[j]);
+						string s = OutputFileName;
+						string s2;
 
-						i = j + 1;
+						for (i = j = 0; i < NrParameters; i++)
+						{
+							j = s.IndexOf('*', j);
+							if (j < 0)
+								break;
+
+							s2 = M.Groups["P" + i.ToString()].Value;
+							s = s.Remove(j, 1).Insert(j, s2);
+							j += s2.Length;
+						}
+
+						if (ConvertIndividualFile(File, s, Headers))
+							NrConverted++;
+						else
+							NrNotConverted++;
 					}
 				}
 			}
 
-			RegexBuilder.Append('$');
-
-			Regex Parsed = new(RegexBuilder.ToString(), RegexOptions.Singleline | RegexOptions.CultureInvariant);
-			string[] Files = Directory.GetFiles(Folder, FileName, Recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly);
-
-			foreach (string File in Files)
-			{
-				if (string.IsNullOrEmpty(OutputFileName))
-					ConvertIndividualFile(File, null, Headers);
-				else
-				{
-					Match M = Parsed.Match(Path.GetFileName(File));
-					if (!M.Success)
-						continue;
-
-					string s = OutputFileName;
-					string s2;
-
-					for (i = j = 0; i < NrParameters; i++)
-					{
-						j = s.IndexOf('*', j);
-						if (j < 0)
-							break;
-
-						s2 = M.Groups["P" + i.ToString()].Value;
-						s = s.Remove(j, 1).Insert(j, s2);
-						j += s2.Length;
-					}
-
-					ConvertIndividualFile(File, s, Headers);
-				}
-			}
+			return new KeyValuePair<int, int>(NrConverted, NrNotConverted);
 		}
 
 		private static readonly char[] regexSpecialCharaters = new char[] { '\\', '^', '$', '{', '}', '[', ']', '(', ')', '.', '*', '+', '?', '|', '<', '>', '-', '&' };
@@ -295,19 +350,53 @@ namespace WordToMarkdown
 		/// <param name="InputFileName">Name of Word file.</param>
 		/// <param name="OutputFileName">Optional name of Output file.</param>
 		/// <param name="Headers">Additional headers to add to Markdown output.</param>
-		public static void ConvertIndividualFile(string InputFileName, string? OutputFileName,
+		/// <returns>If conversion was possible.</returns>
+		public static bool ConvertIndividualFile(string InputFileName, string? OutputFileName,
 			params KeyValuePair<string, string>[]? Headers)
 		{
 			if (string.IsNullOrEmpty(OutputFileName))
 				OutputFileName = Path.ChangeExtension(InputFileName, "md");
+			else if (Directory.Exists(OutputFileName))
+			{
+				string FileName = Path.GetFileName(InputFileName);
+				FileName = Path.ChangeExtension(FileName, "md");
+
+				if (!OutputFileName.EndsWith(Path.DirectorySeparatorChar))
+					OutputFileName += Path.DirectorySeparatorChar;
+
+				OutputFileName = Path.Combine(OutputFileName, FileName);
+			}
 
 			Console.Out.WriteLine("Processing: " + InputFileName);
 
-			using (WordprocessingDocument Doc = WordprocessingDocument.Open(InputFileName, false))
+			WordprocessingDocument? Doc = null;
+			string? TempFileName = null;
+
+			try
 			{
+				try
+				{
+					try
+					{
+						Doc = WordprocessingDocument.Open(InputFileName, false);
+					}
+					catch (OpenXmlPackageException)
+					{
+						TempFileName = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".docx");
+						File.Copy(InputFileName, TempFileName);
+
+						Doc = WordprocessingDocument.Open(TempFileName, true, WordUtilities.GetFailSafePackageSettings());
+					}
+				}
+				catch (Exception)
+				{
+					Console.Out.WriteLine("Unable to open Word file: " + InputFileName);
+					return false;
+				}
+
 				string Markdown = WordUtilities.ExtractAsMarkdown(Doc, InputFileName, out _);
 
-				Dictionary<string, bool> HeadersUsed = new Dictionary<string, bool>();
+				Dictionary<string, bool> HeadersUsed = new();
 				StringBuilder sb = new();
 				DateTime? TP;
 				string? s;
@@ -330,13 +419,13 @@ namespace WordToMarkdown
 
 				if (!string.IsNullOrEmpty(s = Doc.PackageProperties.Version) && !HeadersUsed.ContainsKey("Version"))
 					AppendHeader(sb, "Version", s, ref HeadersAdded);
-				
+
 				if (!string.IsNullOrEmpty(s = Doc.PackageProperties.Title) && !HeadersUsed.ContainsKey("Title"))
 					AppendHeader(sb, "Title", s, ref HeadersAdded);
-				
+
 				if (!string.IsNullOrEmpty(s = Doc.PackageProperties.Subject) && !HeadersUsed.ContainsKey("Subject"))
 					AppendHeader(sb, "Subject", s, ref HeadersAdded);
-				
+
 				if (!string.IsNullOrEmpty(s = Doc.PackageProperties.Creator) && !HeadersUsed.ContainsKey("Author"))
 					AppendHeader(sb, "Author", s, ref HeadersAdded);
 
@@ -359,6 +448,15 @@ namespace WordToMarkdown
 				Console.Out.WriteLine("Saving: " + OutputFileName);
 
 				File.WriteAllText(OutputFileName, Markdown, utf8Bom);
+
+				return true;
+			}
+			finally
+			{
+				Doc?.Dispose();
+
+				if (!string.IsNullOrEmpty(TempFileName) && File.Exists(TempFileName))
+					File.Delete(TempFileName);
 			}
 		}
 

@@ -1,4 +1,5 @@
-﻿using DocumentFormat.OpenXml.Packaging;
+﻿using DocumentFormat.OpenXml;
+using DocumentFormat.OpenXml.Packaging;
 using System.Text;
 using System.Threading.Tasks;
 using Waher.Content;
@@ -41,7 +42,7 @@ namespace TAG.Content.Microsoft.Content
         /// <returns>If the result is dynamic (true), or only depends on the source (false).</returns>
         public async Task<bool> ConvertAsync(ConversionState State)
         {
-            using (WordprocessingDocument Doc = WordprocessingDocument.Open(State.From, false))
+			using (WordprocessingDocument Doc = WordprocessingDocument.Open(State.From, false))
             {
                 StringBuilder Markdown = new StringBuilder();
                 WordUtilities.ExtractAsMarkdown(Doc, string.Empty, Markdown, out _);

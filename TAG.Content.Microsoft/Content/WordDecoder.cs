@@ -1,4 +1,5 @@
-﻿using DocumentFormat.OpenXml.Packaging;
+﻿using DocumentFormat.OpenXml;
+using DocumentFormat.OpenXml.Packaging;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -72,7 +73,7 @@ namespace TAG.Content.Microsoft.Content
         /// <returns>Decoded object.</returns>
         public Task<object> DecodeAsync(string ContentType, byte[] Data, Encoding Encoding, KeyValuePair<string, string>[] Fields, Uri BaseUri)
         {
-            MemoryStream ms = new MemoryStream(Data);
+			MemoryStream ms = new MemoryStream(Data);
             WordprocessingDocument Doc = WordprocessingDocument.Open(ms, false);
 
             // Note: Do not dispose MemoryStream. The document needs the stream to remain open.

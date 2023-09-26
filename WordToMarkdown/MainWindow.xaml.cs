@@ -2,7 +2,6 @@
 using System;
 using System.ComponentModel;
 using System.Windows;
-using System.Windows.Markup;
 using Waher.Events;
 
 namespace WordToMarkdown
@@ -93,7 +92,25 @@ namespace WordToMarkdown
 
 			if (Result.HasValue && Result.Value)
 				this.InputFileName = Dialog.FileName;
+		}
 
+		private void BrowseMarkdownFiles(object sender, RoutedEventArgs e)
+		{
+			OpenFileDialog Dialog = new()
+			{
+				DefaultExt = "*.md",
+				Filter = "Markdown files (*.md)|*.md",
+				CheckFileExists = false,
+				CheckPathExists = true,
+				Multiselect = false,
+				ShowReadOnly = true,
+				Title = "Select Markdown File"
+			};
+
+			bool? Result = Dialog.ShowDialog();
+
+			if (Result.HasValue && Result.Value)
+				this.OutputFileName = Dialog.FileName;
 		}
 	}
 }

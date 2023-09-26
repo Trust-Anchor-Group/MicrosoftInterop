@@ -5,8 +5,9 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
 using TAG.Content.Microsoft;
+using Waher.Content;
 using Waher.Content.Markdown;
-using Waher.Runtime.Inventory.Loader;
+using Waher.Runtime.Inventory;
 
 namespace WordToMarkdown
 {
@@ -17,7 +18,10 @@ namespace WordToMarkdown
 	{
 		protected override void OnStartup(StartupEventArgs e)
 		{
-			TypesLoader.Initialize();
+			Types.Initialize(
+				typeof(App).Assembly,
+				typeof(InternetContent).Assembly,
+				typeof(WordUtilities).Assembly);
 
 			base.OnStartup(e);
 

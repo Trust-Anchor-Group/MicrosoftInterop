@@ -12,9 +12,9 @@
 			<Button DockPanel.Dock="Right" Padding="5,2" Margin="5,0,0,0" Click="BrowseWordDocuments">...</Button>
 			<TextBox DockPanel.Dock="Left" Text="{Binding InputFileName}" ToolTip="Input Word file. Can include wildcards *."/>
 		</DockPanel>
-		<Label DockPanel.Dock="Top" Margin="0,10,0,0">Markdown file(s):</Label>
+		<Label DockPanel.Dock="Top" Margin="0,10,0,0">Markdown file(s) or destination folder:</Label>
 		<DockPanel DockPanel.Dock="Top" LastChildFill="True">
-			<Button DockPanel.Dock="Right" Padding="5,2" Margin="5,0,0,0">...</Button>
+			<Button DockPanel.Dock="Right" Padding="5,2" Margin="5,0,0,0" Click="BrowseMarkdownFiles">...</Button>
 			<TextBox Text="{Binding OutputFileName}" ToolTip="Output Markdown file. Can be empty, or include same amount of wildcards as input."/>
 		</DockPanel>
 		<CheckBox DockPanel.Dock="Top" Content="Include subfolders in wildcard searches." Margin="0,10,0,0" IsChecked="{Binding Recursive}"/>

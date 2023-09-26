@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DocumentFormat.OpenXml.Packaging;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -302,32 +303,74 @@ namespace WordToMarkdown
 
 			Console.Out.WriteLine("Processing: " + InputFileName);
 
-			string Markdown = WordUtilities.ExtractAsMarkdown(InputFileName);
-
-			if (Headers is not null && Headers.Length > 0)
+			using (WordprocessingDocument Doc = WordprocessingDocument.Open(InputFileName, false))
 			{
-				int? HeaderEndPos = MarkdownDocument.HeaderEndPosition(Markdown);
-				if (!HeaderEndPos.HasValue)
-				{
-					Markdown = "\r\n\r\n" + Markdown;
-					HeaderEndPos = 0;
-				}
+				string Markdown = WordUtilities.ExtractAsMarkdown(Doc, InputFileName, out _);
 
+				Dictionary<string, bool> HeadersUsed = new Dictionary<string, bool>();
 				StringBuilder sb = new();
+				DateTime? TP;
+				string? s;
+				bool HeadersAdded = false;
 
-				foreach (KeyValuePair<string, string> Header in Headers)
+				if (Headers is not null)
 				{
-					sb.Append(Header.Key);
-					sb.Append(": ");
-					sb.AppendLine(Header.Value);
+					foreach (KeyValuePair<string, string> Header in Headers)
+					{
+						HeadersUsed[Header.Key] = true;
+						AppendHeader(sb, Header.Key, Header.Value, ref HeadersAdded);
+					}
 				}
 
-				Markdown = Markdown.Insert(HeaderEndPos.Value, sb.ToString());
+				if (!string.IsNullOrEmpty(s = Doc.PackageProperties.Category) && !HeadersUsed.ContainsKey("Cagegory"))
+					AppendHeader(sb, "Category", s, ref HeadersAdded);
+
+				if (!string.IsNullOrEmpty(s = Doc.PackageProperties.Language) && !HeadersUsed.ContainsKey("Language"))
+					AppendHeader(sb, "Language", s, ref HeadersAdded);
+
+				if (!string.IsNullOrEmpty(s = Doc.PackageProperties.Version) && !HeadersUsed.ContainsKey("Version"))
+					AppendHeader(sb, "Version", s, ref HeadersAdded);
+				
+				if (!string.IsNullOrEmpty(s = Doc.PackageProperties.Title) && !HeadersUsed.ContainsKey("Title"))
+					AppendHeader(sb, "Title", s, ref HeadersAdded);
+				
+				if (!string.IsNullOrEmpty(s = Doc.PackageProperties.Subject) && !HeadersUsed.ContainsKey("Subject"))
+					AppendHeader(sb, "Subject", s, ref HeadersAdded);
+				
+				if (!string.IsNullOrEmpty(s = Doc.PackageProperties.Creator) && !HeadersUsed.ContainsKey("Author"))
+					AppendHeader(sb, "Author", s, ref HeadersAdded);
+
+				if (!string.IsNullOrEmpty(s = Doc.PackageProperties.Keywords) && !HeadersUsed.ContainsKey("Keywords"))
+					AppendHeader(sb, "Keywords", s, ref HeadersAdded);
+
+				if (!string.IsNullOrEmpty(s = Doc.PackageProperties.Description) && !HeadersUsed.ContainsKey("Description"))
+					AppendHeader(sb, "Description", s, ref HeadersAdded);
+
+				if ((TP = Doc.PackageProperties.Created).HasValue && !HeadersUsed.ContainsKey("Date"))
+					AppendHeader(sb, "Date", TP.Value.Date.ToShortDateString(), ref HeadersAdded);
+
+				if (HeadersAdded)
+				{
+					sb.AppendLine();
+					sb.Append(Markdown);
+					Markdown = sb.ToString();
+				}
+
+				Console.Out.WriteLine("Saving: " + OutputFileName);
+
+				File.WriteAllText(OutputFileName, Markdown, utf8Bom);
 			}
+		}
 
-			Console.Out.WriteLine("Saving: " + OutputFileName);
-
-			File.WriteAllText(OutputFileName, Markdown, utf8Bom);
+		private static void AppendHeader(StringBuilder Markdown, string Key, string Value, ref bool HeadersAdded)
+		{
+			foreach (string Row in Value.Trim().Replace("\r\n", "\n").Replace('\r', '\n').Split('\n', StringSplitOptions.RemoveEmptyEntries))
+			{
+				Markdown.Append(Key);
+				Markdown.Append(": ");
+				Markdown.AppendLine(Row);
+				HeadersAdded = true;
+			}
 		}
 	}
 }

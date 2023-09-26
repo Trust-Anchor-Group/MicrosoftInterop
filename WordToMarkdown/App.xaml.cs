@@ -1,15 +1,12 @@
-﻿using DocumentFormat.OpenXml;
-using DocumentFormat.OpenXml.Packaging;
+﻿using DocumentFormat.OpenXml.Packaging;
 using System;
 using System.Collections.Generic;
-using System.Dynamic;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
 using TAG.Content.Microsoft;
 using Waher.Content;
-using Waher.Content.Markdown;
 using Waher.Runtime.Inventory;
 
 namespace WordToMarkdown
@@ -240,6 +237,8 @@ namespace WordToMarkdown
 				Folder = Environment.CurrentDirectory;
 			else if (Folder.Contains('*'))
 				throw new Exception("Folder cannot contain wildcards.");
+			else
+				Folder = Path.GetFullPath(Folder);
 
 			string FileName = Path.GetFileName(InputFileName);
 			string[] Parts = FileName.Split('*', StringSplitOptions.None);
@@ -248,7 +247,7 @@ namespace WordToMarkdown
 
 			if (Parts.Length == 1 && !Recursive)
 			{
-				if (ConvertIndividualFile(InputFileName, OutputFileName, Headers))
+				if (ConvertIndividualFile(InputFileName, OutputFileName, string.Empty, Headers))
 					NrConverted++;
 				else
 					NrNotConverted++;
@@ -305,7 +304,7 @@ namespace WordToMarkdown
 				{
 					if (string.IsNullOrEmpty(OutputFileName))
 					{
-						if (ConvertIndividualFile(File, null, Headers))
+						if (ConvertIndividualFile(File, null, string.Empty, Headers))
 							NrConverted++;
 						else
 							NrNotConverted++;
@@ -330,7 +329,13 @@ namespace WordToMarkdown
 							j += s2.Length;
 						}
 
-						if (ConvertIndividualFile(File, s, Headers))
+						string FileFolder = Path.GetDirectoryName(File) ?? string.Empty;
+
+						string SubFolder = FileFolder[Folder.Length..];
+						if (SubFolder.StartsWith(Path.DirectorySeparatorChar))
+							SubFolder = SubFolder[1..];
+
+						if (ConvertIndividualFile(File, s, SubFolder, Headers))
 							NrConverted++;
 						else
 							NrNotConverted++;
@@ -349,9 +354,10 @@ namespace WordToMarkdown
 		/// </summary>
 		/// <param name="InputFileName">Name of Word file.</param>
 		/// <param name="OutputFileName">Optional name of Output file.</param>
+		/// <param name="SubFolder">Current subfolder.</param>
 		/// <param name="Headers">Additional headers to add to Markdown output.</param>
 		/// <returns>If conversion was possible.</returns>
-		public static bool ConvertIndividualFile(string InputFileName, string? OutputFileName,
+		public static bool ConvertIndividualFile(string InputFileName, string? OutputFileName, string SubFolder,
 			params KeyValuePair<string, string>[]? Headers)
 		{
 			if (string.IsNullOrEmpty(OutputFileName))
@@ -361,14 +367,21 @@ namespace WordToMarkdown
 				string FileName = Path.GetFileName(InputFileName);
 				FileName = Path.ChangeExtension(FileName, "md");
 
+				if (!string.IsNullOrEmpty(SubFolder))
+					OutputFileName = Path.Combine(OutputFileName, SubFolder);
+
 				if (!OutputFileName.EndsWith(Path.DirectorySeparatorChar))
 					OutputFileName += Path.DirectorySeparatorChar;
 
 				OutputFileName = Path.Combine(OutputFileName, FileName);
 			}
+			else if (!string.IsNullOrEmpty(SubFolder))
+			{
+				OutputFileName = Path.Combine(Path.GetDirectoryName(OutputFileName) ?? string.Empty,
+					SubFolder, Path.GetFileName(OutputFileName));
+			}
 
 			Console.Out.WriteLine("Processing: " + InputFileName);
-
 			WordprocessingDocument? Doc = null;
 			string? TempFileName = null;
 
@@ -445,8 +458,14 @@ namespace WordToMarkdown
 					Markdown = sb.ToString();
 				}
 
-				Console.Out.WriteLine("Saving: " + OutputFileName);
+				string? OutputFolder = Path.GetDirectoryName(OutputFileName);
+				if (!string.IsNullOrEmpty(OutputFolder) && !Directory.Exists(OutputFolder))
+				{
+					Console.Out.WriteLine("Creating folder: " + OutputFolder);
+					Directory.CreateDirectory(OutputFolder);
+				}
 
+				Console.Out.WriteLine("Saving: " + OutputFileName);
 				File.WriteAllText(OutputFileName, Markdown, utf8Bom);
 
 				return true;

@@ -706,11 +706,46 @@ namespace TAG.Content.Microsoft
 								State.UnrecognizedElement(Element);
 							break;
 
+						case "ins":
+							if (Element is InsertedRun InsertedRun)
+							{
+								Markdown.Append("__");
+								Style.Insert = true;
+								Style.StyleChanged('I');
+
+								HasText = ExportAsMarkdown(InsertedRun.Elements(), Markdown, Style, State);
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "del":
+							if (Element is DeletedRun DeletedRun)
+							{
+								Markdown.Append("~~");
+								Style.Delete = true;
+								Style.StyleChanged('D');
+
+								HasText = ExportAsMarkdown(DeletedRun.Elements(), Markdown, Style, State);
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
 						case "rPr":
 							if (Element is ParagraphMarkRunProperties ParagraphMarkRunProperties)
 								HasText = ExportAsMarkdown(ParagraphMarkRunProperties.Elements(), Markdown, Style, State);
 							else if (Element is RunProperties RunProperties)
 								HasText = ExportAsMarkdown(RunProperties.Elements(), Markdown, Style, State);
+							else if (Element is PreviousRunProperties PreviousRunProperties)
+								HasText = ExportAsMarkdown(PreviousRunProperties.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "rPrChange":
+							if (Element is RunPropertiesChange RunPropertiesChange)
+								HasText = ExportAsMarkdown(RunPropertiesChange.Elements(), Markdown, Style, State);
 							else
 								State.UnrecognizedElement(Element);
 							break;
@@ -2339,6 +2374,48 @@ namespace TAG.Content.Microsoft
 
 								HasText = ExportAsMarkdown(ListEntryFormField.Elements(), Markdown, Style, State);
 							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "highlight":
+							if (Element is Highlight Highlight)
+								HasText = ExportAsMarkdown(Highlight.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "commentRangeStart":
+							if (Element is CommentRangeStart CommentRangeStart)
+								HasText = ExportAsMarkdown(CommentRangeStart.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "commentRangeEnd":
+							if (Element is CommentRangeEnd CommentRangeEnd)
+								HasText = ExportAsMarkdown(CommentRangeEnd.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "commentReference":
+							if (Element is CommentReference CommentReference)
+								HasText = ExportAsMarkdown(CommentReference.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "titlePg":
+							if (Element is TitlePage TitlePage)
+								HasText = ExportAsMarkdown(TitlePage.Elements(), Markdown, Style, State);
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "delText":
+							if (Element is DeletedText DeletedText)
+								HasText = ExportAsMarkdown(DeletedText.Elements(), Markdown, Style, State);
 							else
 								State.UnrecognizedElement(Element);
 							break;

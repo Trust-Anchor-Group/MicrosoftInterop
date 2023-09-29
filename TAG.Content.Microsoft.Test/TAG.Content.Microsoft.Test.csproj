@@ -15,6 +15,7 @@
     <None Remove="Documents\Forms.docx" />
     <None Remove="Documents\Frames.docx" />
     <None Remove="Documents\Lists.docx" />
+    <None Remove="Documents\MultiParagraphList.docx" />
     <None Remove="Documents\Notes.docx" />
     <None Remove="Documents\Paragraphs.docx" />
     <None Remove="Documents\Sections.docx" />
@@ -25,6 +26,7 @@
     <None Remove="Expected\Figures.md" />
     <None Remove="Expected\Frames.md" />
     <None Remove="Expected\Lists.md" />
+    <None Remove="Expected\Markdown\MultiParagraphList.md" />
     <None Remove="Expected\Notes.md" />
     <None Remove="Expected\Paragraphs.md" />
     <None Remove="Expected\Script\Diagram.script" />
@@ -44,6 +46,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="Documents\MultiParagraphList.docx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Expected\Markdown\MultiParagraphList.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Expected\Script\Image.script">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

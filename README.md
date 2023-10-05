@@ -131,3 +131,7 @@ Once you have the document, you can use it as an argument when calling any of th
 | `ExcelToScript(Doc)`  | Converts an Excel document to Script.                 |
 
 The function returns the converted artefact, which you can use in further processing in script.
+
+## Rendering pipeline of Word-based Smart Contracts
+
+![Rendering Pipeline](Diagrams/RenderingPipeline.svg)

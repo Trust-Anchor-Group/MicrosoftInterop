@@ -798,7 +798,7 @@ namespace TAG.Content.Microsoft
 							{
 								Markdown.Append("__");
 								Style.Insert = true;
-								Style.StyleChanged('I');
+								Style.StyleChanged('I', true);
 
 								HasText = ExportAsMarkdown(InsertedRun.Elements(), Markdown, Style, State);
 							}
@@ -811,7 +811,7 @@ namespace TAG.Content.Microsoft
 							{
 								Markdown.Append("~~");
 								Style.Delete = true;
-								Style.StyleChanged('D');
+								Style.StyleChanged('D', true);
 
 								HasText = ExportAsMarkdown(DeletedRun.Elements(), Markdown, Style, State);
 							}
@@ -849,7 +849,7 @@ namespace TAG.Content.Microsoft
 								{
 									Markdown.Append("**");
 									Style.Bold = true;
-									Style.StyleChanged('b');
+									Style.StyleChanged('b', true);
 								}
 							}
 							else
@@ -868,7 +868,7 @@ namespace TAG.Content.Microsoft
 								{
 									Markdown.Append('*');
 									Style.Italic = true;
-									Style.StyleChanged('i');
+									Style.StyleChanged('i', true);
 								}
 							}
 							else
@@ -887,7 +887,7 @@ namespace TAG.Content.Microsoft
 								{
 									Markdown.Append('~');
 									Style.StrikeThrough = true;
-									Style.StyleChanged('s');
+									Style.StyleChanged('s', true);
 								}
 							}
 							else
@@ -901,7 +901,7 @@ namespace TAG.Content.Microsoft
 								{
 									Markdown.Append("~~");
 									Style.Delete = true;
-									Style.StyleChanged('D');
+									Style.StyleChanged('D', true);
 								}
 							}
 							else
@@ -928,7 +928,7 @@ namespace TAG.Content.Microsoft
 											{
 												Markdown.Append('_');
 												Style.Underline = true;
-												Style.StyleChanged('u');
+												Style.StyleChanged('u', true);
 											}
 											break;
 
@@ -945,7 +945,7 @@ namespace TAG.Content.Microsoft
 											{
 												Markdown.Append("__");
 												Style.Insert = true;
-												Style.StyleChanged('I');
+												Style.StyleChanged('I', true);
 											}
 											break;
 
@@ -970,7 +970,7 @@ namespace TAG.Content.Microsoft
 											{
 												Markdown.Append("^[");
 												Style.Superscript = true;
-												Style.StyleChanged('^');
+												Style.StyleChanged('^', false);
 											}
 											break;
 
@@ -979,7 +979,7 @@ namespace TAG.Content.Microsoft
 											{
 												Markdown.Append("[");
 												Style.Subscript = true;
-												Style.StyleChanged('v');
+												Style.StyleChanged('v', false);
 											}
 											break;
 
@@ -1300,7 +1300,7 @@ namespace TAG.Content.Microsoft
 									{
 										Markdown.Append('`');
 										Style.InlineCode = true;
-										Style.StyleChanged('c');
+										Style.StyleChanged('c', false);
 									}
 								}
 							}
@@ -3152,13 +3152,13 @@ namespace TAG.Content.Microsoft
 				this.DocPartGallery = null;
 			}
 
-			public void StyleChanged(char c)
+			public void StyleChanged(char c, bool EncodeLeadingSpace)
 			{
 				if (this.StyleChanges is null)
 					this.StyleChanges = new LinkedList<char>();
 
 				this.StyleChanges.AddFirst(c);
-				this.FormattingApplied = true;
+				this.FormattingApplied |= EncodeLeadingSpace;
 			}
 
 			public bool SameNubmering

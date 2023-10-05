@@ -1009,8 +1009,16 @@ namespace TAG.Content.Microsoft
 
 								if (!string.IsNullOrEmpty(s))
 								{
-									Markdown.Append(MarkdownDocument.Encode(Text.InnerText));
+									if (Style.FormattingApplied && s[0] == ' ')
+									{
+										Markdown.Append("&nbsp;");
+										s = s.Substring(1);
+									}
+
+									Markdown.Append(MarkdownDocument.Encode(s));
 									HasText = true;
+							
+									Style.FormattingApplied = false;
 								}
 							}
 							else
@@ -3096,21 +3104,22 @@ namespace TAG.Content.Microsoft
 			public bool CodeBlock;
 			public bool Caption;
 			public bool InlineCode;
-			public int? NewSection;
 			public bool HorizontalSeparator;
 			public bool ParagraphStyle;
-			public ParagraphType? ParagraphType;
+			public bool FormattingApplied;
+			public bool? Checked;
+			public int? NewSection;
 			public int? OrdinalNumber;
-			public List<int?> PrevItemNumbers;
 			public int? ItemLevel;
 			public int? ItemNumber;
+			public int? ItemCount;
 			public string DocPartGallery;
 			public string Alias;
-			public ParameterType? ParameterType;
-			public int? ItemCount;
 			public string DefaultValue;
-			public bool? Checked;
+			public ParagraphType? ParagraphType;
+			public ParameterType? ParameterType;
 			public ParagraphAlignment ParagraphAlignment;
+			public List<int?> PrevItemNumbers;
 			public LinkedList<char> StyleChanges;
 
 			public FormattingStyle()
@@ -3126,6 +3135,7 @@ namespace TAG.Content.Microsoft
 				this.InlineCode = false;
 				this.CodeBlock = false;
 				this.Caption = false;
+				this.FormattingApplied = false;
 				this.NewSection = null;
 				this.ParagraphStyle = false;
 				this.ParagraphType = null;
@@ -3148,6 +3158,7 @@ namespace TAG.Content.Microsoft
 					this.StyleChanges = new LinkedList<char>();
 
 				this.StyleChanges.AddFirst(c);
+				this.FormattingApplied = true;
 			}
 
 			public bool SameNubmering

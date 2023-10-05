@@ -64,10 +64,8 @@ namespace TAG.Service.MicrosoftInterop.WebServices
 			if (!(Decoded is WordprocessingDocument Doc))
 				throw new BadRequestException("Content not a Word document (.docx).");
 
-			StringBuilder Markdown = new StringBuilder();
-			WordUtilities.ExtractAsMarkdown(Doc, string.Empty, Markdown, out _);
-
-			byte[] Data = WordToMarkdownConverter.Utf8WithBOM.GetBytes(Markdown.ToString());
+			string Markdown = WordUtilities.ExtractAsMarkdown(Doc, string.Empty, out _);
+			byte[] Data = WordToMarkdownConverter.Utf8WithBOM.GetBytes(Markdown);
 
 			Response.ContentType = MarkdownCodec.ContentType + "; charset=utf-8";
 			await Response.Write(Data);

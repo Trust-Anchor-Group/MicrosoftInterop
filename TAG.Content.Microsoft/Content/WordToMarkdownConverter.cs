@@ -44,10 +44,8 @@ namespace TAG.Content.Microsoft.Content
         {
 			using (WordprocessingDocument Doc = WordprocessingDocument.Open(State.From, false))
             {
-                StringBuilder Markdown = new StringBuilder();
-                WordUtilities.ExtractAsMarkdown(Doc, string.Empty, Markdown, out _);
-
-                byte[] Data = Utf8WithBOM.GetBytes(Markdown.ToString());
+                string Markdown = WordUtilities.ExtractAsMarkdown(Doc, string.Empty, out _);
+                byte[] Data = Utf8WithBOM.GetBytes(Markdown);
 
                 await State.To.WriteAsync(Data, 0, Data.Length);
                 State.ToContentType += "; charset=utf-8";

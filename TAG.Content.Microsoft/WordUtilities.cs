@@ -39,7 +39,7 @@ namespace TAG.Content.Microsoft
 		/// Extracts the contents of a Word file to Markdown.
 		/// </summary>
 		/// <param name="WordFileName">File name of Word document.</param>
-		/// <returns>Markdown.</returns>
+		/// <returns>Generated Markdown.</returns>
 		public static string ExtractAsMarkdown(string WordFileName)
 		{
 			return ExtractAsMarkdown(WordFileName, out _);
@@ -50,43 +50,19 @@ namespace TAG.Content.Microsoft
 		/// </summary>
 		/// <param name="WordFileName">File name of Word document.</param>
 		/// <param name="Language">Language of document.</param>
-		/// <returns>Markdown.</returns>
+		/// <returns>Generated Markdown.</returns>
 		public static string ExtractAsMarkdown(string WordFileName, out string Language)
-		{
-			StringBuilder Markdown = new StringBuilder();
-			ExtractAsMarkdown(WordFileName, Markdown, out Language);
-			return Markdown.ToString();
-		}
-
-		/// <summary>
-		/// Extracts the contents of a Word file to Markdown.
-		/// </summary>
-		/// <param name="WordFileName">File name of Word document.</param>
-		/// <param name="Markdown">Markdown will be output here.</param>
-		public static void ExtractAsMarkdown(string WordFileName, StringBuilder Markdown)
-		{
-			ExtractAsMarkdown(WordFileName, Markdown, out _);
-		}
-
-		/// <summary>
-		/// Extracts the contents of a Word file to Markdown.
-		/// </summary>
-		/// <param name="WordFileName">File name of Word document.</param>
-		/// <param name="Markdown">Markdown will be output here.</param>
-		/// <param name="Language">Language of document.</param>
-		public static void ExtractAsMarkdown(string WordFileName, StringBuilder Markdown,
-			out string Language)
 		{
 			using (WordprocessingDocument Doc = WordprocessingDocument.Open(WordFileName, false))
 			{
-				ExtractAsMarkdown(Doc, WordFileName, Markdown, out Language);
+				return ExtractAsMarkdown(Doc, WordFileName, out Language);
 			}
 		}
 
 		/// <summary>
 		/// Returns an OpenXML Settings object that ignores any relationship errors found in objects being loaded.
 		/// </summary>
-		/// <returns></returns>
+		/// <returns>Fail-safe settings object.</returns>
 		public static OpenSettings GetFailSafePackageSettings()
 		{
 			return new OpenSettings()
@@ -149,20 +125,6 @@ namespace TAG.Content.Microsoft
 		public static string ExtractAsMarkdown(WordprocessingDocument Doc, string WordFileName, out string Language)
 		{
 			StringBuilder Markdown = new StringBuilder();
-			ExtractAsMarkdown(Doc, WordFileName, Markdown, out Language);
-			return Markdown.ToString();
-		}
-
-		/// <summary>
-		/// Extracts the contents of a Word file to Markdown.
-		/// </summary>
-		/// <param name="Doc">Document to convert</param>
-		/// <param name="WordFileName">File name of Word document.</param>
-		/// <param name="Markdown">Markdown will be output here.</param>
-		/// <param name="Language">Language of document.</param>
-		public static void ExtractAsMarkdown(WordprocessingDocument Doc, string WordFileName, StringBuilder Markdown,
-			out string Language)
-		{
 			Document MainDocument = Doc.MainDocumentPart.Document;
 			FormattingStyle Style = new FormattingStyle();
 			RenderingState State = new RenderingState()
@@ -327,6 +289,35 @@ namespace TAG.Content.Microsoft
 #endif
 				Log.Warning(Msg.ToString(), WordFileName);
 			}
+
+			string Result = Markdown.ToString();
+
+			if (!(State.captionMarkers is null))
+			{
+				int i = 0;
+				int j;
+
+				foreach (KeyValuePair<string, string> P in State.captionMarkers)
+				{
+					j = Result.IndexOf(P.Key, i);
+					if (j < 0)
+						j = Result.IndexOf(P.Key);
+
+					if (j >= 0)
+					{
+						Result = Result.Remove(j, P.Key.Length);
+						if (string.IsNullOrEmpty(P.Value))
+							i = j;
+						else
+						{
+							Result = Result.Insert(j, P.Value);
+							i = j + P.Value.Length;
+						}
+					}
+				}
+			}
+
+			return Result;
 		}
 
 		private static long? GetFileSize(string FileName)
@@ -415,6 +406,18 @@ namespace TAG.Content.Microsoft
 
 								if (ExportAsMarkdown(Paragraph.Elements(), ParagraphContent, Style, State))
 									HasText = true;
+
+								if (Style.Caption)
+								{
+									Style.Caption = false;
+
+									if (!string.IsNullOrEmpty(State.CaptionMarker))
+									{
+										State.captionMarkers[State.CaptionMarker] = ParagraphContent.ToString();
+										State.CaptionMarker = null;
+										break;
+									}
+								}
 
 								if (Style.CodeBlock)
 								{
@@ -627,6 +630,90 @@ namespace TAG.Content.Microsoft
 								Style.ParagraphStyle = true;
 								HasText = ExportAsMarkdown(ParagraphProperties.Elements(), Markdown, Style, State);
 								Style.ParagraphStyle = false;
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "pStyle":
+							if (Element is ParagraphStyleId ParagraphStyleId)
+							{
+								string StyleId = ParagraphStyleId.Val?.Value?.ToUpper() ?? string.Empty;
+
+								if (styleIds.TryMap(StyleId, out StyleId))
+								{
+									switch (StyleId)
+									{
+										case "TITLE":
+											Markdown.Append("# ");
+											HasText = true;
+											break;
+
+										case "H1":
+											Markdown.Append("## ");
+											HasText = true;
+											break;
+
+										case "H2":
+											Markdown.Append("### ");
+											HasText = true;
+											break;
+
+										case "H3":
+											Markdown.Append("#### ");
+											HasText = true;
+											break;
+
+										case "H4":
+											Markdown.Append("##### ");
+											HasText = true;
+											break;
+
+										case "H5":
+											Markdown.Append("###### ");
+											HasText = true;
+											break;
+
+										case "H6":
+											Markdown.Append("####### ");
+											HasText = true;
+											break;
+
+										case "H7":
+											Markdown.Append("######## ");
+											HasText = true;
+											break;
+
+										case "H8":
+											Markdown.Append("######### ");
+											HasText = true;
+											break;
+
+										case "H9":
+											Markdown.Append("########## ");
+											HasText = true;
+											break;
+
+										case "LIST":
+											Style.ParagraphType = ParagraphType.Continuation;
+											HasText = true;
+											break;
+
+										case "QUOTE":
+											Markdown.Append("> ");
+											HasText = true;
+											break;
+
+										case "CAPTION":
+											Style.Caption = true;
+											break;
+
+										case "NORMAL":
+										default:
+											HasText = false;
+											break;
+									}
+								}
 							}
 							else
 								State.UnrecognizedElement(Element);
@@ -1246,86 +1333,6 @@ namespace TAG.Content.Microsoft
 								State.UnrecognizedElement(Element);
 							break;
 
-						case "pStyle":
-							if (Element is ParagraphStyleId ParagraphStyleId)
-							{
-								string StyleId = ParagraphStyleId.Val?.Value?.ToUpper() ?? string.Empty;
-
-								if (styleIds.TryMap(StyleId, out StyleId))
-								{
-									switch (StyleId)
-									{
-										case "TITLE":
-											Markdown.Append("# ");
-											HasText = true;
-											break;
-
-										case "H1":
-											Markdown.Append("## ");
-											HasText = true;
-											break;
-
-										case "H2":
-											Markdown.Append("### ");
-											HasText = true;
-											break;
-
-										case "H3":
-											Markdown.Append("#### ");
-											HasText = true;
-											break;
-
-										case "H4":
-											Markdown.Append("##### ");
-											HasText = true;
-											break;
-
-										case "H5":
-											Markdown.Append("###### ");
-											HasText = true;
-											break;
-
-										case "H6":
-											Markdown.Append("####### ");
-											HasText = true;
-											break;
-
-										case "H7":
-											Markdown.Append("######## ");
-											HasText = true;
-											break;
-
-										case "H8":
-											Markdown.Append("######### ");
-											HasText = true;
-											break;
-
-										case "H9":
-											Markdown.Append("########## ");
-											HasText = true;
-											break;
-
-										case "LIST":
-											Style.ParagraphType = ParagraphType.Continuation;
-											HasText = true;
-											break;
-
-										case "QUOTE":
-											Markdown.Append("> ");
-											HasText = true;
-											break;
-
-										case "NORMAL":
-										default:
-											HasText = false;
-											break;
-									}
-								}
-							}
-							else
-								State.UnrecognizedElement(Element);
-							break;
-
 						case "numPr":
 							if (Element is NumberingProperties NumberingProperties)
 							{
@@ -1900,7 +1907,9 @@ namespace TAG.Content.Microsoft
 								switch (Style.DocPartGallery)
 								{
 									case "Table of Contents":
-										Markdown.AppendLine("![](toc)");
+										Markdown.Append("![");
+										Markdown.Append(State.NewCaptionMarker());
+										Markdown.AppendLine("](toc)");
 										Markdown.AppendLine();
 										HasText = true;
 										break;
@@ -2535,7 +2544,9 @@ namespace TAG.Content.Microsoft
 
 											ImageStream.Read(Bin, 0, c);
 
-											Markdown.Append("![](data:");
+											Markdown.Append("![");
+											Markdown.Append(State.NewCaptionMarker());
+											Markdown.Append("](data:");
 											Markdown.Append(ImagePart.ContentType);
 											Markdown.Append(";base64,");
 											Markdown.Append(Convert.ToBase64String(Bin));
@@ -3083,6 +3094,7 @@ namespace TAG.Content.Microsoft
 			public bool Superscript;
 			public bool Subscript;
 			public bool CodeBlock;
+			public bool Caption;
 			public bool InlineCode;
 			public int? NewSection;
 			public bool HorizontalSeparator;
@@ -3113,6 +3125,7 @@ namespace TAG.Content.Microsoft
 				this.Subscript = false;
 				this.InlineCode = false;
 				this.CodeBlock = false;
+				this.Caption = false;
 				this.NewSection = null;
 				this.ParagraphStyle = false;
 				this.ParagraphType = null;
@@ -3220,6 +3233,7 @@ namespace TAG.Content.Microsoft
 			public Dictionary<long, KeyValuePair<string, bool>> Endnotes = null;
 			public Dictionary<int, KeyValuePair<AbstractNum, NumberingInstance>> NumberingFormats = null;
 			public Dictionary<string, Dictionary<string, int>> Unrecognized = null;
+			public Dictionary<string, string> captionMarkers = null;
 			public Dictionary<string, int> Sequences = null;
 			public Dictionary<string, int> LanguageCounts = new Dictionary<string, int>();
 			public LinkedList<string> Sections = null;
@@ -3228,6 +3242,7 @@ namespace TAG.Content.Microsoft
 			public LinkedList<string> Bookmarks = null;
 			public string FileName;
 			public long? FileSize;
+			public string CaptionMarker = null;
 			public bool SupressNextBookmark = false;
 
 			public void UnrecognizedElement(OpenXmlElement Element)
@@ -3424,6 +3439,17 @@ namespace TAG.Content.Microsoft
 					i = 0;
 
 				this.LanguageCounts[Language] = ++i;
+			}
+
+			public string NewCaptionMarker()
+			{
+				if (this.captionMarkers is null)
+					this.captionMarkers = new Dictionary<string, string>();
+
+				this.CaptionMarker = Guid.NewGuid().ToString();
+				this.captionMarkers[this.CaptionMarker] = null;
+				
+				return this.CaptionMarker;
 			}
 		}
 

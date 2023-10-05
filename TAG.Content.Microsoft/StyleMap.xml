@@ -31,4 +31,13 @@
 		<LocalStyleId id="QUOTE"/>
 		<LocalStyleId id="INTENSE\s+QUOTE"/>
 	</GenericStyleId>
+	<GenericStyleId id="CAPTION">
+		<LocalStyleId id="CAPTION"/>
+		<LocalStyleId id="BESKRIVNING"/>
+		<LocalStyleId id="DESCRIPCIÓN"/>
+		<LocalStyleId id="DESCRIPTION"/>
+		<LocalStyleId id="BESCHREIBUNG"/>
+		<LocalStyleId id="DIDASCALIA"/>
+		<LocalStyleId id="DESCRIZIONE"/>
+	</GenericStyleId>
 </Styles>

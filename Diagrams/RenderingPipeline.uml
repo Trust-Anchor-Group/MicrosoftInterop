@@ -1,0 +1,92 @@
+
+```dot
+digraph G
+{
+rankdir=LR
+node [shape=oval]
+
+subgraph cluster0
+{
+rank=same;
+rankdir=LR;
+label="TAG Neuron®"
+style=filled;
+color=lightcyan;
+node [style=filled, fillcolor=white];
+
+Word -> N1 [arrowhead=none]
+N1 -> Markdown
+Markdown -> N2 [arrowhead=none]
+
+
+subgraph
+{
+rank=same;
+N1 -> N1_2 [dir=back]
+N1_2 -> Note1 [dir=none]
+Note1 [shape=box, label="Removing\nformatting\nand\npositioning"]
+N1 [shape=none, label="", fixedsize=true, width=0, height=0]
+N1_2 [shape=none, label="", fixedsize=true, width=0, height=0]
+}
+
+subgraph
+{
+rankdir=TB;
+
+N2 -> N2_2 [dir=back]
+N2_2 -> Note2 [dir=none]
+N2 [shape=none, label="", fixedsize=true, width=0, height=0]
+N2_2 [shape=none, label="", fixedsize=true, width=0, height=0]
+Note2 [shape=box, label="Simplifying\ncontent\nto make it\nportable"]
+}
+}
+
+subgraph cluster1
+{
+rank=same;
+label="Federated\nInteroperability\nLayer"
+style=filled;
+color=lightsalmon;
+node [style=filled, fillcolor=white];
+
+N2 -> XML
+"Smart\nContract" [shape=box, label="\n\nSmart\nContract\n\n\n"]
+
+subgraph
+{
+rankdir=TB;
+"Smart\nContract" -> N3 [dir=back]
+N3 -> XML
+XML -> N4 [dir=back]
+N4 -> XMPP
+N3 [fixedsize=true, width=0, height=0, label=""]
+N4 [fixedsize=true, width=0, height=0, label=""]
+}
+}
+
+
+subgraph cluster2
+{
+rankdir=LR;
+label="TAG User Interfaces"
+style=filled;
+color=lightcyan;
+node [style=filled, fillcolor=white];
+
+"Simplified\nMarkdown" -> HTML
+"Simplified\nMarkdown" -> "Plain Text"
+"Simplified\nMarkdown" -> "XAML\nWPF"
+"Simplified\nMarkdown" -> "XAML\nXamarin"
+"Simplified\nMarkdown" -> "XAML\nMaui"
+"Simplified\nMarkdown" -> LaTeX
+HTML -> Web
+"XAML\nWPF" -> "Windows\n(ex. LegalLab)"
+"XAML\nXamarin" -> "Mobile App\n(ex. TAG ID)"
+"XAML\nMaui" -> "Mobile App\n(ex. TAG ID 2)"
+LaTeX -> PDF
+"Plain Text" -> Logs
+}
+
+XML -> "Simplified\nMarkdown"
+}
+```

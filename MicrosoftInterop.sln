@@ -15,7 +15,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TAG.Content.Microsoft.Test"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TAG.Service.MicrosoftInterop", "TAG.Service.MicrosoftInterop\TAG.Service.MicrosoftInterop.csproj", "{0CC9CA49-3CD7-46BC-8062-F4CF81C40D6A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WordToMarkdown", "WordToMarkdown\WordToMarkdown.csproj", "{DA61264E-FA9D-4AB1-A13E-A86821ECBF26}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WordToMarkdown", "WordToMarkdown\WordToMarkdown.csproj", "{DA61264E-FA9D-4AB1-A13E-A86821ECBF26}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Diagrams", "Diagrams", "{9DECE298-5201-4CF9-A6FF-B6E06E910CA1}"
+	ProjectSection(SolutionItems) = preProject
+		Diagrams\RenderingPipeline.dot = Diagrams\RenderingPipeline.dot
+		Diagrams\RenderingPipeline.svg = Diagrams\RenderingPipeline.svg
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -42,6 +48,9 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{9DECE298-5201-4CF9-A6FF-B6E06E910CA1} = {80146D0E-D575-44DD-8D22-F551FC0A9DE8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {701A4F84-286C-409C-AEE6-1B0935BA5ADA}

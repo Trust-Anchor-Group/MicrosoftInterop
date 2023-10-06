@@ -51,6 +51,7 @@ namespace TAG.Content.Microsoft.Test
 		[DataRow("Fields")]
 		[DataRow("Fields")]
 		[DataRow("MultiParagraphList")]
+		[DataRow("TablesAndNotes")]
 		public void Convert_To_Markdown(string FileName)
 		{
 			Assert.IsNotNull(inputFolder);

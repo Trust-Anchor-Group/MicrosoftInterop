@@ -696,7 +696,6 @@ namespace TAG.Content.Microsoft
 											break;
 
 										default:
-											State.LogUnrecognizedStyleId(StyleId);
 											HasText = false;
 											break;
 									}

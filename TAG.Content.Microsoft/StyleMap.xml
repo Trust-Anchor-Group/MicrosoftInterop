@@ -22,6 +22,7 @@
 	<GenericStyleId id="TITLE">
 		<LocalStyleId id="TITLE"/>
 		<LocalStyleId id="BOOK\s+TITLE"/>
+		<LocalStyleId id="RUBRIK"/>
 	</GenericStyleId>
 	<GenericStyleId id="LIST">
 		<LocalStyleId id="LIST PARAGRAPH"/>

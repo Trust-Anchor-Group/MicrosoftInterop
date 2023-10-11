@@ -593,44 +593,27 @@ namespace TAG.Content.Microsoft
 						case "pPr":
 							if (Element is ParagraphProperties ParagraphProperties)
 							{
-								if (!(ParagraphProperties.Justification is null) &&
-									ParagraphProperties.Justification.Val.HasValue)
-								{
-									switch (ParagraphProperties.Justification.Val.Value)
-									{
-										case JustificationValues.Left:
-										case JustificationValues.Start:
-											Style.ParagraphAlignment = ParagraphAlignment.Left;
-											break;
-
-										case JustificationValues.Center:
-											Style.ParagraphAlignment = ParagraphAlignment.Center;
-											break;
-
-										case JustificationValues.Right:
-										case JustificationValues.End:
-											Style.ParagraphAlignment = ParagraphAlignment.Right;
-											break;
-
-										case JustificationValues.Both:
-										case JustificationValues.Distribute:
-											Style.ParagraphAlignment = ParagraphAlignment.Justified;
-											break;
-
-										case JustificationValues.MediumKashida:
-										case JustificationValues.NumTab:
-										case JustificationValues.HighKashida:
-										case JustificationValues.LowKashida:
-										case JustificationValues.ThaiDistribute:
-										default:
-											break;
-									}
-								}
+								ProcessParagraphJustification(ParagraphProperties.Justification, Style);
 
 								Style.ParagraphStyle = true;
 								HasText = ExportAsMarkdown(ParagraphProperties.Elements(), Markdown, Style, State);
 								Style.ParagraphStyle = false;
 							}
+							else if (Element is ParagraphPropertiesExtended ParagraphPropertiesExtended)
+							{
+								ProcessParagraphJustification(ParagraphPropertiesExtended.Justification, Style);
+
+								Style.ParagraphStyle = true;
+								HasText = ExportAsMarkdown(ParagraphPropertiesExtended.Elements(), Markdown, Style, State);
+								Style.ParagraphStyle = false;
+							}
+							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "pPrChange":
+							if (Element is ParagraphPropertiesChange ParagraphPropertiesChange)
+								HasText = ExportAsMarkdown(ParagraphPropertiesChange.Elements(), Markdown, Style, State);
 							else
 								State.UnrecognizedElement(Element);
 							break;
@@ -640,9 +623,9 @@ namespace TAG.Content.Microsoft
 							{
 								string StyleId = ParagraphStyleId.Val?.Value?.ToUpper() ?? string.Empty;
 
-								if (styleIds.TryMap(StyleId, out StyleId))
+								if (styleIds.TryMap(StyleId, out string NormalizedStyleId))
 								{
-									switch (StyleId)
+									switch (NormalizedStyleId)
 									{
 										case "TITLE":
 											Markdown.Append("# ");
@@ -709,11 +692,17 @@ namespace TAG.Content.Microsoft
 											break;
 
 										case "NORMAL":
+											HasText = false;
+											break;
+
 										default:
+											State.LogUnrecognizedStyleId(StyleId);
 											HasText = false;
 											break;
 									}
 								}
+								else
+									State.LogUnrecognizedStyleId(StyleId);
 							}
 							else
 								State.UnrecognizedElement(Element);
@@ -814,6 +803,14 @@ namespace TAG.Content.Microsoft
 								Style.StyleChanged('D', true);
 
 								HasText = ExportAsMarkdown(DeletedRun.Elements(), Markdown, Style, State);
+							}
+							else if (Element is Deleted Deleted)
+							{
+								Markdown.Append("~~");
+								Style.Delete = true;
+								Style.StyleChanged('D', true);
+
+								HasText = ExportAsMarkdown(Deleted.Elements(), Markdown, Style, State);
 							}
 							else
 								State.UnrecognizedElement(Element);
@@ -3008,6 +3005,42 @@ namespace TAG.Content.Microsoft
 			return HasText;
 		}
 
+		private static void ProcessParagraphJustification(Justification Justification, FormattingStyle Style)
+		{
+			if (!(Justification is null) && Justification.Val.HasValue)
+			{
+				switch (Justification.Val.Value)
+				{
+					case JustificationValues.Left:
+					case JustificationValues.Start:
+						Style.ParagraphAlignment = ParagraphAlignment.Left;
+						break;
+
+					case JustificationValues.Center:
+						Style.ParagraphAlignment = ParagraphAlignment.Center;
+						break;
+
+					case JustificationValues.Right:
+					case JustificationValues.End:
+						Style.ParagraphAlignment = ParagraphAlignment.Right;
+						break;
+
+					case JustificationValues.Both:
+					case JustificationValues.Distribute:
+						Style.ParagraphAlignment = ParagraphAlignment.Justified;
+						break;
+
+					case JustificationValues.MediumKashida:
+					case JustificationValues.NumTab:
+					case JustificationValues.HighKashida:
+					case JustificationValues.LowKashida:
+					case JustificationValues.ThaiDistribute:
+					default:
+						break;
+				}
+			}
+		}
+
 		private static string ToString(double? Number, string Argument)
 		{
 			if (!Number.HasValue)
@@ -3247,6 +3280,7 @@ namespace TAG.Content.Microsoft
 			public Dictionary<string, string> captionMarkers = null;
 			public Dictionary<string, int> Sequences = null;
 			public Dictionary<string, int> LanguageCounts = new Dictionary<string, int>();
+			public Dictionary<string, bool> UnrecognizedStyleIds = null;
 			public LinkedList<string> Sections = null;
 			public LinkedList<KeyValuePair<string, string>> MetaData = null;
 			public LinkedList<KeyValuePair<string, string>> MetaData2 = null;
@@ -3461,6 +3495,18 @@ namespace TAG.Content.Microsoft
 				this.captionMarkers[this.CaptionMarker] = null;
 				
 				return this.CaptionMarker;
+			}
+
+			public void LogUnrecognizedStyleId(string StyleId)
+			{
+				if (this.UnrecognizedStyleIds is null)
+					this.UnrecognizedStyleIds = new Dictionary<string, bool>();
+
+				if (this.UnrecognizedStyleIds.ContainsKey(StyleId))
+					return;
+
+				this.UnrecognizedStyleIds[StyleId] = true;
+				Log.Alert("Unrecognized MS Word style: **" + StyleId + "**", this.FileName);
 			}
 		}
 

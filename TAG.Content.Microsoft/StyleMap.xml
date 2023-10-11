@@ -41,4 +41,7 @@
 		<LocalStyleId id="DIDASCALIA"/>
 		<LocalStyleId id="DESCRIZIONE"/>
 	</GenericStyleId>
+	<GenericStyleId id="FOOTNOTE">
+		<LocalStyleId id="FOTNOTSTEXT"/>
+	</GenericStyleId>
 </Styles>

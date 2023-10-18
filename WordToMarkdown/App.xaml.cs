@@ -39,7 +39,7 @@ namespace WordToMarkdown
 				List<KeyValuePair<string, string>>? Headers = null;
 				string? InputFileName = null;
 				string? OutputFileName = null;
-				string Error = null;
+				string? Error = null;
 
 				while (i < c && Error is null)
 				{

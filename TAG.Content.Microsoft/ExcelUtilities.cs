@@ -545,46 +545,41 @@ namespace TAG.Content.Microsoft
 
 									if (State.Type.HasValue)
 									{
-										switch (State.Type.Value)
+										CellValues Value = State.Type.Value;
+
+										if (Value == CellValues.SharedString)
 										{
-											case CellValues.SharedString:
-												if (int.TryParse(s, out int i) &&
-													State.TryGetSharedString(i, out string s2))
-												{
-													State.Cells[State.X - State.Left, State.Y - State.Top] = Expression.ToString(s2);
-												}
-												else
-													State.Cells[State.X - State.Left, State.Y - State.Top] = Expression.ToString(s);
-												break;
-
-											case CellValues.Date:
-												if (DateTime.TryParse(s, out DateTime TP))
-													State.Cells[State.X - State.Left, State.Y - State.Top] = Expression.ToString(TP);
-												else
-													State.Cells[State.X - State.Left, State.Y - State.Top] = Expression.ToString(s);
-												break;
-
-											case CellValues.Boolean:
-												if (CommonTypes.TryParse(s, out bool b))
-													State.Cells[State.X - State.Left, State.Y - State.Top] = Expression.ToString(b);
-												else
-													State.Cells[State.X - State.Left, State.Y - State.Top] = Expression.ToString(s);
-												break;
-
-											case CellValues.Number:
-												if (CommonTypes.TryParse(s, out double d))
-													State.Cells[State.X - State.Left, State.Y - State.Top] = Expression.ToString(d);
-												else
-													State.Cells[State.X - State.Left, State.Y - State.Top] = Expression.ToString(s);
-												break;
-
-											case CellValues.Error:
-											case CellValues.String:
-											case CellValues.InlineString:
-											default:
+											if (int.TryParse(s, out int i) &&
+												State.TryGetSharedString(i, out string s2))
+											{
+												State.Cells[State.X - State.Left, State.Y - State.Top] = Expression.ToString(s2);
+											}
+											else
 												State.Cells[State.X - State.Left, State.Y - State.Top] = Expression.ToString(s);
-												break;
 										}
+										else if (Value == CellValues.Date)
+										{
+											if (DateTime.TryParse(s, out DateTime TP))
+												State.Cells[State.X - State.Left, State.Y - State.Top] = Expression.ToString(TP);
+											else
+												State.Cells[State.X - State.Left, State.Y - State.Top] = Expression.ToString(s);
+										}
+										else if (Value == CellValues.Boolean)
+										{
+											if (CommonTypes.TryParse(s, out bool b))
+												State.Cells[State.X - State.Left, State.Y - State.Top] = Expression.ToString(b);
+											else
+												State.Cells[State.X - State.Left, State.Y - State.Top] = Expression.ToString(s);
+										}
+										else if (Value == CellValues.Number)
+										{
+											if (CommonTypes.TryParse(s, out double d))
+												State.Cells[State.X - State.Left, State.Y - State.Top] = Expression.ToString(d);
+											else
+												State.Cells[State.X - State.Left, State.Y - State.Top] = Expression.ToString(s);
+										}
+										else if (Value == CellValues.Error || Value == CellValues.String || Value == CellValues.InlineString)
+											State.Cells[State.X - State.Left, State.Y - State.Top] = Expression.ToString(s);
 									}
 									else
 									{
@@ -644,7 +639,7 @@ namespace TAG.Content.Microsoft
 							else
 								State.UnrecognizedElement(Element);
 							break;
-	
+
 						default:
 							State.UnrecognizedElement(Element);
 							break;

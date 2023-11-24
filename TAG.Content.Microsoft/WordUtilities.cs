@@ -69,30 +69,30 @@ namespace TAG.Content.Microsoft
 			{
 				AutoSave = false,
 				MaxCharactersInPart = 0,
-				MarkupCompatibilityProcessSettings = new MarkupCompatibilityProcessSettings(MarkupCompatibilityProcessMode.ProcessAllParts, FileFormatVersions.Microsoft365), 
-				RelationshipErrorHandlerFactory = RelationshipHandlerFactory
+				MarkupCompatibilityProcessSettings = new MarkupCompatibilityProcessSettings(MarkupCompatibilityProcessMode.ProcessAllParts, FileFormatVersions.Microsoft365),
+				//RelationshipErrorHandlerFactory = RelationshipHandlerFactory
 			};
 		}
 
-		private static RelationshipErrorHandler RelationshipHandlerFactory(OpenXmlPackage Package) => ignoreErrors;
-
-		private class IgnoreErrors : RelationshipErrorHandler
-		{
-			public override string Rewrite(Uri partUri, string id, string uri)
-			{
-				try
-				{
-					Uri Uri = new Uri(uri);
-					return uri;
-				}
-				catch (Exception)
-				{
-					return "http://example.com/";
-				}
-			}
-		}
-
-		private static readonly IgnoreErrors ignoreErrors = new IgnoreErrors();
+		//private static RelationshipErrorHandler RelationshipHandlerFactory(OpenXmlPackage Package) => ignoreErrors;
+		//
+		//private class IgnoreErrors : RelationshipErrorHandler
+		//{
+		//	public override string Rewrite(Uri partUri, string id, string uri)
+		//	{
+		//		try
+		//		{
+		//			Uri Uri = new Uri(uri);
+		//			return uri;
+		//		}
+		//		catch (Exception)
+		//		{
+		//			return "http://example.com/";
+		//		}
+		//	}
+		//}
+		//
+		//private static readonly IgnoreErrors ignoreErrors = new IgnoreErrors();
 
 		/// <summary>
 		/// Extracts the contents of a Word file to Markdown.
@@ -909,44 +909,42 @@ namespace TAG.Content.Microsoft
 							{
 								if (Underline.Val.HasValue && !Style.ParagraphStyle)
 								{
-									switch (Underline.Val.Value)
+									UnderlineValues Value = Underline.Val.Value;
+
+									if (Value == UnderlineValues.Double ||
+										Value == UnderlineValues.Thick ||
+										Value == UnderlineValues.DottedHeavy ||
+										Value == UnderlineValues.DashedHeavy ||
+										Value == UnderlineValues.DashLongHeavy ||
+										Value == UnderlineValues.DashDotHeavy ||
+										Value == UnderlineValues.DashDotDotHeavy ||
+										Value == UnderlineValues.WavyHeavy ||
+										Value == UnderlineValues.WavyDouble)
 									{
-										case UnderlineValues.Single:
-										case UnderlineValues.Words:
-										case UnderlineValues.Dotted:
-										case UnderlineValues.Dash:
-										case UnderlineValues.DashLong:
-										case UnderlineValues.DotDash:
-										case UnderlineValues.DotDotDash:
-										case UnderlineValues.Wave:
-										default:
-											if (!Style.Underline)
-											{
-												Markdown.Append('_');
-												Style.Underline = true;
-												Style.StyleChanged('u', true);
-											}
-											break;
+										if (!Style.Insert)
+										{
+											Markdown.Append("__");
+											Style.Insert = true;
+											Style.StyleChanged('I', true);
+										}
+									}
+									else if (Value != UnderlineValues.None)
+									{
+										// UnderlineValues.Single
+										// UnderlineValues.Words
+										// UnderlineValues.Dotted
+										// UnderlineValues.Dash
+										// UnderlineValues.DashLong
+										// UnderlineValues.DotDash
+										// UnderlineValues.DotDotDash
+										// UnderlineValues.Wave
 
-										case UnderlineValues.Double:
-										case UnderlineValues.Thick:
-										case UnderlineValues.DottedHeavy:
-										case UnderlineValues.DashedHeavy:
-										case UnderlineValues.DashLongHeavy:
-										case UnderlineValues.DashDotHeavy:
-										case UnderlineValues.DashDotDotHeavy:
-										case UnderlineValues.WavyHeavy:
-										case UnderlineValues.WavyDouble:
-											if (!Style.Insert)
-											{
-												Markdown.Append("__");
-												Style.Insert = true;
-												Style.StyleChanged('I', true);
-											}
-											break;
-
-										case UnderlineValues.None:
-											break;
+										if (!Style.Underline)
+										{
+											Markdown.Append('_');
+											Style.Underline = true;
+											Style.StyleChanged('u', true);
+										}
 									}
 								}
 							}
@@ -959,28 +957,25 @@ namespace TAG.Content.Microsoft
 							{
 								if (VerticalTextAlignment.Val.HasValue)
 								{
-									switch (VerticalTextAlignment.Val.Value)
+									VerticalPositionValues Value = VerticalTextAlignment.Val.Value;
+
+									if (Value == VerticalPositionValues.Superscript)
 									{
-										case VerticalPositionValues.Superscript:
-											if (!Style.Superscript)
-											{
-												Markdown.Append("^[");
-												Style.Superscript = true;
-												Style.StyleChanged('^', false);
-											}
-											break;
-
-										case VerticalPositionValues.Subscript:
-											if (!Style.Subscript)
-											{
-												Markdown.Append("[");
-												Style.Subscript = true;
-												Style.StyleChanged('v', false);
-											}
-											break;
-
-										case VerticalPositionValues.Baseline:
-											break;
+										if (!Style.Superscript)
+										{
+											Markdown.Append("^[");
+											Style.Superscript = true;
+											Style.StyleChanged('^', false);
+										}
+									}
+									else if (Value == VerticalPositionValues.Subscript)
+									{
+										if (!Style.Subscript)
+										{
+											Markdown.Append("[");
+											Style.Subscript = true;
+											Style.StyleChanged('v', false);
+										}
 									}
 								}
 							}
@@ -1013,7 +1008,7 @@ namespace TAG.Content.Microsoft
 
 									Markdown.Append(MarkdownDocument.Encode(s));
 									HasText = true;
-							
+
 									Style.FormattingApplied = false;
 								}
 							}
@@ -1393,113 +1388,113 @@ namespace TAG.Content.Microsoft
 
 													if (!(Lvl.NumberingFormat?.Val is null))
 													{
+														NumberFormatValues Value = Lvl.NumberingFormat.Val.Value;
 
-														switch (Lvl.NumberingFormat.Val.Value)
+														if (Value == NumberFormatValues.Decimal ||
+															Value == NumberFormatValues.UpperRoman ||
+															Value == NumberFormatValues.LowerRoman ||
+															Value == NumberFormatValues.Ordinal ||
+															Value == NumberFormatValues.JapaneseCounting ||
+															Value == NumberFormatValues.DecimalFullWidth ||
+															Value == NumberFormatValues.DecimalHalfWidth ||
+															Value == NumberFormatValues.JapaneseLegal ||
+															Value == NumberFormatValues.JapaneseDigitalTenThousand ||
+															Value == NumberFormatValues.DecimalEnclosedCircle ||
+															Value == NumberFormatValues.DecimalFullWidth2 ||
+															Value == NumberFormatValues.DecimalZero ||
+															Value == NumberFormatValues.Ganada ||
+															Value == NumberFormatValues.Chosung ||
+															Value == NumberFormatValues.DecimalEnclosedFullstop ||
+															Value == NumberFormatValues.DecimalEnclosedParen ||
+															Value == NumberFormatValues.DecimalEnclosedCircleChinese ||
+															Value == NumberFormatValues.TaiwaneseCounting ||
+															Value == NumberFormatValues.TaiwaneseCountingThousand ||
+															Value == NumberFormatValues.TaiwaneseDigital ||
+															Value == NumberFormatValues.ChineseCounting ||
+															Value == NumberFormatValues.ChineseCountingThousand ||
+															Value == NumberFormatValues.KoreanDigital ||
+															Value == NumberFormatValues.KoreanCounting ||
+															Value == NumberFormatValues.KoreanLegal ||
+															Value == NumberFormatValues.KoreanDigital2 ||
+															Value == NumberFormatValues.VietnameseCounting ||
+															Value == NumberFormatValues.NumberInDash ||
+															Value == NumberFormatValues.Hebrew1 ||
+															Value == NumberFormatValues.ArabicAbjad ||
+															Value == NumberFormatValues.HindiNumbers ||
+															Value == NumberFormatValues.HindiCounting ||
+															Value == NumberFormatValues.ThaiNumbers ||
+															Value == NumberFormatValues.ThaiCounting)
 														{
-															case NumberFormatValues.Decimal:
-															case NumberFormatValues.UpperRoman:
-															case NumberFormatValues.LowerRoman:
-															case NumberFormatValues.Ordinal:
-															case NumberFormatValues.JapaneseCounting:
-															case NumberFormatValues.DecimalFullWidth:
-															case NumberFormatValues.DecimalHalfWidth:
-															case NumberFormatValues.JapaneseLegal:
-															case NumberFormatValues.JapaneseDigitalTenThousand:
-															case NumberFormatValues.DecimalEnclosedCircle:
-															case NumberFormatValues.DecimalFullWidth2:
-															case NumberFormatValues.DecimalZero:
-															case NumberFormatValues.Ganada:
-															case NumberFormatValues.Chosung:
-															case NumberFormatValues.DecimalEnclosedFullstop:
-															case NumberFormatValues.DecimalEnclosedParen:
-															case NumberFormatValues.DecimalEnclosedCircleChinese:
-															case NumberFormatValues.TaiwaneseCounting:
-															case NumberFormatValues.TaiwaneseCountingThousand:
-															case NumberFormatValues.TaiwaneseDigital:
-															case NumberFormatValues.ChineseCounting:
-															case NumberFormatValues.ChineseCountingThousand:
-															case NumberFormatValues.KoreanDigital:
-															case NumberFormatValues.KoreanCounting:
-															case NumberFormatValues.KoreanLegal:
-															case NumberFormatValues.KoreanDigital2:
-															case NumberFormatValues.VietnameseCounting:
-															case NumberFormatValues.NumberInDash:
-															case NumberFormatValues.Hebrew1:
-															case NumberFormatValues.ArabicAbjad:
-															case NumberFormatValues.HindiNumbers:
-															case NumberFormatValues.HindiCounting:
-															case NumberFormatValues.ThaiNumbers:
-															case NumberFormatValues.ThaiCounting:
-																Style.ParagraphType = ParagraphType.OrderedList;
-																HasText = true;
+															Style.ParagraphType = ParagraphType.OrderedList;
+															HasText = true;
 
-																if (Style.SameNubmering || !Style.OrdinalNumber.HasValue)
-																	Markdown.Append("#.\t");
-																else
+															if (Style.SameNubmering || !Style.OrdinalNumber.HasValue)
+																Markdown.Append("#.\t");
+															else
+															{
+																Markdown.Append(Style.OrdinalNumber.Value.ToString());
+																Markdown.Append(".\t");
+															}
+														}
+														else if (Value == NumberFormatValues.None)
+														{
+															Style.ParagraphType = ParagraphType.Continuation;
+															HasText = true;
+															Markdown.Append('\t');
+														}
+														else
+														{
+															// NumberFormatValues.UpperLetter:
+															// NumberFormatValues.LowerLetter:
+															// NumberFormatValues.CardinalText:
+															// NumberFormatValues.OrdinalText:
+															// NumberFormatValues.Hex:
+															// NumberFormatValues.Chicago:
+															// NumberFormatValues.IdeographDigital:
+															// NumberFormatValues.Aiueo:
+															// NumberFormatValues.Iroha:
+															// NumberFormatValues.AiueoFullWidth:
+															// NumberFormatValues.IrohaFullWidth:
+															// NumberFormatValues.Bullet:
+															// NumberFormatValues.IdeographEnclosedCircle:
+															// NumberFormatValues.IdeographTraditional:
+															// NumberFormatValues.IdeographZodiac:
+															// NumberFormatValues.IdeographZodiacTraditional:
+															// NumberFormatValues.IdeographLegalTraditional:
+															// NumberFormatValues.ChineseLegalSimplified:
+															// NumberFormatValues.RussianLower:
+															// NumberFormatValues.RussianUpper:
+															// NumberFormatValues.Hebrew2:
+															// NumberFormatValues.ArabicAlpha:
+															// NumberFormatValues.HindiVowels:
+															// NumberFormatValues.HindiConsonants:
+															// NumberFormatValues.ThaiLetters:
+															// NumberFormatValues.BahtText:
+															// NumberFormatValues.DollarText:
+															// NumberFormatValues.Custom:
+
+															Style.ParagraphType = ParagraphType.BulletList;
+															HasText = true;
+
+															if (Style.ItemLevel.HasValue)
+															{
+																switch (Style.ItemLevel.Value % 3)
 																{
-																	Markdown.Append(Style.OrdinalNumber.Value.ToString());
-																	Markdown.Append(".\t");
+																	case 0:
+																		Markdown.Append("*\t");
+																		break;
+
+																	case 1:
+																		Markdown.Append("-\t");
+																		break;
+
+																	case 2:
+																		Markdown.Append("+\t");
+																		break;
 																}
-																break;
-
-															case NumberFormatValues.UpperLetter:
-															case NumberFormatValues.LowerLetter:
-															case NumberFormatValues.CardinalText:
-															case NumberFormatValues.OrdinalText:
-															case NumberFormatValues.Hex:
-															case NumberFormatValues.Chicago:
-															case NumberFormatValues.IdeographDigital:
-															case NumberFormatValues.Aiueo:
-															case NumberFormatValues.Iroha:
-															case NumberFormatValues.AiueoFullWidth:
-															case NumberFormatValues.IrohaFullWidth:
-															case NumberFormatValues.Bullet:
-															case NumberFormatValues.IdeographEnclosedCircle:
-															case NumberFormatValues.IdeographTraditional:
-															case NumberFormatValues.IdeographZodiac:
-															case NumberFormatValues.IdeographZodiacTraditional:
-															case NumberFormatValues.IdeographLegalTraditional:
-															case NumberFormatValues.ChineseLegalSimplified:
-															case NumberFormatValues.RussianLower:
-															case NumberFormatValues.RussianUpper:
-															case NumberFormatValues.Hebrew2:
-															case NumberFormatValues.ArabicAlpha:
-															case NumberFormatValues.HindiVowels:
-															case NumberFormatValues.HindiConsonants:
-															case NumberFormatValues.ThaiLetters:
-															case NumberFormatValues.BahtText:
-															case NumberFormatValues.DollarText:
-															case NumberFormatValues.Custom:
-															default:
-																Style.ParagraphType = ParagraphType.BulletList;
-																HasText = true;
-
-																if (Style.ItemLevel.HasValue)
-																{
-																	switch (Style.ItemLevel.Value % 3)
-																	{
-																		case 0:
-																			Markdown.Append("*\t");
-																			break;
-
-																		case 1:
-																			Markdown.Append("-\t");
-																			break;
-
-																		case 2:
-																			Markdown.Append("+\t");
-																			break;
-																	}
-																}
-																else
-																	Markdown.Append("*\t");
-																break;
-
-															case NumberFormatValues.None:
-																Style.ParagraphType = ParagraphType.Continuation;
-																HasText = true;
-																Markdown.Append('\t');
-																break;
+															}
+															else
+																Markdown.Append("*\t");
 														}
 													}
 													else if (Lvl.LevelText.Val.HasValue)
@@ -1588,18 +1583,14 @@ namespace TAG.Content.Microsoft
 							{
 								if (SectionType.Val.HasValue)
 								{
-									switch (SectionType.Val.Value)
-									{
-										case SectionMarkValues.EvenPage:
-										case SectionMarkValues.OddPage:
-										case SectionMarkValues.Continuous:
-										case SectionMarkValues.NextPage:
-											Style.NewSection = 1;
-											break;
+									SectionMarkValues Value = SectionType.Val.Value;
 
-										case SectionMarkValues.NextColumn:
-										default:
-											break;
+									if (Value == SectionMarkValues.EvenPage ||
+										Value == SectionMarkValues.OddPage ||
+										Value == SectionMarkValues.Continuous ||
+										Value == SectionMarkValues.NextPage)
+									{
+										Style.NewSection = 1;
 									}
 								}
 
@@ -1609,29 +1600,24 @@ namespace TAG.Content.Microsoft
 							{
 								if (TextBoxFormFieldType.Val.HasValue)
 								{
-									switch (TextBoxFormFieldType.Val.Value)
+									TextBoxFormFieldValues Value = TextBoxFormFieldType.Val.Value;
+
+									if (Value == TextBoxFormFieldValues.Calculated)
+										Style.ParameterType = null;
+									else if (Value == TextBoxFormFieldValues.CurrentTime)
+										Style.ParameterType = ParameterType.Time;
+									else if (Value == TextBoxFormFieldValues.CurrentDate ||
+										Value == TextBoxFormFieldValues.Date)
 									{
-										case TextBoxFormFieldValues.Calculated:
-											Style.ParameterType = null;
-											break;
+										Style.ParameterType = ParameterType.Date;
+									}
+									else if (Value == TextBoxFormFieldValues.Number)
+										Style.ParameterType = ParameterType.Number;
+									else
+									{
+										// TextBoxFormFieldValues.Regular
 
-										case TextBoxFormFieldValues.CurrentTime:
-											Style.ParameterType = ParameterType.Time;
-											break;
-
-										case TextBoxFormFieldValues.CurrentDate:
-										case TextBoxFormFieldValues.Date:
-											Style.ParameterType = ParameterType.Date;
-											break;
-
-										case TextBoxFormFieldValues.Number:
-											Style.ParameterType = ParameterType.Number;
-											break;
-
-										case TextBoxFormFieldValues.Regular:
-										default:
-											Style.ParameterType = ParameterType.String;
-											break;
+										Style.ParameterType = ParameterType.String;
 									}
 								}
 							}
@@ -2465,22 +2451,20 @@ namespace TAG.Content.Microsoft
 							{
 								if (Checked.Val.HasValue)
 								{
-									switch (Checked.Val.Value)
+									DocumentFormat.OpenXml.Office2010.Word.OnOffValues Value = Checked.Val.Value;
+
+									if (Value == DocumentFormat.OpenXml.Office2010.Word.OnOffValues.One ||
+										Value == DocumentFormat.OpenXml.Office2010.Word.OnOffValues.True)
 									{
-										case DocumentFormat.OpenXml.Office2010.Word.OnOffValues.One:
-										case DocumentFormat.OpenXml.Office2010.Word.OnOffValues.True:
-											Style.Checked = true;
-											break;
-
-										case DocumentFormat.OpenXml.Office2010.Word.OnOffValues.Zero:
-										case DocumentFormat.OpenXml.Office2010.Word.OnOffValues.False:
-											Style.Checked = false;
-											break;
-
-										default:
-											Style.Checked = null;
-											break;
+										Style.Checked = true;
 									}
+									else if (Value == DocumentFormat.OpenXml.Office2010.Word.OnOffValues.Zero ||
+										Value == DocumentFormat.OpenXml.Office2010.Word.OnOffValues.False)
+									{
+										Style.Checked = false;
+									}
+									else
+										Style.Checked = null;
 								}
 
 								HasText = ExportAsMarkdown(Checked.Elements(), Markdown, Style, State);
@@ -3008,35 +2992,16 @@ namespace TAG.Content.Microsoft
 		{
 			if (!(Justification is null) && Justification.Val.HasValue)
 			{
-				switch (Justification.Val.Value)
-				{
-					case JustificationValues.Left:
-					case JustificationValues.Start:
-						Style.ParagraphAlignment = ParagraphAlignment.Left;
-						break;
+				JustificationValues Value = Justification.Val.Value;
 
-					case JustificationValues.Center:
-						Style.ParagraphAlignment = ParagraphAlignment.Center;
-						break;
-
-					case JustificationValues.Right:
-					case JustificationValues.End:
-						Style.ParagraphAlignment = ParagraphAlignment.Right;
-						break;
-
-					case JustificationValues.Both:
-					case JustificationValues.Distribute:
-						Style.ParagraphAlignment = ParagraphAlignment.Justified;
-						break;
-
-					case JustificationValues.MediumKashida:
-					case JustificationValues.NumTab:
-					case JustificationValues.HighKashida:
-					case JustificationValues.LowKashida:
-					case JustificationValues.ThaiDistribute:
-					default:
-						break;
-				}
+				if (Value == JustificationValues.Left || Value == JustificationValues.Start)
+					Style.ParagraphAlignment = ParagraphAlignment.Left;
+				else if (Value == JustificationValues.Center)
+					Style.ParagraphAlignment = ParagraphAlignment.Center;
+				else if (Value == JustificationValues.Right || Value == JustificationValues.End)
+					Style.ParagraphAlignment = ParagraphAlignment.Right;
+				else if (Value == JustificationValues.Both || Value == JustificationValues.Distribute)
+					Style.ParagraphAlignment = ParagraphAlignment.Justified;
 			}
 		}
 
@@ -3349,7 +3314,7 @@ namespace TAG.Content.Microsoft
 			}
 
 			private bool TryGetNote<T>(long? Id, RenderingState State, out string Content,
-				TypedOpenXmlPartRootElement Root, ref Dictionary<long, KeyValuePair<string, bool>> Notes)
+				OpenXmlPartRootElement Root, ref Dictionary<long, KeyValuePair<string, bool>> Notes)
 				where T : FootnoteEndnoteType
 			{
 				if (!Id.HasValue)
@@ -3492,7 +3457,7 @@ namespace TAG.Content.Microsoft
 
 				this.CaptionMarker = Guid.NewGuid().ToString();
 				this.captionMarkers[this.CaptionMarker] = null;
-				
+
 				return this.CaptionMarker;
 			}
 

@@ -2,6 +2,7 @@
 <Module xmlns="http://waher.se/Schema/ModuleManifest.xsd">
 	<Assembly fileName="System.IO.Packaging.dll"/>
 	<Assembly fileName="DocumentFormat.OpenXml.dll"/>
+	<Assembly fileName="DocumentFormat.OpenXml.Framework.dll"/>
 	<Assembly fileName="TAG.Content.Microsoft.dll"/>
 	<Assembly fileName="TAG.Service.MicrosoftInterop.dll"/>
 	<Folder name="Root">

@@ -25,7 +25,7 @@
 		<LocalStyleId id="RUBRIK"/>
 	</GenericStyleId>
 	<GenericStyleId id="LIST">
-		<LocalStyleId id="LIST PARAGRAPH"/>
+		<LocalStyleId id="LIST(\s*PARAGRAPH)?"/>
 		<LocalStyleId id="LISTSTYCKE"/>
 	</GenericStyleId>
 	<GenericStyleId id="QUOTE">

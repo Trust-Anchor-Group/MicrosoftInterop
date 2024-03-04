@@ -16,7 +16,7 @@
 
 Syntax of Markdown supported:
 https://lab.tagroot.io/Markdown.md</Description>
-		<Copyright>Copyright © Trust Anchor Group AB 2023. All rights reserved.</Copyright>
+		<Copyright>Copyright © Trust Anchor Group AB 2023-2024. All rights reserved.</Copyright>
 		<PackageProjectUrl>https://github.com/Trust-Anchor-Group/MicrosoftInterop</PackageProjectUrl>
 		<PackageIcon>Tag64x64.png</PackageIcon>
 		<PackageTags>Word Markdown docx md Conversion Open XML</PackageTags>

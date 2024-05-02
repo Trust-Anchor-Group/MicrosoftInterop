@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using TAG.Content.Microsoft.Content;
 using Waher.Content;
-using Waher.Content.Html.Javascript;
+using Waher.Content.Html.JavaScript;
 using Waher.IoTGateway;
 using Waher.Networking.HTTP;
 
@@ -66,7 +66,7 @@ namespace TAG.Service.MicrosoftInterop.WebServices
 
 			Javascript1 += Javascript2;
 
-			Response.ContentType = JavascriptCodec.JavascriptContentTypes[0] + "; charset=utf-8";
+			Response.ContentType = JavaScriptCodec.JavaScriptContentTypes[0] + "; charset=utf-8";
 			await Response.Write(WordToMarkdownConverter.Utf8WithBOM.GetBytes(Javascript1));
 		}
 	}

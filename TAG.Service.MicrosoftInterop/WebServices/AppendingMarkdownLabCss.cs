@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using TAG.Content.Microsoft.Content;
 using Waher.Content;
 using Waher.Content.Html.Css;
-using Waher.Content.Html.Javascript;
 using Waher.IoTGateway;
 using Waher.Networking.HTTP;
 

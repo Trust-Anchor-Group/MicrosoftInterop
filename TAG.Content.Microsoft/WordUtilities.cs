@@ -1080,6 +1080,11 @@ namespace TAG.Content.Microsoft
 								State.UnrecognizedElement(Element);
 							break;
 
+						case "tblInd":
+							if (!(Element is TableIndentation))
+								State.UnrecognizedElement(Element);
+							break;
+
 						case "gridCol":
 							if (Element is GridColumn)
 							{
@@ -2416,6 +2421,51 @@ namespace TAG.Content.Microsoft
 							if (Element is DeletedText DeletedText)
 								HasText = ExportAsMarkdown(DeletedText.Elements(), Markdown, Style, State);
 							else
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "autoSpaceDE":
+							if (!(Element is AutoSpaceDE))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "autoSpaceDN":
+							if (!(Element is AutoSpaceDN))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "adjustRightInd":
+							if (!(Element is AdjustRightIndent))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "snapToGrid":
+							if (!(Element is SnapToGrid))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "widowControl":
+							if (!(Element is WidowControl))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "contextualSpacing":
+							if (!(Element is ContextualSpacing))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "headerReference":
+							if (!(Element is HeaderReference))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "overflowPunct":
+							if (!(Element is OverflowPunctuation))
+								State.UnrecognizedElement(Element);
+							break;
+
+						case "textAlignment":
+							if (!(Element is TextAlignment))
 								State.UnrecognizedElement(Element);
 							break;
 

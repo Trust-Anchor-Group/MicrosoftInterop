@@ -157,19 +157,19 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
-    <PackageReference Include="MSTest.TestAdapter" Version="3.5.0" />
-    <PackageReference Include="MSTest.TestFramework" Version="3.5.0" />
+    <PackageReference Include="MSTest.TestAdapter" Version="3.5.2" />
+    <PackageReference Include="MSTest.TestFramework" Version="3.5.2" />
     <PackageReference Include="coverlet.collector" Version="6.0.2">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Waher.Content" Version="2.6.10" />
-    <PackageReference Include="Waher.Content.Xml" Version="2.3.0" />
-    <PackageReference Include="Waher.Events" Version="1.1.3" />
-    <PackageReference Include="Waher.Events.Console" Version="1.1.2" />
+    <PackageReference Include="Waher.Content" Version="2.6.11" />
+    <PackageReference Include="Waher.Content.Xml" Version="2.3.1" />
+    <PackageReference Include="Waher.Events" Version="1.2.0" />
+    <PackageReference Include="Waher.Events.Console" Version="1.1.3" />
     <PackageReference Include="Waher.Runtime.Inventory" Version="1.1.5" />
     <PackageReference Include="Waher.Runtime.Inventory.Loader" Version="1.0.9" />
-    <PackageReference Include="Waher.Runtime.Text" Version="1.1.3" />
+    <PackageReference Include="Waher.Runtime.Text" Version="1.1.4" />
     <PackageReference Include="Waher.Script.Content" Version="2.1.5" />
   </ItemGroup>
 

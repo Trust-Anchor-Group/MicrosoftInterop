@@ -36,17 +36,17 @@
 
 	<ItemGroup>
     <PackageReference Include="DocumentFormat.OpenXml" Version="3.1.1" />
-    <PackageReference Include="Waher.Content" Version="2.6.13" />
-    <PackageReference Include="Waher.Content.Html" Version="2.3.2" />
-    <PackageReference Include="Waher.Content.Markdown" Version="3.2.0" />
-    <PackageReference Include="Waher.Content.Markdown.Web" Version="3.1.4" />
-    <PackageReference Include="Waher.IoTGateway" Version="2.1.0" />
-    <PackageReference Include="Waher.Networking" Version="2.3.0" />
-    <PackageReference Include="Waher.Networking.HTTP" Version="2.8.4" />
-    <PackageReference Include="Waher.Runtime.Inventory" Version="1.1.7" />
-    <PackageReference Include="Waher.Security" Version="1.0.9" />
-    <PackageReference Include="Waher.Security.JWT" Version="1.4.2" />
-    <PackageReference Include="Waher.Security.Users" Version="1.1.0" />
+    <PackageReference Include="Waher.Content" Version="2.6.14" />
+    <PackageReference Include="Waher.Content.Html" Version="2.3.3" />
+    <PackageReference Include="Waher.Content.Markdown" Version="4.0.0" />
+    <PackageReference Include="Waher.Content.Markdown.Web" Version="3.1.5" />
+    <PackageReference Include="Waher.IoTGateway" Version="3.0.0" />
+    <PackageReference Include="Waher.Networking" Version="3.0.0" />
+    <PackageReference Include="Waher.Networking.HTTP" Version="3.0.0" />
+    <PackageReference Include="Waher.Runtime.Inventory" Version="1.2.0" />
+    <PackageReference Include="Waher.Security" Version="1.0.11" />
+    <PackageReference Include="Waher.Security.JWT" Version="1.4.3" />
+    <PackageReference Include="Waher.Security.Users" Version="1.1.1" />
   </ItemGroup>
 
   <ItemGroup>
@@ -54,8 +54,8 @@
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="&quot;C:\My Projects\IoTGateway\Utilities\Waher.Utility.Install\bin\$(ConfigurationName)\net6.0\win-x86\Waher.Utility.Install.exe&quot; -m &quot;C:\My Projects\MicrosoftInterop\TAG.Service.MicrosoftInterop\bin\$(ConfigurationName)\netstandard2.0\TAG.Service.MicrosoftInterop.manifest&quot; -s &quot;C:\My Projects\IoTGateway\Waher.IoTGateway.Console\bin\$(ConfigurationName)\net6.0\Waher.IoTGateway.Console.dll&quot; -d &quot;C:\ProgramData\IoT Gateway Dev&quot;" Condition="'$(OS)'=='Windows_NT'" />
-    <Exec Command="&quot;/My Projects/IoTGateway/Utilities/Waher.Utility.Install/bin/$(ConfigurationName)/net6.0/osx-arm64/Waher.Utility.Install&quot; -s &quot;/My Projects/IoTGateway/Waher.IoTGateway.Console/bin/$(ConfigurationName)/net6.0/Waher.IoTGateway.Console.dll&quot; -d &quot;/usr/local/share/IoT Gateway Dev&quot; -m &quot;/My Projects/MicrosoftInterop/TAG.Service.MicrosoftInterop/bin/$(ConfigurationName)/netstandard2.0/TAG.Service.MicrosoftInterop.manifest&quot;" Condition="'$(OS)'=='Unix'" />
+    <Exec Command="&quot;C:\My Projects\IoTGateway\Utilities\Waher.Utility.Install\bin\$(ConfigurationName)\net8.0\win-x86\Waher.Utility.Install.exe&quot; -m &quot;C:\My Projects\MicrosoftInterop\TAG.Service.MicrosoftInterop\bin\$(ConfigurationName)\netstandard2.0\TAG.Service.MicrosoftInterop.manifest&quot; -s &quot;C:\My Projects\IoTGateway\Waher.IoTGateway.Console\bin\$(ConfigurationName)\net8.0\Waher.IoTGateway.Console.dll&quot; -d &quot;C:\ProgramData\IoT Gateway Dev&quot;" Condition="'$(OS)'=='Windows_NT'" />
+    <Exec Command="&quot;/My Projects/IoTGateway/Utilities/Waher.Utility.Install/bin/$(ConfigurationName)/net8.0/osx-arm64/Waher.Utility.Install&quot; -s &quot;/My Projects/IoTGateway/Waher.IoTGateway.Console/bin/$(ConfigurationName)/net8.0/Waher.IoTGateway.Console.dll&quot; -d &quot;/usr/local/share/IoT Gateway Dev&quot; -m &quot;/My Projects/MicrosoftInterop/TAG.Service.MicrosoftInterop/bin/$(ConfigurationName)/netstandard2.0/TAG.Service.MicrosoftInterop.manifest&quot;" Condition="'$(OS)'=='Unix'" />
   </Target>
 
 </Project>

@@ -5,6 +5,7 @@ using Waher.Content;
 using Waher.Content.Html.Css;
 using Waher.IoTGateway;
 using Waher.Networking.HTTP;
+using Waher.Runtime.IO;
 
 namespace TAG.Service.MicrosoftInterop.WebServices
 {
@@ -59,12 +60,12 @@ namespace TAG.Service.MicrosoftInterop.WebServices
 		public async Task GET(HttpRequest Request, HttpResponse Response)
 		{
 			string FileName = Path.Combine(Gateway.RootFolder, "MarkdownLab", "MarkdownLab.Css");
-			string Css = await Resources.ReadAllTextAsync(FileName);
+			string Css = await Files.ReadAllTextAsync(FileName);
 
 			Css = Css.Replace("min-height:60vh;", "min-height:50vh;");
 
 			Response.ContentType = CssCodec.CssContentTypes[0] + "; charset=utf-8";
-			await Response.Write(WordToMarkdownConverter.Utf8WithBOM.GetBytes(Css));
+			await Response.Write(true, WordToMarkdownConverter.Utf8WithBOM.GetBytes(Css));
 		}
 	}
 }

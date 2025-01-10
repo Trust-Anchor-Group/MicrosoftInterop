@@ -14,6 +14,7 @@ using Waher.Content.Xml;
 using Waher.Events;
 using MarkdownModel = Waher.Content.Markdown.Model;
 using Waher.Runtime.Text;
+using Waher.Runtime.IO;
 
 namespace TAG.Content.Microsoft
 {
@@ -53,10 +54,9 @@ namespace TAG.Content.Microsoft
 		/// <returns>Generated Markdown.</returns>
 		public static string ExtractAsMarkdown(string WordFileName, out string Language)
 		{
-			using (WordprocessingDocument Doc = WordprocessingDocument.Open(WordFileName, false))
-			{
-				return ExtractAsMarkdown(Doc, WordFileName, out Language);
-			}
+			using WordprocessingDocument Doc = WordprocessingDocument.Open(WordFileName, false);
+			
+			return ExtractAsMarkdown(Doc, WordFileName, out Language);
 		}
 
 		/// <summary>
@@ -219,8 +219,8 @@ namespace TAG.Content.Microsoft
 					Start = string.Empty;
 				else
 				{
-					Start = End.Substring(0, StartLen);
-					End = End.Substring(StartLen);
+					Start = End[..StartLen];
+					End = End[StartLen..];
 				}
 
 				Markdown.Clear();
@@ -330,10 +330,9 @@ namespace TAG.Content.Microsoft
 			{
 				try
 				{
-					using (FileStream fs = File.OpenRead(FileName))
-					{
-						return fs.Length;
-					}
+					using FileStream fs = File.OpenRead(FileName);
+					
+					return fs.Length;
 				}
 				catch (Exception)
 				{
@@ -345,7 +344,7 @@ namespace TAG.Content.Microsoft
 		internal static string CapLength(string s, int MaxLength)
 		{
 			if (s.Length > MaxLength)
-				return s.Substring(0, MaxLength) + "...";
+				return s[..MaxLength] + "...";
 			else
 				return s;
 		}
@@ -521,22 +520,12 @@ namespace TAG.Content.Microsoft
 								{
 									if (State.Table.ColumnIndex < State.Table.NrColumns)
 									{
-										switch (Style.ParagraphAlignment)
+										State.Table.ColumnAlignments[State.Table.ColumnIndex] = Style.ParagraphAlignment switch
 										{
-											case ParagraphAlignment.Left:
-											case ParagraphAlignment.Justified:
-											default:
-												State.Table.ColumnAlignments[State.Table.ColumnIndex] = MarkdownModel.TextAlignment.Left;
-												break;
-
-											case ParagraphAlignment.Right:
-												State.Table.ColumnAlignments[State.Table.ColumnIndex] = MarkdownModel.TextAlignment.Right;
-												break;
-
-											case ParagraphAlignment.Center:
-												State.Table.ColumnAlignments[State.Table.ColumnIndex] = MarkdownModel.TextAlignment.Center;
-												break;
-										}
+											ParagraphAlignment.Right => MarkdownModel.TextAlignment.Right,
+											ParagraphAlignment.Center => MarkdownModel.TextAlignment.Center,
+											_ => MarkdownModel.TextAlignment.Left,
+										};
 									}
 								}
 
@@ -577,10 +566,9 @@ namespace TAG.Content.Microsoft
 									Section.Append(Markdown.ToString());
 									Markdown.Clear();
 
-									if (State.Sections is null)
-										State.Sections = new LinkedList<string>();
-
+									State.Sections ??= new LinkedList<string>();
 									State.Sections.AddLast(Section.ToString());
+									
 									Style.NewSection = null;
 								}
 
@@ -1003,7 +991,7 @@ namespace TAG.Content.Microsoft
 									if (Style.FormattingApplied && s[0] == ' ')
 									{
 										Markdown.Append("&nbsp;");
-										s = s.Substring(1);
+										s = s[1..];
 									}
 
 									Markdown.Append(MarkdownDocument.Encode(s));
@@ -1175,8 +1163,7 @@ namespace TAG.Content.Microsoft
 												}
 												else
 												{
-													if (State.TableFootnotes is null)
-														State.TableFootnotes = new Dictionary<string, string>();
+													State.TableFootnotes ??= new Dictionary<string, string>();
 
 													string FootnoteKey = "n" + (State.TableFootnotes.Count + 1).ToString();
 													State.TableFootnotes[FootnoteKey] = s;
@@ -1785,8 +1772,7 @@ namespace TAG.Content.Microsoft
 												break;
 
 											case "SEQ":
-												if (State.Sequences is null)
-													State.Sequences = new Dictionary<string, int>();
+												State.Sequences ??= new Dictionary<string, int>();
 
 												if (!State.Sequences.TryGetValue(Argument, out int i))
 													i = 0;
@@ -2575,21 +2561,20 @@ namespace TAG.Content.Microsoft
 									OpenXmlPart Part = State.Doc.MainDocumentPart.GetPartById(Blip.Embed.Value);
 									if (Part is ImagePart ImagePart)
 									{
-										using (Stream ImageStream = ImagePart.GetStream())
-										{
-											int c = (int)Math.Min(ImageStream.Length, int.MaxValue);
-											byte[] Bin = new byte[c];
+										using Stream ImageStream = ImagePart.GetStream();
+										
+										int c = (int)Math.Min(ImageStream.Length, int.MaxValue);
+										byte[] Bin = new byte[c];
 
-											ImageStream.Read(Bin, 0, c);
+										ImageStream.Read(Bin, 0, c);
 
-											Markdown.Append("![");
-											Markdown.Append(State.NewCaptionMarker());
-											Markdown.Append("](data:");
-											Markdown.Append(ImagePart.ContentType);
-											Markdown.Append(";base64,");
-											Markdown.Append(Convert.ToBase64String(Bin));
-											Markdown.Append(")");
-										}
+										Markdown.Append("![");
+										Markdown.Append(State.NewCaptionMarker());
+										Markdown.Append("](data:");
+										Markdown.Append(ImagePart.ContentType);
+										Markdown.Append(";base64,");
+										Markdown.Append(Convert.ToBase64String(Bin));
+										Markdown.Append(")");
 									}
 								}
 
@@ -3201,9 +3186,7 @@ namespace TAG.Content.Microsoft
 
 			public void StyleChanged(char c, bool EncodeLeadingSpace)
 			{
-				if (this.StyleChanges is null)
-					this.StyleChanges = new LinkedList<char>();
-
+				this.StyleChanges ??= new LinkedList<char>();
 				this.StyleChanges.AddFirst(c);
 				this.FormattingApplied |= EncodeLeadingSpace;
 			}
@@ -3237,8 +3220,7 @@ namespace TAG.Content.Microsoft
 					this.PrevItemNumbers = null;
 				else
 				{
-					if (this.PrevItemNumbers is null)
-						this.PrevItemNumbers = new List<int?>();
+					this.PrevItemNumbers ??= new List<int?>();
 
 					int i = this.ItemLevel ?? 0;
 					int c = this.PrevItemNumbers.Count;
@@ -3306,8 +3288,7 @@ namespace TAG.Content.Microsoft
 
 			public void UnrecognizedElement(OpenXmlElement Element)
 			{
-				if (this.Unrecognized is null)
-					this.Unrecognized = new Dictionary<string, Dictionary<string, int>>();
+				this.Unrecognized ??= new Dictionary<string, Dictionary<string, int>>();
 
 				string Key = Element.LocalName;
 
@@ -3448,8 +3429,7 @@ namespace TAG.Content.Microsoft
 
 			public void AddMetaData(string Key, string Value)
 			{
-				if (this.MetaData is null)
-					this.MetaData = new LinkedList<KeyValuePair<string, string>>();
+				this.MetaData ??= new LinkedList<KeyValuePair<string, string>>();
 
 				foreach (string Row in GetRows(Value.Trim()))
 					this.MetaData.AddLast(new KeyValuePair<string, string>(Key, Row));
@@ -3457,8 +3437,7 @@ namespace TAG.Content.Microsoft
 
 			public void AddMetaData2(string Key, string Value)
 			{
-				if (this.MetaData2 is null)
-					this.MetaData2 = new LinkedList<KeyValuePair<string, string>>();
+				this.MetaData2 ??= new LinkedList<KeyValuePair<string, string>>();
 
 				foreach (string Row in GetRows(Value.Trim()))
 					this.MetaData2.AddLast(new KeyValuePair<string, string>(Key, Row));
@@ -3466,10 +3445,9 @@ namespace TAG.Content.Microsoft
 
 			public void StartBookmark(StringBuilder Markdown)
 			{
-				if (this.Bookmarks is null)
-					this.Bookmarks = new LinkedList<string>();
-
+				this.Bookmarks ??= new LinkedList<string>();
 				this.Bookmarks.AddLast(Markdown.ToString());
+				
 				Markdown.Clear();
 			}
 
@@ -3492,7 +3470,7 @@ namespace TAG.Content.Microsoft
 			{
 				int i = Language.IndexOf('-');
 				if (i >= 0)
-					Language = Language.Substring(0, i);
+					Language = Language[..i];
 
 				if (!this.LanguageCounts.TryGetValue(Language, out i))
 					i = 0;
@@ -3502,8 +3480,7 @@ namespace TAG.Content.Microsoft
 
 			public string NewCaptionMarker()
 			{
-				if (this.captionMarkers is null)
-					this.captionMarkers = new Dictionary<string, string>();
+				this.captionMarkers ??= new Dictionary<string, string>();
 
 				this.CaptionMarker = Guid.NewGuid().ToString();
 				this.captionMarkers[this.CaptionMarker] = null;
@@ -3513,8 +3490,7 @@ namespace TAG.Content.Microsoft
 
 			public void LogUnrecognizedStyleId(string StyleId)
 			{
-				if (this.UnrecognizedStyleIds is null)
-					this.UnrecognizedStyleIds = new Dictionary<string, bool>();
+				this.UnrecognizedStyleIds ??= new Dictionary<string, bool>();
 
 				if (this.UnrecognizedStyleIds.ContainsKey(StyleId))
 					return;

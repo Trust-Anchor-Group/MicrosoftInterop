@@ -68,7 +68,7 @@ namespace TAG.Service.MicrosoftInterop.WebServices
 			byte[] Data = WordToMarkdownConverter.Utf8WithBOM.GetBytes(Markdown);
 
 			Response.ContentType = MarkdownCodec.ContentType + "; charset=utf-8";
-			await Response.Write(Data);
+			await Response.Write(true, Data);
 		}
 	}
 }

@@ -1,5 +1,4 @@
-﻿using DocumentFormat.OpenXml;
-using DocumentFormat.OpenXml.Packaging;
+﻿using DocumentFormat.OpenXml.Packaging;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -62,26 +61,35 @@ namespace TAG.Content.Microsoft.Content
             }
         }
 
-        /// <summary>
-        /// Decodes an encoded object.
-        /// </summary>
-        /// <param name="ContentType">Content-Type of encoded object.</param>
-        /// <param name="Data">Binary data</param>
-        /// <param name="Encoding">Any default encoding provided.</param>
-        /// <param name="Fields">Fields available in request.</param>
-        /// <param name="BaseUri">Base URI of object.</param>
-        /// <returns>Decoded object.</returns>
-        public Task<object> DecodeAsync(string ContentType, byte[] Data, Encoding Encoding, KeyValuePair<string, string>[] Fields, Uri BaseUri)
-        {
-			MemoryStream ms = new MemoryStream(Data);
-            WordprocessingDocument Doc = WordprocessingDocument.Open(ms, false);
+		/// <summary>
+		/// Decodes an encoded object.
+		/// </summary>
+		/// <param name="ContentType">Content-Type of encoded object.</param>
+		/// <param name="Data">Binary data</param>
+		/// <param name="Encoding">Any default encoding provided.</param>
+		/// <param name="Fields">Fields available in request.</param>
+		/// <param name="BaseUri">Base URI of object.</param>
+		/// <param name="Progress">Optional interface where codecs can report progress.</param>
+		/// <returns>Decoded object.</returns>
+		public Task<ContentResponse> DecodeAsync(string ContentType, byte[] Data, Encoding Encoding,
+			KeyValuePair<string, string>[] Fields, Uri BaseUri, ICodecProgress Progress)
+		{
+			try
+			{
+				MemoryStream ms = new MemoryStream(Data);
+				WordprocessingDocument Doc = WordprocessingDocument.Open(ms, false);
 
-            // Note: Do not dispose MemoryStream. The document needs the stream to remain open.
-            //       This incurrs no memory loss while using only the MemoryStream, as no
-            //       unmanaged resources are used. The GC will reclaim unused memory once
-            //       no longer using the document.
+				// Note: Do not dispose MemoryStream. The document needs the stream to remain open.
+				//       This incurrs no memory loss while using only the MemoryStream, as no
+				//       unmanaged resources are used. The GC will reclaim unused memory once
+				//       no longer using the document.
 
-            return Task.FromResult<object>(Doc);
+				return Task.FromResult(new ContentResponse(WordDocumentContentType, Doc, Data));
+			}
+			catch (Exception ex)
+			{
+				return Task.FromResult(new ContentResponse(ex));
+			}
         }
 
         /// <summary>

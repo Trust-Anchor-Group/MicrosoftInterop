@@ -5,6 +5,7 @@ using Waher.Content;
 using Waher.Content.Html.JavaScript;
 using Waher.IoTGateway;
 using Waher.Networking.HTTP;
+using Waher.Runtime.IO;
 
 namespace TAG.Service.MicrosoftInterop.WebServices
 {
@@ -59,15 +60,15 @@ namespace TAG.Service.MicrosoftInterop.WebServices
 		public async Task GET(HttpRequest Request, HttpResponse Response)
 		{
 			string FileName1 = Path.Combine(Gateway.RootFolder, "Prompt.js");
-			string Javascript1 = await Resources.ReadAllTextAsync(FileName1);
+			string Javascript1 = await Files.ReadAllTextAsync(FileName1);
 
 			string FileName2 = Path.Combine(Gateway.RootFolder, "MicrosoftInterop", "PromptAddendum.js");
-			string Javascript2 = await Resources.ReadAllTextAsync(FileName2);
+			string Javascript2 = await Files.ReadAllTextAsync(FileName2);
 
 			Javascript1 += Javascript2;
 
 			Response.ContentType = JavaScriptCodec.JavaScriptContentTypes[0] + "; charset=utf-8";
-			await Response.Write(WordToMarkdownConverter.Utf8WithBOM.GetBytes(Javascript1));
+			await Response.Write(true, WordToMarkdownConverter.Utf8WithBOM.GetBytes(Javascript1));
 		}
 	}
 }

@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Waher.Content;
 using Waher.IoTGateway;
 using Waher.Networking.HTTP;
+using Waher.Runtime.IO;
 
 namespace TAG.Service.MicrosoftInterop.WebServices
 {
@@ -57,13 +58,13 @@ namespace TAG.Service.MicrosoftInterop.WebServices
 		public async Task GET(HttpRequest Request, HttpResponse Response)
 		{
 			string FileName1 = Path.Combine(Gateway.RootFolder, "Prompt.md");
-			string Markdown1 = await Resources.ReadAllTextAsync(FileName1);
+			string Markdown1 = await Files.ReadAllTextAsync(FileName1);
 			int i = Markdown1.IndexOf("\r\n\r\n=====================================================");
 
 			if (i >= 0)
 			{
 				string FileName2 = Path.Combine(Gateway.RootFolder, "MicrosoftInterop", "PromptAddendum.md");
-				string Markdown2 = await Resources.ReadAllTextAsync(FileName2);
+				string Markdown2 = await Files.ReadAllTextAsync(FileName2);
 
 				Markdown1 = Markdown1.Insert(i + 2, Markdown2);
 			}

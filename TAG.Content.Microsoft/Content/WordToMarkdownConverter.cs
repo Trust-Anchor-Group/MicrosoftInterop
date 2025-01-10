@@ -1,5 +1,4 @@
-﻿using DocumentFormat.OpenXml;
-using DocumentFormat.OpenXml.Packaging;
+﻿using DocumentFormat.OpenXml.Packaging;
 using System.Text;
 using System.Threading.Tasks;
 using Waher.Content;
@@ -35,24 +34,24 @@ namespace TAG.Content.Microsoft.Content
         /// </summary>
         public Grade ConversionGrade => Grade.Barely;
 
-        /// <summary>
-        /// Performs the actual conversion.
-        /// </summary>
-        /// <param name="State">State of the current conversion.</param>
-        /// <returns>If the result is dynamic (true), or only depends on the source (false).</returns>
-        public async Task<bool> ConvertAsync(ConversionState State)
+		/// <summary>
+		/// Performs the actual conversion.
+		/// </summary>
+		/// <param name="State">State of the current conversion.</param>
+		/// <param name="Progress">Optional interface where codecs can report progress.</param>
+		/// <returns>If the result is dynamic (true), or only depends on the source (false).</returns>
+		public async Task<bool> ConvertAsync(ConversionState State, ICodecProgress Progress)
         {
-			using (WordprocessingDocument Doc = WordprocessingDocument.Open(State.From, false))
-            {
-                string Markdown = WordUtilities.ExtractAsMarkdown(Doc, string.Empty, out _);
-                byte[] Data = Utf8WithBOM.GetBytes(Markdown);
+			using WordprocessingDocument Doc = WordprocessingDocument.Open(State.From, false);
+			
+            string Markdown = WordUtilities.ExtractAsMarkdown(Doc, string.Empty, out _);
+			byte[] Data = Utf8WithBOM.GetBytes(Markdown);
 
-                await State.To.WriteAsync(Data, 0, Data.Length);
-                State.ToContentType += "; charset=utf-8";
+			await State.To.WriteAsync(Data, 0, Data.Length);
+			State.ToContentType += "; charset=utf-8";
 
-                return false;
-            }
-        }
+			return false;
+		}
 
         /// <summary>
         /// UTF-8 encoding with BOM (byte-order mark).

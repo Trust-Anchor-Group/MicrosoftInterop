@@ -3,6 +3,7 @@ using System.Text;
 using System.Threading.Tasks;
 using TAG.Content.Microsoft;
 using TAG.Content.Microsoft.Content;
+using Waher.Content;
 using Waher.Content.Markdown;
 using Waher.Networking.HTTP;
 
@@ -58,11 +59,23 @@ namespace TAG.Service.MicrosoftInterop.WebServices
 		public async Task POST(HttpRequest Request, HttpResponse Response)
 		{
 			if (!Request.HasData)
-				throw new BadRequestException("No content.");
+			{
+				await Response.SendResponse(new BadRequestException("No content."));
+				return;
+			}
 
-			object Decoded = await Request.DecodeDataAsync();
-			if (!(Decoded is WordprocessingDocument Doc))
-				throw new BadRequestException("Content not a Word document (.docx).");
+			ContentResponse Decoded = await Request.DecodeDataAsync();
+			if (Decoded.HasError)
+			{
+				await Response.SendResponse(Decoded.Error);
+				return;
+			}
+
+			if (!(Decoded.Decoded is WordprocessingDocument Doc))
+			{
+				await Response.SendResponse(new BadRequestException("Content not a Word document (.docx)."));
+				return;
+			}
 
 			string Markdown = WordUtilities.ExtractAsMarkdown(Doc, string.Empty, out _);
 			byte[] Data = WordToMarkdownConverter.Utf8WithBOM.GetBytes(Markdown);

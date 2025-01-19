@@ -54,7 +54,7 @@
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="&quot;C:\My Projects\IoTGateway\Utilities\Waher.Utility.Install\bin\$(ConfigurationName)\net8.0\win-x86\Waher.Utility.Install.exe&quot; -m &quot;C:\My Projects\MicrosoftInterop\TAG.Service.MicrosoftInterop\bin\$(ConfigurationName)\netstandard2.0\TAG.Service.MicrosoftInterop.manifest&quot; -s &quot;C:\My Projects\IoTGateway\Waher.IoTGateway.Console\bin\$(ConfigurationName)\net8.0\Waher.IoTGateway.Console.dll&quot; -d &quot;C:\ProgramData\IoT Gateway Dev&quot;" Condition="'$(OS)'=='Windows_NT'" />
+    <Exec Command="&quot;C:\My Projects\IoTGateway\Utilities\Waher.Utility.Install\bin\$(ConfigurationName)\net8.0\win-x86\Waher.Utility.Install.exe&quot; -m &quot;C:\My Projects\MicrosoftInterop\TAG.Service.MicrosoftInterop\bin\$(ConfigurationName)\netstandard2.1\TAG.Service.MicrosoftInterop.manifest&quot; -s &quot;C:\My Projects\IoTGateway\Waher.IoTGateway.Console\bin\$(ConfigurationName)\net8.0\Waher.IoTGateway.Console.dll&quot; -d &quot;C:\ProgramData\IoT Gateway Dev&quot;" Condition="'$(OS)'=='Windows_NT'" />
     <Exec Command="&quot;/My Projects/IoTGateway/Utilities/Waher.Utility.Install/bin/$(ConfigurationName)/net8.0/osx-arm64/Waher.Utility.Install&quot; -s &quot;/My Projects/IoTGateway/Waher.IoTGateway.Console/bin/$(ConfigurationName)/net8.0/Waher.IoTGateway.Console.dll&quot; -d &quot;/usr/local/share/IoT Gateway Dev&quot; -m &quot;/My Projects/MicrosoftInterop/TAG.Service.MicrosoftInterop/bin/$(ConfigurationName)/netstandard2.0/TAG.Service.MicrosoftInterop.manifest&quot;" Condition="'$(OS)'=='Unix'" />
   </Target>
 

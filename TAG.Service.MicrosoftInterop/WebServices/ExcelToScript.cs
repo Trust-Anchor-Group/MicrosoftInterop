@@ -3,6 +3,7 @@ using System.Text;
 using System.Threading.Tasks;
 using TAG.Content.Microsoft;
 using TAG.Content.Microsoft.Content;
+using Waher.Content;
 using Waher.Networking.HTTP;
 
 namespace TAG.Service.MicrosoftInterop.WebServices
@@ -57,11 +58,23 @@ namespace TAG.Service.MicrosoftInterop.WebServices
 		public async Task POST(HttpRequest Request, HttpResponse Response)
 		{
 			if (!Request.HasData)
-				throw new BadRequestException("No content.");
+			{
+				await Response.SendResponse(new BadRequestException("No content."));
+				return;
+			}
 
-			object Decoded = await Request.DecodeDataAsync();
-			if (!(Decoded is SpreadsheetDocument Doc))
-				throw new BadRequestException("Content not an Excel document (.xlsx).");
+			ContentResponse Decoded = await Request.DecodeDataAsync();
+			if (Decoded.HasError)
+			{
+				await Response.SendResponse(Decoded.Error);
+				return;
+			}
+
+			if (!(Decoded.Decoded is SpreadsheetDocument Doc))
+			{
+				await Response.SendResponse(new BadRequestException("Content not an Excel document (.xlsx)."));
+				return;
+			}
 
 			StringBuilder Script = new StringBuilder();
 			ExcelUtilities.ExtractAsScript(Doc, string.Empty, Script, true, out _);

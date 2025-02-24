@@ -38,9 +38,8 @@ namespace TAG.Content.Microsoft.Content
 		/// Performs the actual conversion.
 		/// </summary>
 		/// <param name="State">State of the current conversion.</param>
-		/// <param name="Progress">Optional interface where codecs can report progress.</param>
 		/// <returns>If the result is dynamic (true), or only depends on the source (false).</returns>
-		public async Task<bool> ConvertAsync(ConversionState State, ICodecProgress Progress)
+		public async Task<bool> ConvertAsync(ConversionState State)
         {
 			using WordprocessingDocument Doc = WordprocessingDocument.Open(State.From, false);
 			

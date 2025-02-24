@@ -95,12 +95,12 @@ namespace TAG.Service.MicrosoftInterop.WebServices
 
 			ConversionState State = new ConversionState(MarkdownContentType, Input, FileName,
 				Request.Header.Resource, Request.Header.GetURL(), HtmlContentType, Output,
-				Request.Session, Converter.ToContentTypes);
+				Request.Session, Response.Progress, Converter.ToContentTypes);
 
 			Request.Session["Request"] = Request;
 			Request.Session["Response"] = Response;
 
-			await Converter.ConvertAsync(State, null);
+			await Converter.ConvertAsync(State);
 
 			Bin = Output.ToArray();
 

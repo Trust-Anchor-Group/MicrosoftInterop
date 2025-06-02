@@ -49,10 +49,10 @@ https://lab.tagroot.io/Markdown.md</Description>
 
   <ItemGroup>
     <PackageReference Include="DocumentFormat.OpenXml" Version="3.3.0" />
-    <PackageReference Include="Waher.Content" Version="3.3.2" />
-    <PackageReference Include="Waher.Content.Markdown" Version="6.0.3" />
+    <PackageReference Include="Waher.Content" Version="3.3.3" />
+    <PackageReference Include="Waher.Content.Markdown" Version="6.1.0" />
     <PackageReference Include="Waher.Events" Version="1.4.3" />
-    <PackageReference Include="Waher.Runtime.Inventory" Version="1.4.2" />
+    <PackageReference Include="Waher.Runtime.Inventory" Version="1.4.3" />
     <PackageReference Include="Waher.Runtime.Text" Version="1.2.0" />
   </ItemGroup>
 

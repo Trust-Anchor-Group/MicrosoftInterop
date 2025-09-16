@@ -11,10 +11,12 @@ function UploadDocument()
         {
             if (xhttp.status === 200)
             {
-                var Markdown = document.getElementById("Markdown");
-                Markdown.value = xhttp.responseText;
+                var Markdown = document.getElementById("LabMarkdownEditorInput");
+                if (Markdown)
+                    Markdown.value = xhttp.responseText;
+
                 FileInput.value = "";
-                UpdateHtml();
+                RaiseOnInput(Markdown);
             }
             else
                 ShowError(xhttp);

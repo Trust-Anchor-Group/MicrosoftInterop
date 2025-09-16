@@ -98,9 +98,6 @@ namespace TAG.Service.MicrosoftInterop.WebServices
 				Request.Session, Response.Progress, Request.Server, Request.TryGetLocalResourceFileName,
 				Converter.ToContentTypes);
 
-			Request.Session["Request"] = Request;
-			Request.Session["Response"] = Response;
-
 			await Converter.ConvertAsync(State);
 
 			Bin = Output.ToArray();

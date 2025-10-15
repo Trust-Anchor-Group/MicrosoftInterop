@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Waher.Content;
-using Waher.Content.Xml;
 using Waher.Events;
 using Waher.Script;
 

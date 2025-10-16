@@ -1,0 +1,8 @@
+﻿select 
+	?s ?p ?o 
+from 
+	<https://www.w3.org/2000/10/rdf-tests/RDF-Model-Syntax_1.0/ms_7.4_3.rdf> 
+where 
+{ 
+	?s ?p ?o. 
+}

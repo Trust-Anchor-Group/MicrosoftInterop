@@ -1,7 +1,9 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Text;
 using Waher.Events;
 using Waher.Events.Console;
+using Waher.Persistence;
+using Waher.Persistence.Files;
+using Waher.Runtime.Inventory;
 using Waher.Runtime.Inventory.Loader;
 using Waher.Runtime.Text;
 
@@ -10,19 +12,38 @@ namespace TAG.Content.Microsoft.Test
 	[TestClass]
 	public class WordTests
 	{
+		private static FilesProvider? filesProvider = null;
 		private static string? inputFolder;
 		private static string? outputFolder;
 		private static string? expectedFolder;
 
 		[AssemblyInitialize]
-		public static Task AssemblyInitialize(TestContext _)
+		public static async Task AssemblyInitialize(TestContext _)
 		{
 			// Create inventory of available classes.
 			TypesLoader.Initialize();
 
 			Log.Register(new ConsoleEventSink());
 
-			return Task.CompletedTask;
+			if (!Database.HasProvider)
+			{
+				filesProvider = await FilesProvider.CreateAsync("Data", "Default", 8192, 1000, 8192, Encoding.UTF8, 10000, true);
+				Database.Register(filesProvider);
+			}
+
+			await Types.StartAllModules(10000);
+		}
+
+		[AssemblyCleanup]
+		public static async Task AssemblyCleanup()
+		{
+			await Types.StopAllModules();
+
+			if (filesProvider is not null)
+			{
+				await filesProvider.DisposeAsync();
+				filesProvider = null;
+			}
 		}
 
 		[ClassInitialize]

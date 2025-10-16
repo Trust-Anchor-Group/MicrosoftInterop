@@ -1,0 +1,2 @@
+﻿[foreach y in 1..10 do
+	[foreach x in 1..10 do x*y]]

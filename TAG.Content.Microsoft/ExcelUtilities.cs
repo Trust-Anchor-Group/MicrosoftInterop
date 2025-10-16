@@ -5,22 +5,29 @@ using DocumentFormat.OpenXml.Spreadsheet;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Numerics;
 using System.Text;
 using Waher.Content;
+using Waher.Content.Semantic;
+using Waher.Content.Semantic.Model;
 using Waher.Events;
 using Waher.Script;
+using Waher.Script.Abstraction.Elements;
+using Waher.Script.Objects.Matrices;
 
 namespace TAG.Content.Microsoft
 {
 	/// <summary>
-	/// Utilities for interoperation with Microsoft Office Excel documents.
+	/// Utilities for interoperation with Microsoft Office Excel spreadsheets.
 	/// </summary>
 	public static class ExcelUtilities
 	{
+		#region Conversion of Excel spreadsheets to script
+
 		/// <summary>
-		/// Converts an Excel document to scrpit.
+		/// Converts an Excel spreadsheet to scrpit.
 		/// </summary>
-		/// <param name="ExcelFileName">File name of Excel document.</param>
+		/// <param name="ExcelFileName">File name of Excel spreadsheet.</param>
 		/// <param name="ScriptFileName">File name of script file.</param>
 		/// <param name="Indentation">If Indentation is to be used.</param>
 		public static void ConvertExcelToScript(string ExcelFileName, string ScriptFileName,
@@ -34,7 +41,7 @@ namespace TAG.Content.Microsoft
 		/// <summary>
 		/// Extracts the contents of a Excel file to Script.
 		/// </summary>
-		/// <param name="ExcelFileName">File name of Excel document.</param>
+		/// <param name="ExcelFileName">File name of Excel spreadsheet.</param>
 		/// <param name="Indentation">If Indentation is to be used.</param>
 		/// <returns>Script</returns>
 		public static string ExtractAsScript(string ExcelFileName, bool Indentation)
@@ -45,7 +52,7 @@ namespace TAG.Content.Microsoft
 		/// <summary>
 		/// Extracts the contents of a Excel file to Script.
 		/// </summary>
-		/// <param name="ExcelFileName">File name of Excel document.</param>
+		/// <param name="ExcelFileName">File name of Excel spreadsheet.</param>
 		/// <param name="Indentation">If Indentation is to be used.</param>
 		/// <param name="Language">Language of document.</param>
 		/// <returns>Script</returns>
@@ -60,7 +67,7 @@ namespace TAG.Content.Microsoft
 		/// <summary>
 		/// Extracts the contents of a Excel file to Script.
 		/// </summary>
-		/// <param name="ExcelFileName">File name of Excel document.</param>
+		/// <param name="ExcelFileName">File name of Excel spreadsheet.</param>
 		/// <param name="Script">Script will be output here.</param>
 		/// <param name="Indentation">If Indentation is to be used.</param>
 		public static void ExtractAsScript(string ExcelFileName, StringBuilder Script,
@@ -72,17 +79,16 @@ namespace TAG.Content.Microsoft
 		/// <summary>
 		/// Extracts the contents of a Excel file to Script.
 		/// </summary>
-		/// <param name="ExcelFileName">File name of Excel document.</param>
+		/// <param name="ExcelFileName">File name of Excel spreadsheet.</param>
 		/// <param name="Script">Script will be output here.</param>
 		/// <param name="Indentation">If Indentation is to be used.</param>
 		/// <param name="Language">Language of document.</param>
 		public static void ExtractAsScript(string ExcelFileName, StringBuilder Script,
 			bool Indentation, out string Language)
 		{
-			using (SpreadsheetDocument Doc = SpreadsheetDocument.Open(ExcelFileName, false))
-			{
-				ExtractAsScript(Doc, ExcelFileName, Script, Indentation, out Language);
-			}
+			using SpreadsheetDocument Doc = SpreadsheetDocument.Open(ExcelFileName, false);
+
+			ExtractAsScript(Doc, ExcelFileName, Script, Indentation, out Language);
 		}
 
 		/// <summary>
@@ -113,7 +119,7 @@ namespace TAG.Content.Microsoft
 		/// Extracts the contents of a Excel file to Script.
 		/// </summary>
 		/// <param name="Doc">Document to convert</param>
-		/// <param name="ExcelFileName">File name of Excel document.</param>
+		/// <param name="ExcelFileName">File name of Excel spreadsheet.</param>
 		/// <param name="Indentation">If Indentation is to be used.</param>
 		/// <param name="Language">Language of document.</param>
 		/// <returns>Script</returns>
@@ -129,7 +135,7 @@ namespace TAG.Content.Microsoft
 		/// Extracts the contents of a Excel file to Script.
 		/// </summary>
 		/// <param name="Doc">Document to convert</param>
-		/// <param name="ExcelFileName">File name of Excel document.</param>
+		/// <param name="ExcelFileName">File name of Excel spreadsheet.</param>
 		/// <param name="Script">Script will be output here.</param>
 		/// <param name="Indentation">If Indentation is to be used.</param>
 		/// <param name="Language">Language of document.</param>
@@ -756,8 +762,8 @@ namespace TAG.Content.Microsoft
 			if (i < 0)
 				return false;
 
-			return ParseCellReference(Ref.Substring(0, i), out Left, out Top) &&
-				ParseCellReference(Ref.Substring(i + 1), out Right, out Bottom);
+			return ParseCellReference(Ref[..i], out Left, out Top) &&
+				ParseCellReference(Ref[(i + 1)..], out Right, out Bottom);
 		}
 
 		private static bool ParseCellReference(string Ref, out int Column, out int Row)
@@ -845,8 +851,7 @@ namespace TAG.Content.Microsoft
 
 			public void UnrecognizedElement(OpenXmlElement Element)
 			{
-				if (this.Unrecognized is null)
-					this.Unrecognized = new Dictionary<string, Dictionary<string, int>>();
+				this.Unrecognized ??= new Dictionary<string, Dictionary<string, int>>();
 
 				string Key = Element.LocalName;
 
@@ -897,5 +902,425 @@ namespace TAG.Content.Microsoft
 				}
 			}
 		}
+
+		#endregion
+
+		#region Conversion of matrices to Excel spreadsheets
+
+		/// <summary>
+		/// Converts a matrix to an Excel spreadsheet.
+		/// </summary>
+		/// <param name="M">Matrix object instance.</param>
+		/// <param name="FilePath">Path where Excel file will be stored.</param>
+		/// <param name="SheetName">Name of sheet.</param>
+		/// <returns>Spreadsheet document.</returns>
+		public static void ConvertMatrixToExcel(IMatrix M, string FilePath, string SheetName)
+		{
+			if (M is null)
+				throw new ArgumentNullException(nameof(M));
+
+			using SpreadsheetDocument Document = SpreadsheetDocument.Create(FilePath, SpreadsheetDocumentType.Workbook);
+
+			WorkbookPart WorkbookPart = Document.AddWorkbookPart();
+			WorkbookPart.Workbook = new Workbook();
+
+			WorksheetPart WorksheetPart = WorkbookPart.AddNewPart<WorksheetPart>();
+			WorksheetPart.Worksheet = new Worksheet(new SheetData());
+
+			WorkbookStylesPart StylesPart = WorkbookPart.AddNewPart<WorkbookStylesPart>();
+			StylesPart.Stylesheet = CreateStylesheet();  // Define bold and normal styles
+			StylesPart.Stylesheet.Save();
+
+			SheetData SheetData = WorksheetPart.Worksheet.GetFirstChild<SheetData>();
+			int Columns = M.Columns;
+			int Rows = M.Rows;
+			int Row, Column;
+			uint x = 1, y = 1;  // Excel uses 1-based indices.
+			Row ExcelRow;
+			Cell Cell;
+
+			if (M is ObjectMatrix OM && OM.HasColumnNames)
+			{
+				int c = OM.ColumnNames.Length;
+				ExcelRow = new Row()
+				{
+					RowIndex = y
+				};
+
+				for (Column = 0; Column < c; Column++)
+				{
+					Cell = new Cell()
+					{
+						CellReference = GetCellReference(x++, y),
+						CellValue = new CellValue(OM.ColumnNames[Column]),
+						DataType = CellValues.String,
+						StyleIndex = 1  // Bold
+					};
+
+					ExcelRow.Append(Cell);
+				}
+
+				x = 1;
+				y++;
+
+				SheetData.Append(ExcelRow);
+			}
+
+			for (Row = 0; Row < Rows; Row++)
+			{
+				ExcelRow = new Row()
+				{
+					RowIndex = y
+				};
+
+				for (Column = 0; Column < Columns; Column++)
+				{
+					object Value = M.GetElement(Column, Row)?.AssociatedObjectValue;
+
+					if (Value is null)
+						x++;
+					else
+						ExcelRow.Append(CreateCell(x++, y, Value));
+				}
+
+				x = 1;
+				y++;
+
+				SheetData.Append(ExcelRow);
+			}
+
+			Sheets Sheets = WorkbookPart.Workbook.AppendChild(new Sheets());
+			Sheet Sheet = new Sheet()
+			{
+				Id = WorkbookPart.GetIdOfPart(WorksheetPart),
+				SheetId = 1,
+				Name = SheetName
+			};
+			Sheets.Append(Sheet);
+
+			// Save the workbook and close the document
+			WorkbookPart.Workbook.Save();
+		}
+
+		private static Cell CreateCell(uint Column, uint Row, object Value)
+		{
+			Cell Cell = new Cell()
+			{
+				CellReference = GetCellReference(Column, Row),
+				StyleIndex = 0  // Normal
+			};
+
+			if (Value is ISemanticLiteral SemanticLiteral)
+				Value = SemanticLiteral.Value;
+
+			if (Value is string s)
+			{
+				Cell.CellValue = new CellValue(s);
+				Cell.DataType = CellValues.String;
+			}
+			else if (Value is double d)
+			{
+				Cell.CellValue = new CellValue(d);
+				Cell.DataType = CellValues.Number;
+			}
+			else if (Value is decimal dec)
+			{
+				Cell.CellValue = new CellValue(dec);
+				Cell.DataType = CellValues.Number;
+			}
+			else if (Value is float f)
+			{
+				Cell.CellValue = new CellValue(f);
+				Cell.DataType = CellValues.Number;
+			}
+			else if (Value is sbyte i8)
+			{
+				Cell.CellValue = new CellValue(i8);
+				Cell.DataType = CellValues.Number;
+			}
+			else if (Value is short i16)
+			{
+				Cell.CellValue = new CellValue(i16);
+				Cell.DataType = CellValues.Number;
+			}
+			else if (Value is int i32)
+			{
+				Cell.CellValue = new CellValue(i32);
+				Cell.DataType = CellValues.Number;
+			}
+			else if (Value is long i64)
+			{
+				Cell.CellValue = new CellValue((decimal)i64);
+				Cell.DataType = CellValues.Number;
+			}
+			else if (Value is byte ui8)
+			{
+				Cell.CellValue = new CellValue(ui8);
+				Cell.DataType = CellValues.Number;
+			}
+			else if (Value is ushort ui16)
+			{
+				Cell.CellValue = new CellValue(ui16);
+				Cell.DataType = CellValues.Number;
+			}
+			else if (Value is uint ui32)
+			{
+				Cell.CellValue = new CellValue((decimal)ui32);
+				Cell.DataType = CellValues.Number;
+			}
+			else if (Value is ulong ui64)
+			{
+				Cell.CellValue = new CellValue((decimal)ui64);
+				Cell.DataType = CellValues.Number;
+			}
+			else if (Value is BigInteger i)
+			{
+				Cell.CellValue = new CellValue(i.ToString());
+				Cell.DataType = CellValues.Number;
+			}
+			else if (Value is bool b)
+			{
+				Cell.CellValue = new CellValue(b);
+				Cell.DataType = CellValues.Boolean;
+			}
+			else if (Value is DateTime dt)
+			{
+				Cell.CellValue = new CellValue(dt);
+				Cell.DataType = CellValues.Date;
+			}
+			else if (Value is DateTimeOffset dto)
+			{
+				Cell.CellValue = new CellValue(dto);
+				Cell.DataType = CellValues.Date;
+			}
+			else if (Value is BlankNode BlankNode)
+			{
+				Cell.CellValue = new CellValue(BlankNode.ToString());
+				Cell.DataType = CellValues.String;
+			}
+			else if (Value is UriNode UriNode)
+			{
+				Cell.CellValue = new CellValue(UriNode.ToString());
+				Cell.DataType = CellValues.String;
+			}
+			else
+			{
+				Cell.CellValue = new CellValue(Value.ToString());
+				Cell.DataType = CellValues.String;
+			}
+
+			return Cell;
+		}
+
+		private static Stylesheet CreateStylesheet()
+		{
+			Stylesheet Stylesheet = new Stylesheet();
+
+			Fonts Fonts = new Fonts();
+			Fonts.Append(new Font(                         // Index 0 - default font
+				new FontName() { Val = "Calibri" },
+				new FontSize() { Val = 11 }));
+			Fonts.Append(new Font(                         // Index 1 - bold font
+				new FontName() { Val = "Calibri" },
+				new FontSize() { Val = 11 },
+				new Bold()));
+			Fonts.Count = UInt32Value.FromUInt32((uint)Fonts.ChildElements.Count);
+
+			Fills Fills = new Fills();
+			Fills.Append(new Fill // index 0 = none
+			{
+				PatternFill = new PatternFill
+				{
+					PatternType = PatternValues.None
+				}
+			});
+
+			Fills.Append(new Fill // index 1 = Gray125 (required default fills)
+			{
+				PatternFill = new PatternFill
+				{
+					PatternType = PatternValues.Gray125
+				}
+			});
+			Fills.Count = UInt32Value.FromUInt32((uint)Fills.ChildElements.Count);
+
+			Borders Borders = new Borders();
+			Borders.Append(new Border(  // index 0 = default (no border)
+				new LeftBorder(),
+				new RightBorder(),
+				new TopBorder(),
+				new BottomBorder(),
+				new DiagonalBorder()));
+			Borders.Count = UInt32Value.FromUInt32((uint)Borders.ChildElements.Count);
+
+			CellFormats CellFormats = new CellFormats();
+			CellFormats.Append(new CellFormat()     // index 0 = default
+			{
+				FontId = 0,
+				FillId = 0,
+				BorderId = 0
+			});
+			CellFormats.Append(new CellFormat()     // index 1 = bold
+			{
+				FontId = 1,
+				FillId = 0,
+				BorderId = 0,
+				ApplyFont = true
+			});
+			CellFormats.Count = UInt32Value.FromUInt32((uint)CellFormats.ChildElements.Count);
+
+			// Assemble the stylesheet
+			Stylesheet.Append(Fonts);
+			Stylesheet.Append(Fills);
+			Stylesheet.Append(Borders);
+			Stylesheet.Append(CellFormats);
+
+			return Stylesheet;
+		}
+
+		private static string GetCellReference(uint ColumnIndex, uint RowIndex)
+		{
+			return GetColumnName(ColumnIndex) + RowIndex.ToString();
+		}
+
+		private static string GetColumnName(uint ColumnIndex)
+		{
+			uint Dividend = ColumnIndex;
+			string ColumnName = string.Empty;
+
+			while (Dividend > 0)
+			{
+				uint Modulo = (Dividend - 1) % 26;
+				char Letter = (char)('A' + Modulo);
+				ColumnName = Letter + ColumnName;
+				Dividend = (Dividend - Modulo - 1) / 26;
+			}
+
+			return ColumnName;
+		}
+
+		#endregion
+
+		#region Conversion of SPARQL Result sets to Excel spreadsheets
+
+		/// <summary>
+		/// Converts a SPARQL Result Set to an Excel spreadsheet.
+		/// </summary>
+		/// <param name="ResultSet">SPARQL result set.</param>
+		/// <param name="FilePath">Path where Excel file will be stored.</param>
+		/// <param name="SheetName">Name of sheet.</param>
+		/// <returns>Spreadsheet document.</returns>
+		public static void ConvertResultSetToExcel(SparqlResultSet ResultSet, string FilePath, string SheetName)
+		{
+			if (ResultSet is null)
+				throw new ArgumentNullException(nameof(ResultSet));
+
+			using SpreadsheetDocument Document = SpreadsheetDocument.Create(FilePath, SpreadsheetDocumentType.Workbook);
+
+			WorkbookPart WorkbookPart = Document.AddWorkbookPart();
+			WorkbookPart.Workbook = new Workbook();
+
+			WorksheetPart WorksheetPart = WorkbookPart.AddNewPart<WorksheetPart>();
+			WorksheetPart.Worksheet = new Worksheet(new SheetData());
+
+			WorkbookStylesPart StylesPart = WorkbookPart.AddNewPart<WorkbookStylesPart>();
+			StylesPart.Stylesheet = CreateStylesheet();  // Define bold and normal styles
+			StylesPart.Stylesheet.Save();
+
+			SheetData SheetData = WorksheetPart.Worksheet.GetFirstChild<SheetData>();
+			int Columns = ResultSet.Variables?.Length ?? 0;
+			int Rows = ResultSet.Records?.Length ?? 0;
+			int Row, Column;
+			uint x = 1, y = 1;  // Excel uses 1-based indices.
+			Row ExcelRow;
+			Cell Cell;
+
+			if (ResultSet.BooleanResult.HasValue)
+			{
+				ExcelRow = new Row()
+				{
+					RowIndex = y
+				};
+
+				Cell = new Cell()
+				{
+					CellReference = GetCellReference(x, y),
+					CellValue = new CellValue(ResultSet.BooleanResult.Value),
+					DataType = CellValues.Boolean,
+					StyleIndex = 0  // Normal
+				};
+
+				ExcelRow.Append(Cell);
+
+				y++;
+
+				SheetData.Append(ExcelRow);
+			}
+
+			if (Columns > 0)
+			{
+				ExcelRow = new Row()
+				{
+					RowIndex = y
+				};
+
+				for (Column = 0; Column < Columns; Column++)
+				{
+					Cell = new Cell()
+					{
+						CellReference = GetCellReference(x++, y),
+						CellValue = new CellValue(ResultSet.Variables[Column]),
+						DataType = CellValues.String,
+						StyleIndex = 1  // Bold
+					};
+
+					ExcelRow.Append(Cell);
+				}
+
+				x = 1;
+				y++;
+
+				SheetData.Append(ExcelRow);
+			}
+
+			for (Row = 0; Row < Rows; Row++)
+			{
+				ISparqlResultRecord Record = ResultSet.Records[Row];
+
+				ExcelRow = new Row()
+				{
+					RowIndex = y
+				};
+
+				for (Column = 0; Column < Columns; Column++)
+				{
+					object Value = Record[ResultSet.Variables[Column]];
+
+					if (Value is null)
+						x++;
+					else
+						ExcelRow.Append(CreateCell(x++, y, Value));
+				}
+
+				x = 1;
+				y++;
+
+				SheetData.Append(ExcelRow);
+			}
+
+			Sheets Sheets = WorkbookPart.Workbook.AppendChild(new Sheets());
+			Sheet Sheet = new Sheet()
+			{
+				Id = WorkbookPart.GetIdOfPart(WorksheetPart),
+				SheetId = 1,
+				Name = SheetName
+			};
+			Sheets.Append(Sheet);
+
+			// Save the workbook and close the document
+			WorkbookPart.Workbook.Save();
+		}
+
+		#endregion
 	}
 }

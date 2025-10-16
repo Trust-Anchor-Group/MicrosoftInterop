@@ -1,21 +1,25 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Diagnostics;
 using System.Text;
+using Waher.Content.Semantic;
 using Waher.Runtime.Text;
 using Waher.Script;
+using Waher.Script.Abstraction.Elements;
 
 namespace TAG.Content.Microsoft.Test
 {
 	[TestClass]
 	public class ExcelTests
 	{
-		private static string? inputFolder;
+		private static string? inputSpreadsheetsFolder;
+		private static string? inputScriptFolder;
 		private static string? outputFolder;
 		private static string? expectedFolder;
 
 		[ClassInitialize]
 		public static Task ClassInitialize(TestContext _)
 		{
-			inputFolder = Path.Combine(Environment.CurrentDirectory, "Spreadsheets");
+			inputSpreadsheetsFolder = Path.Combine(Environment.CurrentDirectory, "Spreadsheets");
+			inputScriptFolder = Path.Combine(Environment.CurrentDirectory, "Script");
 			outputFolder = Path.Combine(Environment.CurrentDirectory, "Output");
 			expectedFolder = Path.Combine(Environment.CurrentDirectory, "Expected", "Script");
 
@@ -25,7 +29,7 @@ namespace TAG.Content.Microsoft.Test
 			return Task.CompletedTask;
 		}
 
-		[DataTestMethod]
+		[TestMethod]
 		[DataRow("SimpleSheet")]
 		[DataRow("MultipleSheets")]
 		[DataRow("SparseMatrix")]
@@ -33,11 +37,11 @@ namespace TAG.Content.Microsoft.Test
 		[DataRow("Image")]
 		public async Task Convert_To_Script(string FileName)
 		{
-			Assert.IsNotNull(inputFolder);
+			Assert.IsNotNull(inputSpreadsheetsFolder);
 			Assert.IsNotNull(outputFolder);
 			Assert.IsNotNull(expectedFolder);
 
-			string InputFileName = Path.Combine(inputFolder, FileName + ".xlsx");
+			string InputFileName = Path.Combine(inputSpreadsheetsFolder, FileName + ".xlsx");
 			string OutputFileName = Path.Combine(outputFolder, FileName + ".script");
 			string OutputFileName2 = Path.Combine(outputFolder, FileName + "2.script");
 			string ExpectedFileName = Path.Combine(expectedFolder, FileName + ".script");
@@ -51,11 +55,11 @@ namespace TAG.Content.Microsoft.Test
 			Expression Exp1 = new(Output);
 			Expression Exp2 = new(Output2);
 
-			Variables Variables1 = new();
+			Variables Variables1 = [];
 			object Result1 = await Exp1.EvaluateAsync(Variables1);
 			string s1 = Expression.ToString(Result1);
 
-			Variables Variables2 = new();
+			Variables Variables2 = [];
 			object Result2 = await Exp2.EvaluateAsync(Variables2);
 			string s2 = Expression.ToString(Result2);
 
@@ -98,5 +102,35 @@ namespace TAG.Content.Microsoft.Test
 				}
 			}
 		}
+
+		[TestMethod]
+		[DataRow("MultiplicationTable")]
+		[DataRow("SineTable")]
+		[DataRow("SparqlResult")]
+		public async Task Convert_To_Excel(string FileName)
+		{
+			Assert.IsNotNull(inputScriptFolder);
+			Assert.IsNotNull(outputFolder);
+
+			string InputFileName = Path.Combine(inputScriptFolder, FileName + ".script");
+			string OutputFileName = Path.Combine(outputFolder, FileName + ".xlsx");
+
+			string Script = File.ReadAllText(InputFileName);
+			object Value = await Expression.EvalAsync(Script, []);
+			if (Value is IMatrix Matrix)
+				ExcelUtilities.ConvertMatrixToExcel(Matrix, OutputFileName, "Result");
+			else if (Value is SparqlResultSet SparqlResultSet)
+				ExcelUtilities.ConvertResultSetToExcel(SparqlResultSet, OutputFileName, "Result");
+			else
+				throw new Exception("Unsupported result.");
+
+
+			Process.Start(new ProcessStartInfo()
+			{
+				FileName = OutputFileName,
+				UseShellExecute = true
+			});
+		}
+
 	}
 }

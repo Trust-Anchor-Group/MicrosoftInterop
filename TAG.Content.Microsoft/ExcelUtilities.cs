@@ -10,6 +10,7 @@ using System.Text;
 using Waher.Content;
 using Waher.Content.Semantic;
 using Waher.Content.Semantic.Model;
+using Waher.Content.Xml;
 using Waher.Events;
 using Waher.Script;
 using Waher.Script.Abstraction.Elements;
@@ -25,7 +26,7 @@ namespace TAG.Content.Microsoft
 		#region Conversion of Excel spreadsheets to script
 
 		/// <summary>
-		/// Converts an Excel spreadsheet to scrpit.
+		/// Converts an Excel spreadsheet to script.
 		/// </summary>
 		/// <param name="ExcelFileName">File name of Excel spreadsheet.</param>
 		/// <param name="ScriptFileName">File name of script file.</param>
@@ -907,6 +908,8 @@ namespace TAG.Content.Microsoft
 
 		#region Conversion of matrices to Excel spreadsheets
 
+		private const double MaxDigitWidth = 7;
+
 		/// <summary>
 		/// Converts a matrix to an Excel spreadsheet.
 		/// </summary>
@@ -925,19 +928,26 @@ namespace TAG.Content.Microsoft
 			WorkbookPart.Workbook = new Workbook();
 
 			WorksheetPart WorksheetPart = WorkbookPart.AddNewPart<WorksheetPart>();
-			WorksheetPart.Worksheet = new Worksheet(new SheetData());
+			WorksheetPart.Worksheet = new Worksheet();
 
 			WorkbookStylesPart StylesPart = WorkbookPart.AddNewPart<WorkbookStylesPart>();
 			StylesPart.Stylesheet = CreateStylesheet();  // Define bold and normal styles
 			StylesPart.Stylesheet.Save();
 
-			SheetData SheetData = WorksheetPart.Worksheet.GetFirstChild<SheetData>();
+			Columns SheetColumns = new Columns();
+			WorksheetPart.Worksheet.Append(SheetColumns);
+			List<Column> SheetColumn = new List<Column>();
+
+			SheetData SheetData = new SheetData();
+			WorksheetPart.Worksheet.Append(SheetData);
+
 			int Columns = M.Columns;
 			int Rows = M.Rows;
 			int Row, Column;
 			uint x = 1, y = 1;  // Excel uses 1-based indices.
 			Row ExcelRow;
 			Cell Cell;
+			string s;
 
 			if (M is ObjectMatrix OM && OM.HasColumnNames)
 			{
@@ -949,10 +959,13 @@ namespace TAG.Content.Microsoft
 
 				for (Column = 0; Column < c; Column++)
 				{
+					s = OM.ColumnNames[Column];
+					CheckColumnWidth(s, x, SheetColumns, SheetColumn);
+
 					Cell = new Cell()
 					{
 						CellReference = GetCellReference(x++, y),
-						CellValue = new CellValue(OM.ColumnNames[Column]),
+						CellValue = new CellValue(s),
 						DataType = CellValues.String,
 						StyleIndex = 1  // Bold
 					};
@@ -980,7 +993,11 @@ namespace TAG.Content.Microsoft
 					if (Value is null)
 						x++;
 					else
-						ExcelRow.Append(CreateCell(x++, y, Value));
+					{
+						s = Value.ToString();
+						ExcelRow.Append(CreateCell(null, x, y, Value, ref s));
+						CheckColumnWidth(s, x++, SheetColumns, SheetColumn);
+					}
 				}
 
 				x = 1;
@@ -998,11 +1015,37 @@ namespace TAG.Content.Microsoft
 			};
 			Sheets.Append(Sheet);
 
-			// Save the workbook and close the document
+			WorksheetPart.Worksheet.Save();
 			WorkbookPart.Workbook.Save();
 		}
 
-		private static Cell CreateCell(uint Column, uint Row, object Value)
+		private static void CheckColumnWidth(string Content, uint x, Columns SheetColumns, List<Column> SheetColumn)
+		{
+			double Width = Math.Floor((Content.Length * MaxDigitWidth + 5) / MaxDigitWidth * 256) / 256;
+			Column Column;
+
+			if (x > SheetColumn.Count)
+			{
+				Column = new Column()
+				{
+					Min = x,
+					Max = x,
+					Width = Width,
+					CustomWidth = true
+				};
+				SheetColumn.Add(Column);
+				SheetColumns.Append(Column);
+			}
+			else
+			{
+				Column = SheetColumn[(int)(x - 1)];
+
+				if (Width > Column.Width)
+					Column.Width = Width;
+			}
+		}
+
+		private static Cell CreateCell(SparqlResultSet Result, uint Column, uint Row, object Value, ref string StringValue)
 		{
 			Cell Cell = new Cell()
 			{
@@ -1022,16 +1065,25 @@ namespace TAG.Content.Microsoft
 			{
 				Cell.CellValue = new CellValue(d);
 				Cell.DataType = CellValues.Number;
+
+				if (StringValue.Length > 11)
+					StringValue = StringValue.Substring(0, 11);
 			}
 			else if (Value is decimal dec)
 			{
 				Cell.CellValue = new CellValue(dec);
 				Cell.DataType = CellValues.Number;
+
+				if (StringValue.Length > 11)
+					StringValue = StringValue.Substring(0, 11);
 			}
 			else if (Value is float f)
 			{
 				Cell.CellValue = new CellValue(f);
 				Cell.DataType = CellValues.Number;
+
+				if (StringValue.Length > 11)
+					StringValue = StringValue.Substring(0, 11);
 			}
 			else if (Value is sbyte i8)
 			{
@@ -1080,7 +1132,7 @@ namespace TAG.Content.Microsoft
 			}
 			else if (Value is bool b)
 			{
-				Cell.CellValue = new CellValue(b);
+				Cell.CellValue = new CellValue(StringValue = b.ToString().ToLower());
 				Cell.DataType = CellValues.Boolean;
 			}
 			else if (Value is DateTime dt)
@@ -1095,17 +1147,21 @@ namespace TAG.Content.Microsoft
 			}
 			else if (Value is BlankNode BlankNode)
 			{
-				Cell.CellValue = new CellValue(BlankNode.ToString());
+				Cell.CellValue = new CellValue(StringValue = 
+					Result?.GetShortBlankNodeLabel(BlankNode) ?? BlankNode.ToString());
+
 				Cell.DataType = CellValues.String;
 			}
 			else if (Value is UriNode UriNode)
 			{
-				Cell.CellValue = new CellValue(UriNode.ToString());
+				Cell.CellValue = new CellValue(StringValue =
+					Result?.GetShortUri(UriNode) ?? UriNode.Uri.ToString());
+
 				Cell.DataType = CellValues.String;
 			}
 			else
 			{
-				Cell.CellValue = new CellValue(Value.ToString());
+				Cell.CellValue = new CellValue(StringValue);
 				Cell.DataType = CellValues.String;
 			}
 
@@ -1221,19 +1277,26 @@ namespace TAG.Content.Microsoft
 			WorkbookPart.Workbook = new Workbook();
 
 			WorksheetPart WorksheetPart = WorkbookPart.AddNewPart<WorksheetPart>();
-			WorksheetPart.Worksheet = new Worksheet(new SheetData());
+			WorksheetPart.Worksheet = new Worksheet();
 
 			WorkbookStylesPart StylesPart = WorkbookPart.AddNewPart<WorkbookStylesPart>();
 			StylesPart.Stylesheet = CreateStylesheet();  // Define bold and normal styles
 			StylesPart.Stylesheet.Save();
 
-			SheetData SheetData = WorksheetPart.Worksheet.GetFirstChild<SheetData>();
+			Columns SheetColumns = new Columns();
+			WorksheetPart.Worksheet.Append(SheetColumns);
+			List<Column> SheetColumn = new List<Column>();
+
+			SheetData SheetData = new SheetData();
+			WorksheetPart.Worksheet.Append(SheetData);
+
 			int Columns = ResultSet.Variables?.Length ?? 0;
 			int Rows = ResultSet.Records?.Length ?? 0;
 			int Row, Column;
 			uint x = 1, y = 1;  // Excel uses 1-based indices.
 			Row ExcelRow;
 			Cell Cell;
+			string s;
 
 			if (ResultSet.BooleanResult.HasValue)
 			{
@@ -1245,7 +1308,7 @@ namespace TAG.Content.Microsoft
 				Cell = new Cell()
 				{
 					CellReference = GetCellReference(x, y),
-					CellValue = new CellValue(ResultSet.BooleanResult.Value),
+					CellValue = new CellValue(ResultSet.BooleanResult.Value.ToString().ToLower()),
 					DataType = CellValues.Boolean,
 					StyleIndex = 0  // Normal
 				};
@@ -1266,10 +1329,13 @@ namespace TAG.Content.Microsoft
 
 				for (Column = 0; Column < Columns; Column++)
 				{
+					s = ResultSet.Variables[Column];
+					CheckColumnWidth(s, x, SheetColumns, SheetColumn);
+
 					Cell = new Cell()
 					{
 						CellReference = GetCellReference(x++, y),
-						CellValue = new CellValue(ResultSet.Variables[Column]),
+						CellValue = new CellValue(s),
 						DataType = CellValues.String,
 						StyleIndex = 1  // Bold
 					};
@@ -1299,7 +1365,11 @@ namespace TAG.Content.Microsoft
 					if (Value is null)
 						x++;
 					else
-						ExcelRow.Append(CreateCell(x++, y, Value));
+					{
+						s = Value.ToString();
+						ExcelRow.Append(CreateCell(ResultSet, x, y, Value, ref s));
+						CheckColumnWidth(s, x++, SheetColumns, SheetColumn);
+					}
 				}
 
 				x = 1;
@@ -1317,7 +1387,7 @@ namespace TAG.Content.Microsoft
 			};
 			Sheets.Append(Sheet);
 
-			// Save the workbook and close the document
+			WorksheetPart.Worksheet.Save();
 			WorkbookPart.Workbook.Save();
 		}
 

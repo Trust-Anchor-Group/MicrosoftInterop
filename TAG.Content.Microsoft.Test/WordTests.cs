@@ -59,7 +59,7 @@ namespace TAG.Content.Microsoft.Test
 			return Task.CompletedTask;
 		}
 
-		[DataTestMethod]
+		[TestMethod]
 		[DataRow("SimpleText")]
 		[DataRow("Paragraphs")]
 		[DataRow("Sections")]
@@ -69,7 +69,6 @@ namespace TAG.Content.Microsoft.Test
 		[DataRow("Figures")]
 		[DataRow("Frames")]
 		[DataRow("Notes")]
-		[DataRow("Fields")]
 		[DataRow("Fields")]
 		[DataRow("MultiParagraphList")]
 		[DataRow("TablesAndNotes")]

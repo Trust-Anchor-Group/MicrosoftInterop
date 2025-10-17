@@ -1104,9 +1104,10 @@ namespace TAG.Content.Microsoft
 
 			if (Value is ISemanticLiteral SemanticLiteral)
 			{
-				Value = SemanticLiteral.Value;
+				Value = SemanticLiteral.AssociatedObjectValue;
 				StringValue = null;
 			}
+
 			if (Value is PhysicalQuantity Quantity)
 			{
 				Value = Quantity.Magnitude;

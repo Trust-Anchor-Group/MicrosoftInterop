@@ -1241,14 +1241,17 @@ namespace TAG.Content.Microsoft
 			else if (Value is DateTime dt)
 			{
 				Cell.CellValue = new CellValue(dt.ToOADate());
-				Cell.StyleIndex = 3;	// Date & Time format
+				Cell.StyleIndex = 3;    // Date & Time format
 				Cell.DataType = CellValues.Number;
+				StringValue = dt.ToString("yyyy-MM-dd HH:mm:ss");
 			}
 			else if (Value is DateTimeOffset dto)
 			{
-				Cell.CellValue = new CellValue(dto.DateTime.ToOADate());
+				dt = dto.DateTime;
+				Cell.CellValue = new CellValue(dt.ToOADate());
 				Cell.StyleIndex = 3;    // Date & Time format
 				Cell.DataType = CellValues.Number;
+				StringValue = dt.ToString("yyyy-MM-dd HH:mm:ss");
 			}
 			else if (Value is BlankNode BlankNode)
 			{
@@ -1279,12 +1282,15 @@ namespace TAG.Content.Microsoft
 			Stylesheet Stylesheet = new Stylesheet();
 
 			NumberingFormats NumberingFormats = new NumberingFormats();
-
 			NumberingFormat DateTimeFormat = new NumberingFormat()
 			{
 				NumberFormatId = 164U,
 				FormatCode = DocumentFormat.OpenXml.StringValue.FromString("yyyy-mm-dd hh:mm:ss")
 			};
+
+			NumberingFormats.Append(DateTimeFormat);
+			NumberingFormats.Count = 1;
+			Stylesheet.Append(NumberingFormats);
 
 			Fonts Fonts = new Fonts();
 			Fonts.Append(new Font(                         // Index 0 - default font
@@ -1295,6 +1301,7 @@ namespace TAG.Content.Microsoft
 				new FontSize() { Val = 11 },
 				new Bold()));
 			Fonts.Count = 2;
+			Stylesheet.Append(Fonts);
 
 			Fills Fills = new Fills();
 			Fills.Append(new Fill // index 0 = none
@@ -1313,6 +1320,7 @@ namespace TAG.Content.Microsoft
 				}
 			});
 			Fills.Count = 2;
+			Stylesheet.Append(Fills);
 
 			Borders Borders = new Borders();
 			Borders.Append(new Border(  // index 0 = default (no border)
@@ -1322,9 +1330,18 @@ namespace TAG.Content.Microsoft
 				new BottomBorder(),
 				new DiagonalBorder()));
 			Borders.Count = 1;
+			Stylesheet.Append(Borders);
 
-			NumberingFormats.Append(DateTimeFormat);
-			NumberingFormats.Count = 1;
+			CellStyleFormats CellStyleFormats = new CellStyleFormats();
+			CellStyleFormats.Append(new CellFormat()
+			{
+				FontId = 0,
+				FillId = 0,
+				BorderId = 0,
+				NumberFormatId = 0
+			});
+			CellStyleFormats.Count = 1;
+			Stylesheet.Append(CellStyleFormats);
 
 			CellFormats CellFormats = new CellFormats();
 			CellFormats.Append(new CellFormat()     // index 0 = default
@@ -1365,13 +1382,17 @@ namespace TAG.Content.Microsoft
 				ApplyNumberFormat = true,
 			});
 			CellFormats.Count = 4;
-
-			// Assemble the stylesheet
-			Stylesheet.Append(NumberingFormats);
-			Stylesheet.Append(Fonts);
-			Stylesheet.Append(Fills);
-			Stylesheet.Append(Borders);
 			Stylesheet.Append(CellFormats);
+			
+			CellStyles CellStyles = new CellStyles();
+			CellStyles.Append(new CellStyle()
+			{
+				Name = "Normal",
+				FormatId = 0,
+				BuiltinId = 0
+			});
+			CellStyles.Count = 1;
+			Stylesheet.Append(CellStyles);
 
 			return Stylesheet;
 		}

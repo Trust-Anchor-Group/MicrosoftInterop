@@ -568,6 +568,8 @@ namespace TAG.Content.Microsoft
 										{
 											if (DateTime.TryParse(s, out DateTime TP))
 												State.Cells[State.X - State.Left, State.Y - State.Top] = Expression.ToString(TP);
+											else if (CommonTypes.TryParse(s, out double d))
+												State.Cells[State.X - State.Left, State.Y - State.Top] = Expression.ToString(DateTime.FromOADate(d));
 											else
 												State.Cells[State.X - State.Left, State.Y - State.Top] = Expression.ToString(s);
 										}
@@ -1238,13 +1240,15 @@ namespace TAG.Content.Microsoft
 			}
 			else if (Value is DateTime dt)
 			{
-				Cell.CellValue = new CellValue(dt);
-				Cell.DataType = CellValues.Date;
+				Cell.CellValue = new CellValue(dt.ToOADate());
+				Cell.StyleIndex = 3;	// Date & Time format
+				Cell.DataType = CellValues.Number;
 			}
 			else if (Value is DateTimeOffset dto)
 			{
-				Cell.CellValue = new CellValue(dto);
-				Cell.DataType = CellValues.Date;
+				Cell.CellValue = new CellValue(dto.DateTime.ToOADate());
+				Cell.StyleIndex = 3;    // Date & Time format
+				Cell.DataType = CellValues.Number;
 			}
 			else if (Value is BlankNode BlankNode)
 			{
@@ -1274,6 +1278,14 @@ namespace TAG.Content.Microsoft
 		{
 			Stylesheet Stylesheet = new Stylesheet();
 
+			NumberingFormats NumberingFormats = new NumberingFormats();
+
+			NumberingFormat DateTimeFormat = new NumberingFormat()
+			{
+				NumberFormatId = 164U,
+				FormatCode = DocumentFormat.OpenXml.StringValue.FromString("yyyy-mm-dd hh:mm:ss")
+			};
+
 			Fonts Fonts = new Fonts();
 			Fonts.Append(new Font(                         // Index 0 - default font
 				new FontName() { Val = "Calibri" },
@@ -1282,7 +1294,7 @@ namespace TAG.Content.Microsoft
 				new FontName() { Val = "Calibri" },
 				new FontSize() { Val = 11 },
 				new Bold()));
-			Fonts.Count = UInt32Value.FromUInt32((uint)Fonts.ChildElements.Count);
+			Fonts.Count = 2;
 
 			Fills Fills = new Fills();
 			Fills.Append(new Fill // index 0 = none
@@ -1300,7 +1312,7 @@ namespace TAG.Content.Microsoft
 					PatternType = PatternValues.Gray125
 				}
 			});
-			Fills.Count = UInt32Value.FromUInt32((uint)Fills.ChildElements.Count);
+			Fills.Count = 2;
 
 			Borders Borders = new Borders();
 			Borders.Append(new Border(  // index 0 = default (no border)
@@ -1309,7 +1321,10 @@ namespace TAG.Content.Microsoft
 				new TopBorder(),
 				new BottomBorder(),
 				new DiagonalBorder()));
-			Borders.Count = UInt32Value.FromUInt32((uint)Borders.ChildElements.Count);
+			Borders.Count = 1;
+
+			NumberingFormats.Append(DateTimeFormat);
+			NumberingFormats.Count = 1;
 
 			CellFormats CellFormats = new CellFormats();
 			CellFormats.Append(new CellFormat()     // index 0 = default
@@ -1340,9 +1355,19 @@ namespace TAG.Content.Microsoft
 					Vertical = VerticalAlignmentValues.Top
 				}
 			});
-			CellFormats.Count = UInt32Value.FromUInt32((uint)CellFormats.ChildElements.Count);
+			CellFormats.Append(new CellFormat()     // index 3 = Date & Time
+			{
+				FontId = 0,
+				FillId = 0,
+				BorderId = 0,
+				FormatId = 0,
+				NumberFormatId = 164U,
+				ApplyNumberFormat = true,
+			});
+			CellFormats.Count = 4;
 
 			// Assemble the stylesheet
+			Stylesheet.Append(NumberingFormats);
 			Stylesheet.Append(Fonts);
 			Stylesheet.Append(Fills);
 			Stylesheet.Append(Borders);

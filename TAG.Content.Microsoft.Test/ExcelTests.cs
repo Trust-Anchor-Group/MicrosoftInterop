@@ -107,6 +107,7 @@ namespace TAG.Content.Microsoft.Test
 		[DataRow("MultiplicationTable")]
 		[DataRow("SineTable")]
 		[DataRow("SparqlResult")]
+		[DataRow("TableUnits")]
 		public async Task Convert_To_Excel(string FileName)
 		{
 			Assert.IsNotNull(inputScriptFolder);

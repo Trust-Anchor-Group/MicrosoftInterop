@@ -64,6 +64,9 @@
     <Content Include="Expected\Script\Image.script">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Script\TableUnits.script">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Script\SparqlResult.script">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

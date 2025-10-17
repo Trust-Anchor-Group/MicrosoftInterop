@@ -20,6 +20,8 @@ namespace TAG.Content.Microsoft.Test
 		[AssemblyInitialize]
 		public static async Task AssemblyInitialize(TestContext _)
 		{
+			new Waher.Content.Semantic.RdfCodec();
+
 			// Create inventory of available classes.
 			TypesLoader.Initialize();
 

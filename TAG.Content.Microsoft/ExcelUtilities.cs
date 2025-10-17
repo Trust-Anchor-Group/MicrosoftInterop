@@ -14,6 +14,7 @@ using Waher.Content.Xml;
 using Waher.Events;
 using Waher.Script;
 using Waher.Script.Abstraction.Elements;
+using Waher.Script.Objects;
 using Waher.Script.Objects.Matrices;
 
 namespace TAG.Content.Microsoft
@@ -908,7 +909,7 @@ namespace TAG.Content.Microsoft
 
 		#region Conversion of matrices to Excel spreadsheets
 
-		private const double MaxDigitWidth = 7;
+		private const double MaxDigitWidth = 7.1;
 
 		/// <summary>
 		/// Converts a matrix to an Excel spreadsheet.
@@ -941,13 +942,15 @@ namespace TAG.Content.Microsoft
 			SheetData SheetData = new SheetData();
 			WorksheetPart.Worksheet.Append(SheetData);
 
+			uint[] Increments = ColumnIncrements(M);
+			uint ColumnTotal = ColumnCount(Increments);
 			int Columns = M.Columns;
 			int Rows = M.Rows;
 			int Row, Column;
 			uint x = 1, y = 1;  // Excel uses 1-based indices.
+			string s;
 			Row ExcelRow;
 			Cell Cell;
-			string s;
 
 			if (M is ObjectMatrix OM && OM.HasColumnNames)
 			{
@@ -964,13 +967,14 @@ namespace TAG.Content.Microsoft
 
 					Cell = new Cell()
 					{
-						CellReference = GetCellReference(x++, y),
+						CellReference = GetCellReference(x, y),
 						CellValue = new CellValue(s),
 						DataType = CellValues.String,
 						StyleIndex = 1  // Bold
 					};
 
 					ExcelRow.Append(Cell);
+					x += Increments[Column];
 				}
 
 				x = 1;
@@ -990,14 +994,21 @@ namespace TAG.Content.Microsoft
 				{
 					object Value = M.GetElement(Column, Row)?.AssociatedObjectValue;
 
-					if (Value is null)
-						x++;
-					else
+					if (!(Value is null))
 					{
 						s = Value.ToString();
-						ExcelRow.Append(CreateCell(null, x, y, Value, ref s));
-						CheckColumnWidth(s, x++, SheetColumns, SheetColumn);
+						ExcelRow.Append(CreateCell(null, x, y, Value, ref s, out string Unit));
+						CheckColumnWidth(s, x, SheetColumns, SheetColumn);
+
+						if (!string.IsNullOrEmpty(Unit))
+						{
+							s = Unit;
+							ExcelRow.Append(CreateCell(null, x + 1, y, Unit, ref s, out Unit));
+							CheckColumnWidth(s, x + 1, SheetColumns, SheetColumn);
+						}
 					}
+
+					x += Increments[Column];
 				}
 
 				x = 1;
@@ -1045,7 +1056,43 @@ namespace TAG.Content.Microsoft
 			}
 		}
 
-		private static Cell CreateCell(SparqlResultSet Result, uint Column, uint Row, object Value, ref string StringValue)
+		private static uint[] ColumnIncrements(IMatrix Result)
+		{
+			int x, Columns = Result.Columns;
+			int y, Rows = Result.Rows;
+			uint[] Increments = new uint[Columns];
+
+			Array.Fill(Increments, (uint)1);
+
+			for (y = 0; y < Rows; y++)
+			{
+				for (x = 0; x < Columns; x++)
+				{
+					if (Increments[x] == 1)
+					{
+						object Element = Result.GetElement(x, y)?.AssociatedObjectValue;
+
+						if (Element is PhysicalQuantity)
+							Increments[x] = 2;
+					}
+				}
+			}
+
+			return Increments;
+		}
+
+		private static uint ColumnCount(uint[] ColumnIncrements)
+		{
+			uint Result = 0;
+
+			foreach (uint Increment in ColumnIncrements)
+				Result += Increment;
+
+			return Result;
+		}
+
+		private static Cell CreateCell(SparqlResultSet Result, uint Column, uint Row,
+			object Value, ref string StringValue, out string Unit)
 		{
 			Cell Cell = new Cell()
 			{
@@ -1053,13 +1100,65 @@ namespace TAG.Content.Microsoft
 				StyleIndex = 0  // Normal
 			};
 
+			Unit = null;
+
 			if (Value is ISemanticLiteral SemanticLiteral)
+			{
 				Value = SemanticLiteral.Value;
+				StringValue = null;
+			}
+			if (Value is PhysicalQuantity Quantity)
+			{
+				Value = Quantity.Magnitude;
+				Unit = Quantity.Unit.ToString();
+				StringValue = null;
+			}
+
+			StringValue ??= Value.ToString();
 
 			if (Value is string s)
 			{
-				Cell.CellValue = new CellValue(s);
-				Cell.DataType = CellValues.String;
+				if (s.IndexOf('\n') < 0)
+				{
+					Cell.CellValue = new CellValue(s);
+					Cell.DataType = CellValues.String;
+				}
+				else
+				{
+					string[] Rows = s.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
+					StringBuilder sb = new StringBuilder(Rows[0]);
+					int MaxIndex = 0;
+					int MaxLen = Rows[0].Length;
+					int i, j, c = Rows.Length;
+
+					for (i = 1; i < c; i++)
+					{
+						s = Rows[i];
+						j = s.Length;
+						if (j > MaxLen)
+						{
+							MaxLen = j;
+							MaxIndex = i;
+						}
+
+						sb.Append("\r\n");
+						sb.Append(s);
+					}
+
+					StringValue = Rows[MaxIndex];
+
+					Text Text = new Text(sb.ToString())
+					{
+						Space = SpaceProcessingModeValues.Preserve
+					};
+
+					InlineString InlineString = new InlineString();
+					InlineString.AppendChild(Text);
+
+					Cell.InlineString = InlineString;
+					Cell.DataType = CellValues.InlineString;
+					Cell.StyleIndex = 2;    // Wrap text
+				}
 			}
 			else if (Value is double d)
 			{
@@ -1067,7 +1166,7 @@ namespace TAG.Content.Microsoft
 				Cell.DataType = CellValues.Number;
 
 				if (StringValue.Length > 11)
-					StringValue = StringValue.Substring(0, 11);
+					StringValue = StringValue[..11];
 			}
 			else if (Value is decimal dec)
 			{
@@ -1075,7 +1174,7 @@ namespace TAG.Content.Microsoft
 				Cell.DataType = CellValues.Number;
 
 				if (StringValue.Length > 11)
-					StringValue = StringValue.Substring(0, 11);
+					StringValue = StringValue[..11];
 			}
 			else if (Value is float f)
 			{
@@ -1083,7 +1182,7 @@ namespace TAG.Content.Microsoft
 				Cell.DataType = CellValues.Number;
 
 				if (StringValue.Length > 11)
-					StringValue = StringValue.Substring(0, 11);
+					StringValue = StringValue[..11];
 			}
 			else if (Value is sbyte i8)
 			{
@@ -1132,7 +1231,8 @@ namespace TAG.Content.Microsoft
 			}
 			else if (Value is bool b)
 			{
-				Cell.CellValue = new CellValue(StringValue = b.ToString().ToLower());
+				StringValue = b.ToString().ToLower();
+				Cell.CellValue = new CellValue(StringValue);
 				Cell.DataType = CellValues.Boolean;
 			}
 			else if (Value is DateTime dt)
@@ -1147,16 +1247,17 @@ namespace TAG.Content.Microsoft
 			}
 			else if (Value is BlankNode BlankNode)
 			{
-				Cell.CellValue = new CellValue(StringValue = 
-					Result?.GetShortBlankNodeLabel(BlankNode) ?? BlankNode.ToString());
+				StringValue = Result?.GetShortBlankNodeLabel(BlankNode)
+					?? BlankNode.ToString();
 
+				Cell.CellValue = new CellValue(StringValue);
 				Cell.DataType = CellValues.String;
 			}
 			else if (Value is UriNode UriNode)
 			{
-				Cell.CellValue = new CellValue(StringValue =
-					Result?.GetShortUri(UriNode) ?? UriNode.Uri.ToString());
+				StringValue = Result?.GetShortUri(UriNode) ?? UriNode.Uri.ToString();
 
+				Cell.CellValue = new CellValue(StringValue);
 				Cell.DataType = CellValues.String;
 			}
 			else
@@ -1221,7 +1322,22 @@ namespace TAG.Content.Microsoft
 				FontId = 1,
 				FillId = 0,
 				BorderId = 0,
-				ApplyFont = true
+				ApplyFont = true,
+				Alignment = new Alignment()
+				{
+					Horizontal = HorizontalAlignmentValues.Center
+				}
+			});
+			CellFormats.Append(new CellFormat()     // index 2 = wrap text
+			{
+				FontId = 0,
+				FillId = 0,
+				BorderId = 0,
+				Alignment = new Alignment()
+				{
+					WrapText = true,
+					Vertical = VerticalAlignmentValues.Top
+				}
 			});
 			CellFormats.Count = UInt32Value.FromUInt32((uint)CellFormats.ChildElements.Count);
 
@@ -1290,6 +1406,8 @@ namespace TAG.Content.Microsoft
 			SheetData SheetData = new SheetData();
 			WorksheetPart.Worksheet.Append(SheetData);
 
+			uint[] Increments = ColumnIncrements(ResultSet);
+			uint ColumnTotal = ColumnCount(Increments);
 			int Columns = ResultSet.Variables?.Length ?? 0;
 			int Rows = ResultSet.Records?.Length ?? 0;
 			int Row, Column;
@@ -1334,13 +1452,14 @@ namespace TAG.Content.Microsoft
 
 					Cell = new Cell()
 					{
-						CellReference = GetCellReference(x++, y),
+						CellReference = GetCellReference(x, y),
 						CellValue = new CellValue(s),
 						DataType = CellValues.String,
 						StyleIndex = 1  // Bold
 					};
 
 					ExcelRow.Append(Cell);
+					x += Increments[Column];
 				}
 
 				x = 1;
@@ -1362,14 +1481,21 @@ namespace TAG.Content.Microsoft
 				{
 					object Value = Record[ResultSet.Variables[Column]];
 
-					if (Value is null)
-						x++;
-					else
+					if (!(Value is null))
 					{
 						s = Value.ToString();
-						ExcelRow.Append(CreateCell(ResultSet, x, y, Value, ref s));
-						CheckColumnWidth(s, x++, SheetColumns, SheetColumn);
+						ExcelRow.Append(CreateCell(ResultSet, x, y, Value, ref s, out string Unit));
+						CheckColumnWidth(s, x, SheetColumns, SheetColumn);
+
+						if (!string.IsNullOrEmpty(Unit))
+						{
+							s = Unit;
+							ExcelRow.Append(CreateCell(ResultSet, x + 1, y, Unit, ref s, out Unit));
+							CheckColumnWidth(s, x + 1, SheetColumns, SheetColumn);
+						}
 					}
+
+					x += Increments[Column];
 				}
 
 				x = 1;
@@ -1389,6 +1515,37 @@ namespace TAG.Content.Microsoft
 
 			WorksheetPart.Worksheet.Save();
 			WorkbookPart.Workbook.Save();
+		}
+
+		private static uint[] ColumnIncrements(SparqlResultSet Result)
+		{
+			string[] Variables = Result.Variables;
+			int i, c = Variables?.Length ?? 0;
+			uint[] Increments = new uint[c];
+
+			Array.Fill(Increments, (uint)1);
+
+			if (!(Result.Records is null))
+			{
+				foreach (ISparqlResultRecord Record in Result.Records)
+				{
+					for (i = 0; i < c; i++)
+					{
+						if (Increments[i] == 1)
+						{
+							ISemanticElement Element = Record[Variables[i]];
+
+							if (Element is ISemanticLiteral Literal &&
+								Literal.Value is PhysicalQuantity Quantity)
+							{
+								Increments[i] = 2;
+							}
+						}
+					}
+				}
+			}
+
+			return Increments;
 		}
 
 		#endregion

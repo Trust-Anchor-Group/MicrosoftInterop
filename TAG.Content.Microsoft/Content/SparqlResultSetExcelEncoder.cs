@@ -86,8 +86,6 @@ namespace TAG.Content.Microsoft.Content
 		/// <returns>Encoded object.</returns>
 		public Task<ContentResponse> EncodeAsync(object Object, Encoding Encoding, ICodecProgress Progress, params string[] AcceptedContentTypes)
 		{
-			Encoding ??= Encoding.UTF8;
-
 			byte[] Bin;
 
 			if (Object is SparqlResultSet Result)

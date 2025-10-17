@@ -1,0 +1,1 @@
+﻿[foreach row in 1..10 do [10 m + row,100 m + 2*row]]

@@ -57,11 +57,11 @@ namespace TAG.Content.Microsoft.Test
 
 			Variables Variables1 = [];
 			object Result1 = await Exp1.EvaluateAsync(Variables1);
-			string s1 = Expression.ToString(Result1);
+			string s1 = Expression.ToExpressionString(Result1);
 
 			Variables Variables2 = [];
 			object Result2 = await Exp2.EvaluateAsync(Variables2);
-			string s2 = Expression.ToString(Result2);
+			string s2 = Expression.ToExpressionString(Result2);
 
 			Assert.AreEqual(s1, s2);
 

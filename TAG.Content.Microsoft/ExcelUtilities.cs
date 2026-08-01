@@ -559,10 +559,10 @@ namespace TAG.Content.Microsoft
 											if (int.TryParse(s, out int i) &&
 												State.TryGetSharedString(i, out string s2))
 											{
-												State.Cells[State.X - State.Left, State.Y - State.Top] = Expression.ToString(s2);
+												State.Cells[State.X - State.Left, State.Y - State.Top] = Expression.ToExpressionString(s2);
 											}
 											else
-												State.Cells[State.X - State.Left, State.Y - State.Top] = Expression.ToString(s);
+												State.Cells[State.X - State.Left, State.Y - State.Top] = Expression.ToExpressionString(s);
 										}
 										else if (Value == CellValues.Date)
 										{
@@ -571,24 +571,24 @@ namespace TAG.Content.Microsoft
 											else if (CommonTypes.TryParse(s, out double d))
 												State.Cells[State.X - State.Left, State.Y - State.Top] = Expression.ToString(DateTime.FromOADate(d));
 											else
-												State.Cells[State.X - State.Left, State.Y - State.Top] = Expression.ToString(s);
+												State.Cells[State.X - State.Left, State.Y - State.Top] = Expression.ToExpressionString(s);
 										}
 										else if (Value == CellValues.Boolean)
 										{
 											if (CommonTypes.TryParse(s, out bool b))
 												State.Cells[State.X - State.Left, State.Y - State.Top] = Expression.ToString(b);
 											else
-												State.Cells[State.X - State.Left, State.Y - State.Top] = Expression.ToString(s);
+												State.Cells[State.X - State.Left, State.Y - State.Top] = Expression.ToExpressionString(s);
 										}
 										else if (Value == CellValues.Number)
 										{
 											if (CommonTypes.TryParse(s, out double d))
 												State.Cells[State.X - State.Left, State.Y - State.Top] = Expression.ToString(d);
 											else
-												State.Cells[State.X - State.Left, State.Y - State.Top] = Expression.ToString(s);
+												State.Cells[State.X - State.Left, State.Y - State.Top] = Expression.ToExpressionString(s);
 										}
 										else if (Value == CellValues.Error || Value == CellValues.String || Value == CellValues.InlineString)
-											State.Cells[State.X - State.Left, State.Y - State.Top] = Expression.ToString(s);
+											State.Cells[State.X - State.Left, State.Y - State.Top] = Expression.ToExpressionString(s);
 									}
 									else
 									{
@@ -597,7 +597,7 @@ namespace TAG.Content.Microsoft
 										else if (CommonTypes.TryParse(s, out bool b))
 											State.Cells[State.X - State.Left, State.Y - State.Top] = Expression.ToString(b);
 										else
-											State.Cells[State.X - State.Left, State.Y - State.Top] = Expression.ToString(s);
+											State.Cells[State.X - State.Left, State.Y - State.Top] = Expression.ToExpressionString(s);
 									}
 								}
 
